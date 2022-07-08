@@ -24,7 +24,7 @@ def DataGenerator(total_count: int) -> Generator:
                 return
 
 
-@TaskFunc("简书资产排行榜", "0 0 12 1/1 * ?")
+@TaskFunc("简书资产排行榜", "0 0 12 1/1 * *")
 def main():
     start_time = GetNowWithoutMileseconds()
 
