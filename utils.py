@@ -36,12 +36,12 @@ def CostSecondsToString(cost: int) -> str:
         result.append(hour)
         result.append("小时")
         result.append(minute)
-        result.append("分钟")
+        result.append("分")
         result.append(second)
         result.append("秒")
     elif minute:
         result.append(minute)
-        result.append("分钟")
+        result.append("分")
         result.append(second)
         result.append("秒")
     elif second:
