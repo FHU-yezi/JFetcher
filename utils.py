@@ -1,9 +1,13 @@
-from datetime import datetime
+from datetime import datetime, date
 from typing import Any, Dict, List
 
 
 def GetNowWithoutMileseconds() -> datetime:
     return datetime.now().replace(microsecond=0)
+
+
+def GetTodayInDatetimeObj() -> datetime:
+    return datetime.fromisoformat(date.today().strftime(r"%Y-%m-%d"))
 
 
 def CronToKwargs(cron: str) -> Dict[str, str]:
