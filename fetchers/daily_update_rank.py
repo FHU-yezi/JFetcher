@@ -30,7 +30,7 @@ def main():
                 "name": item["name"],
                 "url": UserSlugToUserUrl(item["uslug"])
             },
-            "days": item["ckeck_in_count"]
+            "days": item["check_in_count"]
         }
 
         temp.append(data)

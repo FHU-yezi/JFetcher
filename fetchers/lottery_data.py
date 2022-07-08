@@ -33,7 +33,7 @@ def GetLastSavedItemID() -> int:
         # 没有数据
         return 0  # 保证所有数据都被存储
 
-    return data_collection.find().sort("_id", -1).limit(1)["_id"]
+    return data_collection.find_one(sort=[("_id", -1)])["_id"]
 
 
 @TaskFunc("简书大转盘抽奖", "0 0 2,9,14,21 1/1 * *")
@@ -58,7 +58,8 @@ def main():
 
     last_id = GetLastSavedItemID()
     temp = [x for x in temp if x["_id"] > last_id]
-    data_collection.insert_many(temp)
+    if data_collection:
+        data_collection.insert_many(temp)
 
     data_count = len(temp)
 

@@ -18,7 +18,7 @@ funcs = GetAllRegisteredFuncs()
 AddRunLog("SYSTEM", "INFO", f"获取到 {len(funcs)} 个任务函数")
 
 for task_name, cron, func in funcs:
-    scheduler.add_job(func, "cron", **CronToKwargs(cron), id=f"{task_name}")
+    scheduler.add_job(func, "cron", **CronToKwargs(cron), id=task_name)
 AddRunLog("SYSTEM", "INFO", "已将任务函数加入调度")
 
 scheduler.add_listener(OnSuccessEvent, EVENT_JOB_EXECUTED)

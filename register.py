@@ -3,7 +3,7 @@ from typing import Callable, List, Tuple
 
 from log_manager import AddRunLog
 
-_registered_funcs = []
+_registered_funcs: List[Tuple[str, str, Callable]] = []
 
 
 def TaskFunc(task_name: str, cron: str) -> Callable:
@@ -27,7 +27,7 @@ def TaskFunc(task_name: str, cron: str) -> Callable:
     return outer
 
 
-def GetAllRegisteredFuncs() -> List[Tuple[str, str, str, Callable]]:
+def GetAllRegisteredFuncs() -> List[Tuple[str, str, Callable]]:
     """获取注册的任务函数列表
 
     Returns:
