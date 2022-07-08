@@ -4,7 +4,7 @@ from httpx import post as httpx_post
 
 from config_manager import config
 from log_manager import AddRunLog
-from utils import CostSecondsToString, GetNowWithoutMileseconds
+from utils import GetNowWithoutMileseconds
 
 
 def GetFeishuToken() -> str:
@@ -39,7 +39,7 @@ def SendFeishuCard(card: Dict) -> None:
         raise ValueError(f"发送消息卡片时发生错误，错误码：{response.json()['code']}，错误信息：{response.json()['msg']}")
 
 
-def SendTaskSuccessCard(task_name: str, time_cost: int, data_count: int) -> None:
+def SendTaskSuccessCard(task_name: str, data_count: int, cost_time_str: str) -> None:
     time_now = GetNowWithoutMileseconds()
 
     card = {
@@ -76,7 +76,7 @@ def SendTaskSuccessCard(task_name: str, time_cost: int, data_count: int) -> None
                         "is_short": True,
                         "text": {
                             "tag": "lark_md",
-                            "content": f"**耗时**\n{CostSecondsToString(time_cost)}"
+                            "content": f"**耗时**\n{cost_time_str}"
                         }
                     },
                     {
@@ -84,6 +84,54 @@ def SendTaskSuccessCard(task_name: str, time_cost: int, data_count: int) -> None
                         "text": {
                             "tag": "lark_md",
                             "content": f"**采集数据量**\n{data_count}"
+                        }
+                    }
+                ]
+            }
+        ]
+    }
+
+    SendFeishuCard(card)
+
+
+def SendTaskFailtureCard(task_name: str, error_message: str) -> None:
+    time_now = GetNowWithoutMileseconds()
+
+    card = {
+        "header": {
+            "title": {
+                "tag": "plain_text",
+                "content": "采集任务运行失败"
+            },
+            "template": "red"
+        },
+        "elements": [
+            {
+                "tag": "markdown",
+                "content": f"**时间：**{time_now}"
+            },
+            {
+                "tag": "div",
+                "fields": [
+                    {
+                        "is_short": True,
+                        "text": {
+                            "tag": "lark_md",
+                            "content": f"**任务名称**\n{task_name}"
+                        }
+                    },
+                    {
+                        "is_short": False,
+                        "text": {
+                            "tag": "lark_md",
+                            "content": ""
+                        }
+                    },
+                    {
+                        "is_short": True,
+                        "text": {
+                            "tag": "lark_md",
+                            "content": f"**错误信息**\n{error_message}"
                         }
                     }
                 ]
