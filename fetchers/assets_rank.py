@@ -31,20 +31,36 @@ def main():
     temp = []
     data_count = 0
     for item in DataGenerator(1000):
-        data = {
-            "date": GetTodayInDatetimeObj(),
-            "ranking": item["ranking"],
-            "user": {
-                "id": item["uid"],
-                "url": UserSlugToUserUrl(item["uslug"]),
-                "name": item["name"]
-            },
-            "assets": {
-                "FP": item["FP"],
-                "FTN": None,
-                "total": None
+        if not item["uid"]:  # 用户账号状态异常，相关信息无法获取
+            data = {
+                "date": GetTodayInDatetimeObj(),
+                "ranking": item["ranking"],
+                "user": {
+                    "id": None,
+                    "url": None,
+                    "name": None
+                },
+                "assets": {
+                    "FP": item["FP"],
+                    "FTN": None,
+                    "total": None
+                }
             }
-        }
+        else:
+            data = {
+                "date": GetTodayInDatetimeObj(),
+                "ranking": item["ranking"],
+                "user": {
+                    "id": item["uid"],
+                    "url": UserSlugToUserUrl(item["uslug"]),
+                    "name": item["name"]
+                },
+                "assets": {
+                    "FP": item["FP"],
+                    "FTN": None,
+                    "total": None
+                }
+            }
 
         try:
             user = User.from_slug(item["uslug"])

@@ -23,22 +23,40 @@ def main():
     temp = []
     data_count = 0
     for item in DataGenerator():
-        data = {
-            "date": GetTodayInDatetimeObj(),
-            "ranking": item["ranking"],
-            "article": {
-                "title": item["title"],
-                "url": ArticleSlugToArticleUrl(item["aslug"]),
-            },
-            "author": {
-                "name": item["author_name"]
-            },
-            "reward": {
-                "to_author": item["fp_to_author"],
-                "to_voter": item["fp_to_voter"],
-                "total": item["total_fp"],
+        if not item["author_name"]:  # 文章被删除导致相关信息无法访问
+            data = {
+                "date": GetTodayInDatetimeObj(),
+                "ranking": item["ranking"],
+                "article": {
+                    "title": None,
+                    "url": None,
+                },
+                "author": {
+                    "name": None
+                },
+                "reward": {
+                    "to_author": item["fp_to_author"],
+                    "to_voter": item["fp_to_voter"],
+                    "total": item["total_fp"],
+                }
             }
-        }
+        else:
+            data = {
+                "date": GetTodayInDatetimeObj(),
+                "ranking": item["ranking"],
+                "article": {
+                    "title": item["title"],
+                    "url": ArticleSlugToArticleUrl(item["aslug"]),
+                },
+                "author": {
+                    "name": item["author_name"]
+                },
+                "reward": {
+                    "to_author": item["fp_to_author"],
+                    "to_voter": item["fp_to_voter"],
+                    "total": item["total_fp"],
+                }
+            }
 
         temp.append(data)
         data_count += 1
