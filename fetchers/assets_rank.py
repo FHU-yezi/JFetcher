@@ -62,13 +62,13 @@ def main():
                 }
             }
 
-        try:
-            user = User.from_slug(item["uslug"])
-            data["assets"]["FTN"] = user.FTN_count
-            data["assets"]["total"] = round(data["assets"]["FP"] + data["assets"]["FTN"], 3)
-        except (ResourceError, APIError):
-            # TODO: 记录日志
-            pass
+            try:
+                user = User.from_slug(item["uslug"])
+                data["assets"]["FTN"] = user.FTN_count
+                data["assets"]["total"] = round(data["assets"]["FP"] + data["assets"]["FTN"], 3)
+            except (ResourceError, APIError):
+                # TODO: 记录日志
+                pass
 
         temp.append(data)
         data_count += 1
