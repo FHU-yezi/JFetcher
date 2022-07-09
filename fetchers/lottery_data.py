@@ -58,7 +58,7 @@ def main():
 
     last_id = GetLastSavedItemID()
     temp = [x for x in temp if x["_id"] > last_id]
-    if data_collection:
+    if temp:
         data_collection.insert_many(temp)
 
     data_count = len(temp)
