@@ -21,38 +21,23 @@ def CronToKwargs(cron: str) -> Dict[str, str]:
     return result
 
 
-def CostSecondsToString(cost: int) -> str:
+def CostSecondsToString(cost_time: int) -> str:
     # TODO: 这玩意写的一点都不优雅
-    hour, minute, second = 0, 0, 0
+    mapping = {
+        "分": 60,
+        "秒": 1
+    }
+    data = {key: 0 for key in mapping.keys()}
 
-    while cost >= 3600:
-        hour += 1
-        cost -= 3600
-    while cost >= 60:
-        minute += 1
-        cost -= 60
-    while cost > 0:
-        second += 1
-        cost -= 1
+    for key, value in mapping.items():
+        while value <= cost_time:
+            data[key] += 1
+            cost_time -= value
 
-    result: List[Any[int, str]] = []
-    if hour:
-        result.append(hour)
-        result.append("小时")
-        result.append(minute)
-        result.append("分")
-        result.append(second)
-        result.append("秒")
-    elif minute:
-        result.append(minute)
-        result.append("分")
-        result.append(second)
-        result.append("秒")
-    elif second:
-        result.append(second)
-        result.append("秒")
-    else:
-        result.append(0)
-        result.append("秒")
+    if sum(data.values()) == 0:
+        return "0秒"
 
-    return "".join([str(x) for x in result])
+    if data["分"] == 0 and data["秒"] != 0:
+        del data["分"]
+
+    return "".join(f"{value}{key}" for key, value in data.items())
