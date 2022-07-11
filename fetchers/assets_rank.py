@@ -14,7 +14,7 @@ from utils import GetNowWithoutMileseconds, GetTodayInDatetimeObj
 
 set_cache_status(False)
 
-DATA_SAVE_CHECK_INTERVAL = 3
+DATA_SAVE_CHECK_INTERVAL = 5
 DATA_SAVE_THRESHOLD = 50
 
 data_collection = GetCollection("assets_rank")
