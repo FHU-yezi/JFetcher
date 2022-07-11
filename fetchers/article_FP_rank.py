@@ -10,7 +10,7 @@ from log_manager import AddRunLog
 from register import TaskFunc
 from utils import GetNowWithoutMileseconds, GetTodayInDatetimeObj
 
-DATA_SAVE_CHECK_INTERVAL = 3
+DATA_SAVE_CHECK_INTERVAL = 1
 DATA_SAVE_THRESHOLD = 100
 
 data_collection = GetCollection("article_FP_rank")
