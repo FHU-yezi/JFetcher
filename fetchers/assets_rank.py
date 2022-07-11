@@ -34,8 +34,6 @@ def DataGenerator(total_count: int) -> Generator:
 
 
 def DataProcessor() -> None:
-    global is_finished
-
     for item in DataGenerator(1000):
         if not item["uid"]:  # 用户账号状态异常，相关信息无法获取
             data = {
@@ -87,6 +85,7 @@ def DataSaver() -> None:
     while not is_finished:
         if data_queue.qsize() < DATA_SAVE_THRESHOLD:
             sleep(DATA_SAVE_CHECK_INTERVAL)
+            continue
 
         data_to_save = [data_queue.get()
                         for _ in range(DATA_SAVE_THRESHOLD)]
