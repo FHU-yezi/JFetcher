@@ -1,4 +1,5 @@
 from os import path as os_path
+from typing import Any
 
 from yaml import SafeLoader
 from yaml import dump as yaml_dump
@@ -33,10 +34,10 @@ class Config():
             with open("config.yaml", "r", encoding="utf-8") as f:
                 self._config_dict = yaml_load(f, Loader=SafeLoader)
 
-    def __getitem__(self, item):
+    def __getitem__(self, item) -> Any:
         self.refresh()  # 刷新配置文件以应用更改
         item_path = item.split("/")
-        result = self._config_dict
+        result: Any = self._config_dict
         for now_path in item_path:
             result = result[now_path]
         return result
