@@ -26,8 +26,6 @@ def DataGenerator() -> Generator:
 
 
 def DataProcessor() -> None:
-    global is_finished
-
     for item in DataGenerator():
         if not item["author_name"]:  # 文章被删除导致相关信息无法访问
             data = {
@@ -73,6 +71,7 @@ def DataSaver() -> None:
     while not is_finished:
         if data_queue.qsize() < DATA_SAVE_THRESHOLD:
             sleep(DATA_SAVE_CHECK_INTERVAL)
+            continue
 
         data_to_save = [data_queue.get()
                         for _ in range(DATA_SAVE_THRESHOLD)]
