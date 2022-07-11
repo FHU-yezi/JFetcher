@@ -8,6 +8,7 @@ from JianshuResearchTools.convert import UserSlugToUserUrl
 from JianshuResearchTools.exceptions import APIError, ResourceError
 from JianshuResearchTools.objects import User, set_cache_status
 from JianshuResearchTools.rank import GetAssetsRankData
+from log_manager import AddRunLog
 from register import TaskFunc
 from utils import GetNowWithoutMileseconds, GetTodayInDatetimeObj
 
@@ -36,6 +37,8 @@ def DataGenerator(total_count: int) -> Generator:
 def DataProcessor() -> None:
     for item in DataGenerator(1000):
         if not item["uid"]:  # 用户账号状态异常，相关信息无法获取
+            AddRunLog("FETCHER", "WARNING", f"排名为 {item['ranking']} "
+                      "的用户账号状态异常，无法获取数据，已自动跳过")
             data = {
                 "date": GetTodayInDatetimeObj(),
                 "ranking": item["ranking"],
@@ -73,7 +76,8 @@ def DataProcessor() -> None:
                     data["assets"]["FP"] + data["assets"]["FTN"], 3
                 )
             except (ResourceError, APIError):
-                # TODO: 记录日志
+                AddRunLog("FETCHER", "WARNING", f"无法获取 id 为 {item['uid']} 的用户"
+                          "的简书贝和总资产信息，已自动跳过")
                 pass
 
         data_queue.put(data)
