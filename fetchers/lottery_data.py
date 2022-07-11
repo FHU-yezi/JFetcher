@@ -7,6 +7,7 @@ from typing import Dict, Generator
 from db_manager import GetCollection
 from httpx import get as httpx_get
 from JianshuResearchTools.convert import UserSlugToUserUrl
+from log_manager import AddRunLog
 from register import TaskFunc
 from utils import GetNowWithoutMileseconds
 
@@ -38,8 +39,8 @@ def DataGenerator() -> Generator:
     try:
         response.raise_for_status()
     except Exception:
-        # TODO: 失败并记录日志
-        pass
+        AddRunLog("FETCHER", "ERROR", "无法获取大转盘抽奖数据")
+        return
 
     data_part = response.json()
     for item in data_part:

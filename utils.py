@@ -22,7 +22,6 @@ def CronToKwargs(cron: str) -> Dict[str, str]:
 
 
 def CostSecondsToString(cost_time: int) -> str:
-    # TODO: 这玩意写的一点都不优雅
     mapping = {
         "分": 60,
         "秒": 1

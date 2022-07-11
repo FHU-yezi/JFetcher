@@ -6,6 +6,7 @@ from typing import Dict, Generator
 from db_manager import GetCollection
 from JianshuResearchTools.convert import ArticleSlugToArticleUrl
 from JianshuResearchTools.rank import GetArticleFPRankData
+from log_manager import AddRunLog
 from register import TaskFunc
 from utils import GetNowWithoutMileseconds, GetTodayInDatetimeObj
 
@@ -27,6 +28,8 @@ def DataGenerator() -> Generator:
 
 def DataProcessor() -> None:
     for item in DataGenerator():
+        AddRunLog("FETCHER", "WARNING", f"排名为 {item['ranking']} "
+                  "的文章被删除，无法采集数据，已自动跳过")
         if not item["author_name"]:  # 文章被删除导致相关信息无法访问
             data = {
                 "date": GetTodayInDatetimeObj(),
