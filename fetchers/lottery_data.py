@@ -20,12 +20,8 @@ is_finished = False
 data_count = 0
 
 
-def GetLastSavedItemID() -> int:
-    if data_collection.count_documents({}) == 0:
-        # 没有数据
-        return 0  # 保证所有数据都被存储
-
-    return data_collection.find_one(sort=[("_id", -1)])["_id"]
+def IsInDataCollection(id: int) -> int:
+    return data_collection.count_documents({"_id": id}) != 0
 
 
 def DataGenerator() -> Generator:
@@ -50,6 +46,9 @@ def DataGenerator() -> Generator:
 
 def DataProcessor() -> None:
     for item in DataGenerator():
+        if IsInDataCollection(item["id"]):
+            continue
+
         data = {
             "_id": item["id"],
             "time": datetime.fromtimestamp(item["created_at"]),
