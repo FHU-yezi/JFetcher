@@ -89,7 +89,7 @@ def DataSaver() -> None:
         data_count += len(data_to_save)
 
 
-@TaskFunc("简书文章收益排行榜", "0 0 8 1/1 * *")
+@TaskFunc("简书文章收益排行榜", "0 0 1 1/1 * *")
 def main():
     global data_count
     global is_finished
