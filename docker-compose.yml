@@ -6,7 +6,7 @@ networks:
 
 services:
   main:
-    image: jfetcher:0.2.2
+    image: jfetcher:0.3.0
     build: .
     volumes:
       - "./config.yaml:/app/config.yaml:ro"
