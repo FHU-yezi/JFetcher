@@ -50,7 +50,7 @@ def DataProcessor() -> None:
             }
         else:
             data = {
-                "date": GetTodayInDatetimeObj(),
+                "date": GetTodayInDatetimeObj() - timedelta(days=1),
                 "ranking": item["ranking"],
                 "article": {
                     "title": item["title"],
