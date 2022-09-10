@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "JFetcher"
-version = "0.3.0"
+version = "0.3.1"
 description = "简书数据采集工具"
 authors = ["FHU-yezi <yehaowei20060411@qq.com>"]
 license = "MIT"
