@@ -7,6 +7,7 @@ from event_handlers import on_fail_event, on_success_event
 from fetchers import init_tasks
 from utils.log import run_logger
 from utils.register import get_all_registered_funcs
+from utils.saver import Saver
 from utils.time_helper import cron_to_kwargs
 
 init_tasks()  # 运行相关模块，继而对采集任务进行注册操作
@@ -17,9 +18,11 @@ run_logger.info("SYSTEM", "成功初始化调度器")
 funcs = get_all_registered_funcs()
 run_logger.info("SYSTEM", f"获取到 {len(funcs)} 个任务函数")
 
-for task_name, cron, func in funcs:
-    scheduler.add_job(func, "cron", **cron_to_kwargs(cron), id=task_name)
-    func()
+for func, task_name, cron, db_name, data_bulk_size in funcs:
+    saver: Saver = Saver(db_name, data_bulk_size)
+    scheduler.add_job(func, "cron", id=task_name, **cron_to_kwargs(cron),
+                      kwargs={"saver": saver})
+    func(saver)
 run_logger.info("SYSTEM", "已将任务函数加入调度")
 
 scheduler.add_listener(on_success_event, EVENT_JOB_EXECUTED)
