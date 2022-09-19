@@ -1,12 +1,12 @@
 from functools import wraps
 from typing import Callable, List, Tuple
 
-from log_manager import AddRunLog
+from utils.log import run_logger
 
 _registered_funcs: List[Tuple[str, str, Callable]] = []
 
 
-def TaskFunc(task_name: str, cron: str) -> Callable:
+def task_func(task_name: str, cron: str) -> Callable:
     """将函数注册为任务函数
 
     Args:
@@ -20,14 +20,14 @@ def TaskFunc(task_name: str, cron: str) -> Callable:
         @wraps(func)
         def inner(task_name, cron):
             _registered_funcs.append((task_name, cron, func))
-            AddRunLog("REGISTER", "DEBUG", f"成功注册任务函数 {task_name}，"
-                      f"cron 表达式：{cron}")
+            run_logger.debug("REGISTER", f"成功注册任务函数 {task_name}，"
+                             f"cron 表达式：{cron}")
             return func
         return inner(task_name, cron)
     return outer
 
 
-def GetAllRegisteredFuncs() -> List[Tuple[str, str, Callable]]:
+def get_all_registered_funcs() -> List[Tuple[str, str, Callable]]:
     """获取注册的任务函数列表
 
     Returns:

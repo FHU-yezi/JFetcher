@@ -3,16 +3,17 @@ from threading import Thread
 from time import sleep
 from typing import Dict, Generator
 
-from db_manager import GetCollection
 from JianshuResearchTools.convert import UserSlugToUserUrl
 from JianshuResearchTools.rank import GetDailyArticleRankData
-from register import TaskFunc
-from utils import GetNowWithoutMileseconds, GetTodayInDatetimeObj
+from utils.db import get_collection
+from utils.register import task_func
+from utils.time_helper import (get_now_without_mileseconds,
+                               get_today_in_datetime_obj)
 
 DATA_SAVE_CHECK_INTERVAL = 1
 DATA_SAVE_THRESHOLD = 100
 
-data_collection = GetCollection("daily_update_rank")
+data_collection = get_collection("daily_update_rank")
 data_queue: "Queue[Dict]" = Queue()
 is_finished = False
 data_count = 0
@@ -28,7 +29,7 @@ def DataGenerator() -> Generator:
 def DataProcessor() -> None:
     for item in DataGenerator():
         data = {
-            "date": GetTodayInDatetimeObj(),
+            "date": get_today_in_datetime_obj(),
             "ranking": item["ranking"],
             "user": {
                 "name": item["name"],
@@ -60,7 +61,7 @@ def DataSaver() -> None:
         data_count += len(data_to_save)
 
 
-@TaskFunc("简书日更排行榜", "0 0 12 1/1 * *")
+@task_func("简书日更排行榜", "0 0 12 1/1 * *")
 def main():
     global data_count
     global is_finished
@@ -68,7 +69,7 @@ def main():
     data_count = 0
     is_finished = False
 
-    start_time = GetNowWithoutMileseconds()
+    start_time = get_now_without_mileseconds()
 
     saver = Thread(target=DataSaver)
     saver.start()
@@ -76,7 +77,7 @@ def main():
     is_finished = True
     saver.join()
 
-    stop_time = GetNowWithoutMileseconds()
+    stop_time = get_now_without_mileseconds()
     cost_time = (stop_time - start_time).total_seconds()
 
     return (True, data_count, cost_time, "")
