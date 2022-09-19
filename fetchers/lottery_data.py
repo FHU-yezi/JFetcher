@@ -1,30 +1,19 @@
 from datetime import datetime
-from queue import Queue
-from threading import Thread
-from time import sleep
-from typing import Dict, Generator
+from typing import Generator
+from utils.saver import Saver
 
-from db_manager import GetCollection
 from httpx import get as httpx_get
 from JianshuResearchTools.convert import UserSlugToUserUrl
-from log_manager import AddRunLog
-from register import TaskFunc
-from utils import GetNowWithoutMileseconds
-
-DATA_SAVE_CHECK_INTERVAL = 1
-DATA_SAVE_THRESHOLD = 100
-
-data_collection = GetCollection("lottery_data")
-data_queue: "Queue[Dict]" = Queue()
-is_finished = False
-data_count = 0
+from utils.log import run_logger
+from utils.register import task_func
+from utils.time_helper import get_now_without_mileseconds
 
 
-def IsInDataCollection(id: int) -> int:
-    return data_collection.count_documents({"_id": id}) != 0
+def is_already_in_db(db, id: int) -> int:
+    return db.count_documents({"_id": id}) != 0
 
 
-def DataGenerator() -> Generator:
+def data_iterator() -> Generator:
     params = {
         "count": 500
     }
@@ -35,7 +24,7 @@ def DataGenerator() -> Generator:
     try:
         response.raise_for_status()
     except Exception:
-        AddRunLog("FETCHER", "ERROR", "无法获取大转盘抽奖数据")
+        run_logger.error("FETCHER", "无法获取大转盘抽奖数据")
         return
 
     data_part = response.json()
@@ -44,9 +33,10 @@ def DataGenerator() -> Generator:
     return
 
 
-def DataProcessor() -> None:
-    for item in DataGenerator():
-        if IsInDataCollection(item["id"]):
+def data_processor(saver: Saver) -> None:
+    for item in data_iterator():
+        # 特殊需求，需要获取底层数据库对象
+        if is_already_in_db(saver._db, item["id"]):
             continue
 
         data = {
@@ -60,46 +50,24 @@ def DataProcessor() -> None:
             }
         }
 
-        data_queue.put(data)
+        saver.add_data(data)
+
+    saver.final_save()
 
 
-def DataSaver() -> None:
-    global data_count
+@task_func(
+    task_name="简书大转盘抽奖",
+    cron="0 0 2,9,14,21 1/1 * *",
+    db_name="lottery_data",
+    data_bulk_size=100
+)
+def main(saver: Saver):
 
-    while not is_finished:
-        if data_queue.qsize() < DATA_SAVE_THRESHOLD:
-            sleep(DATA_SAVE_CHECK_INTERVAL)
-            continue
+    start_time = get_now_without_mileseconds()
 
-        data_to_save = [data_queue.get()
-                        for _ in range(DATA_SAVE_THRESHOLD)]
-        data_collection.insert_many(data_to_save)
-        data_count += len(data_to_save)
+    data_processor(saver)
 
-    # 采集完成，存储剩余数据
-    if data_queue.qsize() > 0:
-        data_to_save = [data_queue.get() for _ in range(data_queue.qsize())]
-        data_collection.insert_many(data_to_save)
-        data_count += len(data_to_save)
-
-
-@TaskFunc("简书大转盘抽奖", "0 0 2,9,14,21 1/1 * *")
-def main():
-    global data_count
-    global is_finished
-
-    data_count = 0
-    is_finished = False
-
-    start_time = GetNowWithoutMileseconds()
-
-    saver = Thread(target=DataSaver)
-    saver.start()
-    DataProcessor()
-    is_finished = True
-    saver.join()
-
-    stop_time = GetNowWithoutMileseconds()
+    stop_time = get_now_without_mileseconds()
     cost_time = (stop_time - start_time).total_seconds()
 
-    return (True, data_count, cost_time, "")
+    return (True, saver.get_data_count(), cost_time, "")
