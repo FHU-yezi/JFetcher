@@ -3,21 +3,22 @@ from threading import Thread
 from time import sleep
 from typing import Dict, Generator
 
-from db_manager import GetCollection
 from JianshuResearchTools.convert import UserSlugToUserUrl
 from JianshuResearchTools.exceptions import APIError, ResourceError
 from JianshuResearchTools.objects import User, set_cache_status
 from JianshuResearchTools.rank import GetAssetsRankData
-from log_manager import AddRunLog
-from register import TaskFunc
-from utils import GetNowWithoutMileseconds, GetTodayInDatetimeObj
+from utils.db import get_collection
+from utils.log import run_logger
+from utils.register import task_func
+from utils.time_helper import (get_now_without_mileseconds,
+                               get_today_in_datetime_obj)
 
 set_cache_status(False)
 
 DATA_SAVE_CHECK_INTERVAL = 5
 DATA_SAVE_THRESHOLD = 50
 
-data_collection = GetCollection("assets_rank")
+data_collection = get_collection("assets_rank")
 data_queue: "Queue[Dict]" = Queue()
 is_finished = False
 data_count = 0
@@ -37,10 +38,10 @@ def DataGenerator(total_count: int) -> Generator:
 def DataProcessor() -> None:
     for item in DataGenerator(1000):
         if not item["uid"]:  # 用户账号状态异常，相关信息无法获取
-            AddRunLog("FETCHER", "WARNING", f"排名为 {item['ranking']} "
-                      "的用户账号状态异常，无法获取数据，已自动跳过")
+            run_logger.warning("FETCHER", f"排名为 {item['ranking']} "
+                               "的用户账号状态异常，无法获取数据，已自动跳过")
             data = {
-                "date": GetTodayInDatetimeObj(),
+                "date": get_today_in_datetime_obj(),
                 "ranking": item["ranking"],
                 "user": {
                     "id": None,
@@ -48,14 +49,15 @@ def DataProcessor() -> None:
                     "name": None
                 },
                 "assets": {
-                    "FP": item["FP"],
+                    "FP": None,
                     "FTN": None,
-                    "total": None
+                    # JRT 写错了
+                    "total": item["FP"]
                 }
             }
         else:
             data = {
-                "date": GetTodayInDatetimeObj(),
+                "date": get_today_in_datetime_obj(),
                 "ranking": item["ranking"],
                 "user": {
                     "id": item["uid"],
@@ -63,21 +65,22 @@ def DataProcessor() -> None:
                     "name": item["name"]
                 },
                 "assets": {
-                    "FP": item["FP"],
+                    "FP": None,
                     "FTN": None,
-                    "total": None
+                    # JRT 写错了
+                    "total": item["FP"]
                 }
             }
 
             try:
                 user = User.from_slug(item["uslug"])
-                data["assets"]["FTN"] = user.FTN_count
-                data["assets"]["total"] = round(
-                    data["assets"]["FP"] + data["assets"]["FTN"], 3
+                data["assets"]["FP"] = user.FP_count
+                data["assets"]["FTN"] = round(
+                    data["assets"]["total"] - data["assets"]["FP"], 3
                 )
             except (ResourceError, APIError):
-                AddRunLog("FETCHER", "WARNING", f"无法获取 id 为 {item['uid']} 的用户"
-                          "的简书贝和总资产信息，已自动跳过")
+                run_logger.warning("FETCHER", f"无法获取 id 为 {item['uid']} 的用户"
+                                   "的简书贝和简书贝信息，已自动跳过")
                 pass
 
         data_queue.put(data)
@@ -103,7 +106,7 @@ def DataSaver() -> None:
         data_count += len(data_to_save)
 
 
-@TaskFunc("简书资产排行榜", "0 0 12 1/1 * *")
+@task_func("简书资产排行榜", "0 0 12 1/1 * *")
 def main():
     global data_count
     global is_finished
@@ -111,7 +114,7 @@ def main():
     data_count = 0
     is_finished = False
 
-    start_time = GetNowWithoutMileseconds()
+    start_time = get_now_without_mileseconds()
 
     saver = Thread(target=DataSaver)
     saver.start()
@@ -119,7 +122,7 @@ def main():
     is_finished = True
     saver.join()
 
-    stop_time = GetNowWithoutMileseconds()
+    stop_time = get_now_without_mileseconds()
     cost_time = (stop_time - start_time).total_seconds()
 
     return (True, data_count, cost_time, "")
