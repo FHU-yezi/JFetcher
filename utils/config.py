@@ -15,6 +15,9 @@ _DEFAULT_CONFIG = {
         "minimum_record_level": "DEBUG",
         "minimum_print_level": "INFO"
     },
+    "fetcher": {
+        "base_path": "./fetchers"
+    },
     "message_sender": {
         "app_id": "",
         "app_secret": "",
