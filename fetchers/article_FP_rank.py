@@ -1,20 +1,21 @@
+from datetime import timedelta
 from queue import Queue
 from threading import Thread
 from time import sleep
 from typing import Dict, Generator
 
-from db_manager import GetCollection
 from JianshuResearchTools.convert import ArticleSlugToArticleUrl
 from JianshuResearchTools.rank import GetArticleFPRankData
-from datetime import timedelta
-from log_manager import AddRunLog
-from register import TaskFunc
-from utils import GetNowWithoutMileseconds, GetTodayInDatetimeObj
+from utils.db import get_collection
+from utils.log import run_logger
+from utils.register import task_func
+from utils.time_helper import (get_now_without_mileseconds,
+                               get_today_in_datetime_obj)
 
 DATA_SAVE_CHECK_INTERVAL = 1
 DATA_SAVE_THRESHOLD = 100
 
-data_collection = GetCollection("article_FP_rank")
+data_collection = get_collection("article_FP_rank")
 data_queue: "Queue[Dict]" = Queue()
 is_finished = False
 data_count = 0
@@ -30,10 +31,10 @@ def DataGenerator() -> Generator:
 def DataProcessor() -> None:
     for item in DataGenerator():
         if not item["author_name"]:  # 文章被删除导致相关信息无法访问
-            AddRunLog("FETCHER", "WARNING", f"排名为 {item['ranking']} "
-                      "的文章被删除，无法采集数据，已自动跳过")
+            run_logger.warning("FETCHER", f"排名为 {item['ranking']} "
+                               "的文章被删除，无法采集数据，已自动跳过")
             data = {
-                "date": GetTodayInDatetimeObj() - timedelta(days=1),
+                "date": get_today_in_datetime_obj() - timedelta(days=1),
                 "ranking": item["ranking"],
                 "article": {
                     "title": None,
@@ -50,7 +51,7 @@ def DataProcessor() -> None:
             }
         else:
             data = {
-                "date": GetTodayInDatetimeObj() - timedelta(days=1),
+                "date": get_today_in_datetime_obj() - timedelta(days=1),
                 "ranking": item["ranking"],
                 "article": {
                     "title": item["title"],
@@ -89,7 +90,7 @@ def DataSaver() -> None:
         data_count += len(data_to_save)
 
 
-@TaskFunc("简书文章收益排行榜", "0 0 1 1/1 * *")
+@task_func("简书文章收益排行榜", "0 0 1 1/1 * *")
 def main():
     global data_count
     global is_finished
@@ -97,7 +98,7 @@ def main():
     data_count = 0
     is_finished = False
 
-    start_time = GetNowWithoutMileseconds()
+    start_time = get_now_without_mileseconds()
 
     saver = Thread(target=DataSaver)
     saver.start()
@@ -105,7 +106,7 @@ def main():
     is_finished = True
     saver.join()
 
-    stop_time = GetNowWithoutMileseconds()
+    stop_time = get_now_without_mileseconds()
     cost_time = (stop_time - start_time).total_seconds()
 
     return (True, data_count, cost_time, "")

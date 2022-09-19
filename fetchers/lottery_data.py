@@ -4,17 +4,17 @@ from threading import Thread
 from time import sleep
 from typing import Dict, Generator
 
-from db_manager import GetCollection
 from httpx import get as httpx_get
 from JianshuResearchTools.convert import UserSlugToUserUrl
-from log_manager import AddRunLog
-from register import TaskFunc
-from utils import GetNowWithoutMileseconds
+from utils.db import get_collection
+from utils.log import run_logger
+from utils.register import task_func
+from utils.time_helper import get_now_without_mileseconds
 
 DATA_SAVE_CHECK_INTERVAL = 1
 DATA_SAVE_THRESHOLD = 100
 
-data_collection = GetCollection("lottery_data")
+data_collection = get_collection("lottery_data")
 data_queue: "Queue[Dict]" = Queue()
 is_finished = False
 data_count = 0
@@ -35,7 +35,7 @@ def DataGenerator() -> Generator:
     try:
         response.raise_for_status()
     except Exception:
-        AddRunLog("FETCHER", "ERROR", "无法获取大转盘抽奖数据")
+        run_logger.error("FETCHER", "无法获取大转盘抽奖数据")
         return
 
     data_part = response.json()
@@ -83,7 +83,7 @@ def DataSaver() -> None:
         data_count += len(data_to_save)
 
 
-@TaskFunc("简书大转盘抽奖", "0 0 2,9,14,21 1/1 * *")
+@task_func("简书大转盘抽奖", "0 0 2,9,14,21 1/1 * *")
 def main():
     global data_count
     global is_finished
@@ -91,7 +91,7 @@ def main():
     data_count = 0
     is_finished = False
 
-    start_time = GetNowWithoutMileseconds()
+    start_time = get_now_without_mileseconds()
 
     saver = Thread(target=DataSaver)
     saver.start()
@@ -99,7 +99,7 @@ def main():
     is_finished = True
     saver.join()
 
-    stop_time = GetNowWithoutMileseconds()
+    stop_time = get_now_without_mileseconds()
     cost_time = (stop_time - start_time).total_seconds()
 
     return (True, data_count, cost_time, "")
