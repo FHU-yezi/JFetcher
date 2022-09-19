@@ -1,29 +1,19 @@
-from queue import Queue
-from threading import Thread
-from time import sleep
-from typing import Dict, Generator
+from typing import Generator
 
-from db_manager import GetCollection
 from JianshuResearchTools.convert import UserSlugToUserUrl
 from JianshuResearchTools.exceptions import APIError, ResourceError
 from JianshuResearchTools.objects import User, set_cache_status
 from JianshuResearchTools.rank import GetAssetsRankData
-from log_manager import AddRunLog
-from register import TaskFunc
-from utils import GetNowWithoutMileseconds, GetTodayInDatetimeObj
+from utils.log import run_logger
+from utils.register import task_func
+from utils.saver import Saver
+from utils.time_helper import (get_now_without_mileseconds,
+                               get_today_in_datetime_obj)
 
 set_cache_status(False)
 
-DATA_SAVE_CHECK_INTERVAL = 5
-DATA_SAVE_THRESHOLD = 50
 
-data_collection = GetCollection("assets_rank")
-data_queue: "Queue[Dict]" = Queue()
-is_finished = False
-data_count = 0
-
-
-def DataGenerator(total_count: int) -> Generator:
+def data_iterator(total_count: int) -> Generator:
     now = 1
     while True:
         data_part = GetAssetsRankData(now)
@@ -34,13 +24,13 @@ def DataGenerator(total_count: int) -> Generator:
                 return
 
 
-def DataProcessor() -> None:
-    for item in DataGenerator(1000):
+def data_processor(saver: Saver) -> None:
+    for item in data_iterator(1000):
         if not item["uid"]:  # 用户账号状态异常，相关信息无法获取
-            AddRunLog("FETCHER", "WARNING", f"排名为 {item['ranking']} "
-                      "的用户账号状态异常，无法获取数据，已自动跳过")
+            run_logger.warning("FETCHER", f"排名为 {item['ranking']} "
+                               "的用户账号状态异常，无法获取数据，已自动跳过")
             data = {
-                "date": GetTodayInDatetimeObj(),
+                "date": get_today_in_datetime_obj(),
                 "ranking": item["ranking"],
                 "user": {
                     "id": None,
@@ -48,14 +38,15 @@ def DataProcessor() -> None:
                     "name": None
                 },
                 "assets": {
-                    "FP": item["FP"],
+                    "FP": None,
                     "FTN": None,
-                    "total": None
+                    # JRT 写错了
+                    "total": item["FP"]
                 }
             }
         else:
             data = {
-                "date": GetTodayInDatetimeObj(),
+                "date": get_today_in_datetime_obj(),
                 "ranking": item["ranking"],
                 "user": {
                     "id": item["uid"],
@@ -63,63 +54,41 @@ def DataProcessor() -> None:
                     "name": item["name"]
                 },
                 "assets": {
-                    "FP": item["FP"],
+                    "FP": None,
                     "FTN": None,
-                    "total": None
+                    # JRT 写错了
+                    "total": item["FP"]
                 }
             }
 
             try:
                 user = User.from_slug(item["uslug"])
-                data["assets"]["FTN"] = user.FTN_count
-                data["assets"]["total"] = round(
-                    data["assets"]["FP"] + data["assets"]["FTN"], 3
+                data["assets"]["FP"] = user.FP_count
+                data["assets"]["FTN"] = round(
+                    data["assets"]["total"] - data["assets"]["FP"], 3
                 )
             except (ResourceError, APIError):
-                AddRunLog("FETCHER", "WARNING", f"无法获取 id 为 {item['uid']} 的用户"
-                          "的简书贝和总资产信息，已自动跳过")
+                run_logger.warning("FETCHER", f"无法获取 id 为 {item['uid']} 的用户"
+                                   "的简书贝和简书贝信息，已自动跳过")
                 pass
 
-        data_queue.put(data)
+        saver.add_data(data)
+
+    saver.final_save()
 
 
-def DataSaver() -> None:
-    global data_count
+@task_func(
+    task_name="简书资产排行榜",
+    cron="0 0 12 1/1 * *",
+    db_name="assets_rank",
+    data_bulk_size=100
+)
+def main(saver: Saver):
+    start_time = get_now_without_mileseconds()
 
-    while not is_finished:
-        if data_queue.qsize() < DATA_SAVE_THRESHOLD:
-            sleep(DATA_SAVE_CHECK_INTERVAL)
-            continue
+    data_processor(saver)
 
-        data_to_save = [data_queue.get()
-                        for _ in range(DATA_SAVE_THRESHOLD)]
-        data_collection.insert_many(data_to_save)
-        data_count += len(data_to_save)
-
-    # 采集完成，存储剩余数据
-    if data_queue.qsize() > 0:
-        data_to_save = [data_queue.get() for _ in range(data_queue.qsize())]
-        data_collection.insert_many(data_to_save)
-        data_count += len(data_to_save)
-
-
-@TaskFunc("简书资产排行榜", "0 0 12 1/1 * *")
-def main():
-    global data_count
-    global is_finished
-
-    data_count = 0
-    is_finished = False
-
-    start_time = GetNowWithoutMileseconds()
-
-    saver = Thread(target=DataSaver)
-    saver.start()
-    DataProcessor()
-    is_finished = True
-    saver.join()
-
-    stop_time = GetNowWithoutMileseconds()
+    stop_time = get_now_without_mileseconds()
     cost_time = (stop_time - start_time).total_seconds()
 
-    return (True, data_count, cost_time, "")
+    return (True, saver.get_data_count(), cost_time, "")

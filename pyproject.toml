@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "JFetcher"
-version = "0.3.1"
+version = "1.0.0"
 description = "简书数据采集工具"
 authors = ["FHU-yezi <yehaowei20060411@qq.com>"]
 license = "MIT"
@@ -10,7 +10,7 @@ python = "^3.8"
 APScheduler = "^3.9.1"
 PyYAML = "^6.0"
 pymongo = "^4.1.1"
-JianshuResearchTools = "2.10.0"
+JianshuResearchTools = "2.10.1"
 
 [tool.poetry.dev-dependencies]
 mypy = "^0.961"

@@ -1,7 +1,7 @@
-from callbacks import TaskFailure, TaskSuccess
+from callbacks import task_fail, task_success
 
 
-def OnSuccessEvent(event) -> None:
+def on_success_event(event) -> None:
     """调度任务成功事件回调
 
     Args:
@@ -11,12 +11,12 @@ def OnSuccessEvent(event) -> None:
     success, data_count, cost_time, error_message = event.retval
 
     if success:
-        TaskSuccess(task_name, data_count, cost_time)
+        task_success(task_name, data_count, cost_time)
     else:
-        TaskFailure(task_name, error_message)
+        task_fail(task_name, error_message)
 
 
-def OnFailureEvent(event) -> None:
+def on_fail_event(event) -> None:
     """调度任务失败事件回调
 
     Args:
@@ -25,4 +25,4 @@ def OnFailureEvent(event) -> None:
     task_name = event.job_id
     error_message = "未捕获异常"
 
-    TaskFailure(task_name, error_message)
+    task_fail(task_name, error_message)
