@@ -15,7 +15,9 @@ class Saver():
         return self._queue.qsize() >= self._bulk_size
 
     def get_data_count(self) -> int:
-        return self._data_count
+        result: int = self._data_count
+        self._data_count = 0  # 重置已采集数据量
+        return result
 
     def _save_to_db(self) -> None:
         data_to_save: List[Dict] = []
