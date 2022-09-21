@@ -2,3 +2,9 @@
 __pycache__/
 .mypy_cache/
 config.yaml
+*.md
+*.yml
+LICENSE
+project.toml
+poetry.lock
+requirements-dev.txt

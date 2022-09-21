@@ -26,40 +26,28 @@ def data_iterator(total_count: int) -> Generator:
 
 def data_processor(saver: Saver) -> None:
     for item in data_iterator(1000):
+        data = {
+            "date": get_today_in_datetime_obj(),
+            "ranking": item["ranking"],
+            "user": {
+                "id": None,
+                "url": None,
+                "name": None
+            },
+            "assets": {
+                "FP": None,
+                "FTN": None,
+                # JRT 写错了
+                "total": item["FP"]
+            }
+        }
         if not item["uid"]:  # 用户账号状态异常，相关信息无法获取
             run_logger.warning("FETCHER", f"排名为 {item['ranking']} "
-                               "的用户账号状态异常，无法获取数据，已自动跳过")
-            data = {
-                "date": get_today_in_datetime_obj(),
-                "ranking": item["ranking"],
-                "user": {
-                    "id": None,
-                    "url": None,
-                    "name": None
-                },
-                "assets": {
-                    "FP": None,
-                    "FTN": None,
-                    # JRT 写错了
-                    "total": item["FP"]
-                }
-            }
+                               "的用户账号状态异常，部分数据无法采集，已自动跳过")
         else:
-            data = {
-                "date": get_today_in_datetime_obj(),
-                "ranking": item["ranking"],
-                "user": {
-                    "id": item["uid"],
-                    "url": UserSlugToUserUrl(item["uslug"]),
-                    "name": item["name"]
-                },
-                "assets": {
-                    "FP": None,
-                    "FTN": None,
-                    # JRT 写错了
-                    "total": item["FP"]
-                }
-            }
+            data["user"]["id"] = item["uid"]
+            data["user"]["url"] = UserSlugToUserUrl(item["uslug"])
+            data["user"]["name"] = item["name"]
 
             try:
                 user = User.from_slug(item["uslug"])
@@ -70,7 +58,6 @@ def data_processor(saver: Saver) -> None:
             except (ResourceError, APIError):
                 run_logger.warning("FETCHER", f"无法获取 id 为 {item['uid']} 的用户"
                                    "的简书贝和简书贝信息，已自动跳过")
-                pass
 
         saver.add_data(data)
 
