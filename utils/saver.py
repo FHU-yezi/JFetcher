@@ -36,3 +36,5 @@ class Saver():
     def final_save(self) -> None:
         if self._queue.qsize() != 0:
             self._save_to_db()
+
+        self._data_count = 0  # 清空已采集数据量
