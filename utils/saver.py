@@ -37,4 +37,4 @@ class Saver():
         if self._queue.qsize() != 0:
             self._save_to_db()
 
-        self._data_count = 0  # 清空已采集数据量
+        self._data_count = 0  # 重置已采集数据量

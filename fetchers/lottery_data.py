@@ -1,11 +1,11 @@
 from datetime import datetime
 from typing import Generator
-from utils.saver import Saver
 
 from httpx import get as httpx_get
 from JianshuResearchTools.convert import UserSlugToUserUrl
 from utils.log import run_logger
 from utils.register import task_func
+from utils.saver import Saver
 from utils.time_helper import get_now_without_mileseconds
 
 
