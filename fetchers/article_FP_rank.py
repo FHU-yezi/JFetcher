@@ -1,13 +1,25 @@
 from datetime import timedelta
-from typing import Generator
+from typing import Generator, Tuple
 
-from JianshuResearchTools.convert import ArticleSlugToArticleUrl
+from httpx import get as httpx_get
+from JianshuResearchTools.convert import (ArticleSlugToArticleUrl,
+                                          ArticleUrlToArticleSlug,
+                                          UserSlugToUserUrl)
 from JianshuResearchTools.rank import GetArticleFPRankData
 from utils.log import run_logger
 from utils.register import task_func
 from utils.saver import Saver
 from utils.time_helper import (get_now_without_mileseconds,
                                get_today_in_datetime_obj)
+
+
+def get_id_url_from_article_url(article_url: str) -> Tuple[int, str]:
+    aslug = ArticleUrlToArticleSlug(article_url)
+    response = httpx_get(f"https://www.jianshu.com/asimov/p/{aslug}")
+    result = response.json()
+    if result.get("error"):
+        raise Exception("文章已被删除")
+    return (result["user"]["id"], UserSlugToUserUrl(result["user"]["slug"]))
 
 
 def data_iterator() -> Generator:
@@ -27,6 +39,8 @@ def data_processor(saver: Saver) -> None:
                 "url": None
             },
             "author": {
+                "id": None,
+                "url": None,
                 "name": None
             },
             "reward": {
@@ -42,6 +56,13 @@ def data_processor(saver: Saver) -> None:
             data["article"]["title"] = item["title"]
             data["article"]["url"] = ArticleSlugToArticleUrl(item["aslug"])
             data["author"]["name"] = item["author_name"]
+
+            try:
+                uid, user_url = get_id_url_from_article_url(data["article"]["url"])
+                data["author"]["id"] = uid
+                data["author"]["url"] = user_url
+            except Exception:  # 无法获取信息
+                pass
 
         saver.add_data(data)
 
