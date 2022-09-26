@@ -2,15 +2,19 @@ from datetime import timedelta
 from typing import Generator, Tuple
 
 from httpx import get as httpx_get
-from JianshuResearchTools.convert import (ArticleSlugToArticleUrl,
-                                          ArticleUrlToArticleSlug,
-                                          UserSlugToUserUrl)
+from JianshuResearchTools.convert import (
+    ArticleSlugToArticleUrl,
+    ArticleUrlToArticleSlug,
+    UserSlugToUserUrl,
+)
 from JianshuResearchTools.rank import GetArticleFPRankData
 from utils.log import run_logger
 from utils.register import task_func
 from utils.saver import Saver
-from utils.time_helper import (get_now_without_mileseconds,
-                               get_today_in_datetime_obj)
+from utils.time_helper import (
+    get_now_without_mileseconds,
+    get_today_in_datetime_obj,
+)
 
 
 def get_id_url_from_article_url(article_url: str) -> Tuple[int, str]:
@@ -36,22 +40,23 @@ def data_processor(saver: Saver) -> None:
             "ranking": item["ranking"],
             "article": {
                 "title": None,
-                "url": None
+                "url": None,
             },
             "author": {
                 "id": None,
                 "url": None,
-                "name": None
+                "name": None,
             },
             "reward": {
                 "to_author": item["fp_to_author"],
                 "to_voter": item["fp_to_voter"],
                 "total": item["total_fp"],
-            }
+            },
         }
         if not item["author_name"]:  # 文章被删除导致相关信息无法访问
-            run_logger.warning("FETCHER", f"排名为 {item['ranking']} "
-                               "的文章被删除，部分数据无法采集，已自动跳过")
+            run_logger.warning(
+                "FETCHER", f"排名为 {item['ranking']} 的文章被删除，部分数据无法采集，已自动跳过"
+            )
         else:
             data["article"]["title"] = item["title"]
             data["article"]["url"] = ArticleSlugToArticleUrl(item["aslug"])
@@ -73,7 +78,7 @@ def data_processor(saver: Saver) -> None:
     task_name="简书文章收益排行榜",
     cron="0 0 1 1/1 * *",
     db_name="article_FP_rank",
-    data_bulk_size=100
+    data_bulk_size=100,
 )
 def main(saver: Saver):
     start_time = get_now_without_mileseconds()

@@ -4,11 +4,7 @@ from typing import List
 
 
 def get_all_modules(base_path: str) -> List[str]:
-    return [
-        x.split(".")[0]
-        for x in listdir(base_path)
-        if x.endswith(".py")
-    ]
+    return [x.split(".")[0] for x in listdir(base_path) if x.endswith(".py")]
 
 
 def run_all_modules(base_path: str) -> None:

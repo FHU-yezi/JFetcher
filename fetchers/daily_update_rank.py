@@ -4,8 +4,10 @@ from JianshuResearchTools.convert import UserSlugToUserUrl
 from JianshuResearchTools.rank import GetDailyArticleRankData
 from utils.register import task_func
 from utils.saver import Saver
-from utils.time_helper import (get_now_without_mileseconds,
-                               get_today_in_datetime_obj)
+from utils.time_helper import (
+    get_now_without_mileseconds,
+    get_today_in_datetime_obj,
+)
 
 
 def data_iterator() -> Generator:
@@ -22,9 +24,9 @@ def data_processor(saver: Saver) -> None:
             "ranking": item["ranking"],
             "user": {
                 "name": item["name"],
-                "url": UserSlugToUserUrl(item["uslug"])
+                "url": UserSlugToUserUrl(item["uslug"]),
             },
-            "days": item["check_in_count"]
+            "days": item["check_in_count"],
         }
 
         saver.add_data(data)
@@ -36,7 +38,7 @@ def data_processor(saver: Saver) -> None:
     task_name="简书日更排行榜",
     cron="0 0 12 1/1 * *",
     db_name="daily_update_rank",
-    data_bulk_size=100
+    data_bulk_size=100,
 )
 def main(saver: Saver):
     start_time = get_now_without_mileseconds()

@@ -15,11 +15,12 @@ def is_already_in_db(db, id: int) -> int:
 
 def data_iterator() -> Generator:
     params = {
-        "count": 500
+        "count": 500,
     }
     response = httpx_get(
         "https://www.jianshu.com/asimov/ad_rewards/winner_list",
-        params=params, timeout=20
+        params=params,
+        timeout=20,
     )
     try:
         response.raise_for_status()
@@ -46,8 +47,8 @@ def data_processor(saver: Saver) -> None:
             "user": {
                 "id": item["user"]["id"],
                 "url": UserSlugToUserUrl(item["user"]["slug"]),
-                "name": item["user"]["nickname"]
-            }
+                "name": item["user"]["nickname"],
+            },
         }
 
         saver.add_data(data)
@@ -59,7 +60,7 @@ def data_processor(saver: Saver) -> None:
     task_name="简书大转盘抽奖",
     cron="0 0 2,9,14,21 1/1 * *",
     db_name="lottery_data",
-    data_bulk_size=100
+    data_bulk_size=100,
 )
 def main(saver: Saver):
 
