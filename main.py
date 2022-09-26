@@ -21,8 +21,13 @@ run_logger.info("SYSTEM", f"获取到 {len(funcs)} 个任务函数")
 
 for func, task_name, cron, db_name, data_bulk_size in funcs:
     saver: Saver = Saver(db_name, data_bulk_size)
-    scheduler.add_job(func, "cron", id=task_name, **cron_to_kwargs(cron),
-                      kwargs={"saver": saver})
+    scheduler.add_job(
+        func,
+        "cron",
+        id=task_name,
+        **cron_to_kwargs(cron),
+        kwargs={"saver": saver},
+    )
 run_logger.info("SYSTEM", "已将任务函数加入调度")
 
 scheduler.add_listener(on_success_event, EVENT_JOB_EXECUTED)

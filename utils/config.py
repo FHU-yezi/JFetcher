@@ -9,24 +9,24 @@ _DEFAULT_CONFIG = {
     "db": {
         "host": "localhost",
         "port": 27017,
-        "main_database": "JFetcherData"
+        "main_database": "JFetcherData",
     },
     "log": {
         "minimum_record_level": "DEBUG",
-        "minimum_print_level": "INFO"
+        "minimum_print_level": "INFO",
     },
     "fetcher": {
-        "base_path": "./fetchers"
+        "base_path": "./fetchers",
     },
     "message_sender": {
         "app_id": "",
         "app_secret": "",
-        "email": ""
-    }
+        "email": "",
+    },
 }
 
 
-class Config():
+class Config:
     def __new__(cls) -> "Config":
         # 单例模式
         if not hasattr(cls, "_instance"):
@@ -53,7 +53,7 @@ class Config():
         self.__init__()
 
 
-class ConfigNode():
+class ConfigNode:
     def __init__(self, data: Dict[str, Any]) -> None:
         self._data: Dict[str, Any] = data
 

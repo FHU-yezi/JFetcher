@@ -4,7 +4,7 @@ from typing import Dict, List
 from utils.db import get_collection
 
 
-class Saver():
+class Saver:
     def __init__(self, db_name: str, data_bulk_size: int) -> None:
         self._db = get_collection(db_name)
         self._queue: Queue = Queue()

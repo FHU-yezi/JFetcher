@@ -9,13 +9,18 @@ LOG_LEVELS = {
     "INFO": 1,
     "WARNING": 2,
     "ERROR": 3,
-    "CRITICAL": 4
+    "CRITICAL": 4,
 }
 
 
-class RunLogger():
-    def __init__(self, db, log_types: Sequence[str], minimum_record_level: str,
-                 minimum_print_level: str) -> None:
+class RunLogger:
+    def __init__(
+        self,
+        db,
+        log_types: Sequence[str],
+        minimum_record_level: str,
+        minimum_print_level: str,
+    ) -> None:
         self._db = db
         self._log_types = log_types
         self._minimum_record_level = minimum_record_level
@@ -30,16 +35,20 @@ class RunLogger():
         if LOG_LEVELS[level] < LOG_LEVELS[self._minimum_record_level]:
             return
 
-        self._db.insert_one({
-            "time": datetime.now(),
-            "type": type_,
-            "level": level,
-            "content": content
-        })
+        self._db.insert_one(
+            {
+                "time": datetime.now(),
+                "type": type_,
+                "level": level,
+                "content": content,
+            }
+        )
 
         if LOG_LEVELS[level] >= LOG_LEVELS[self._minimum_print_level]:
-            print(f"[{datetime.now().strftime(r'%Y-%m-%d %H:%M:%S')}] "
-                  f"[{type_}] [{level}] {content}")
+            print(
+                f"[{datetime.now().strftime(r'%Y-%m-%d %H:%M:%S')}] "
+                f"[{type_}] [{level}] {content}"
+            )
 
     def debug(self, type_: str, content: str) -> None:
         self._log("DEBUG", type_, content)
@@ -61,5 +70,5 @@ run_logger: RunLogger = RunLogger(
     db=run_log_db,
     log_types=("SYSTEM", "REGISTER", "FETCHER", "SENDER"),
     minimum_record_level=config.log.minimum_record_level,
-    minimum_print_level=config.log.minimum_print_level
+    minimum_print_level=config.log.minimum_print_level,
 )
