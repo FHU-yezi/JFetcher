@@ -13,7 +13,6 @@ def task_success(task_name: str, data_count: int, cost_time: int) -> None:
     """
     cost_time_str = human_readable_time_cost(cost_time)
     run_logger.debug(
-        "FETCHER",
         f"{task_name} 运行成功，采集的数据量：{data_count}，耗时：{cost_time}",
     )
 
@@ -28,7 +27,6 @@ def task_fail(task_name: str, error_message: str) -> None:
         error_message (str): 错误信息
     """
     run_logger.debug(
-        "FETCHER",
         f"{task_name} 运行失败，错误信息：{error_message}",
     )
 

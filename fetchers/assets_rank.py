@@ -4,6 +4,7 @@ from JianshuResearchTools.convert import UserSlugToUserUrl
 from JianshuResearchTools.exceptions import APIError, ResourceError
 from JianshuResearchTools.objects import User, set_cache_status
 from JianshuResearchTools.rank import GetAssetsRankData
+
 from utils.log import run_logger
 from utils.register import task_func
 from utils.saver import Saver
@@ -44,9 +45,7 @@ def data_processor(saver: Saver) -> None:
             },
         }
         if not item["uid"]:  # 用户账号状态异常，相关信息无法获取
-            run_logger.warning(
-                "FETCHER", f"排名为 {item['ranking']} " "的用户账号状态异常，部分数据无法采集，已自动跳过"
-            )
+            run_logger.warning(f"排名为 {item['ranking']} " "的用户账号状态异常，部分数据无法采集，已自动跳过")
         else:
             data["user"]["id"] = item["uid"]
             data["user"]["url"] = UserSlugToUserUrl(item["uslug"])
@@ -59,9 +58,7 @@ def data_processor(saver: Saver) -> None:
                     data["assets"]["total"] - data["assets"]["FP"], 3
                 )
             except (ResourceError, APIError):
-                run_logger.warning(
-                    "FETCHER", f"无法获取 id 为 {item['uid']} 的用户的简书贝和简书贝信息，已自动跳过"
-                )
+                run_logger.warning(f"无法获取 id 为 {item['uid']} 的用户的简书贝和简书贝信息，已自动跳过")
 
         saver.add_data(data)
 

@@ -21,7 +21,7 @@ def task_func(task_name: str, cron: str, db_name: str, data_bulk_size: int) -> C
 
     def outer(func: Callable[[Saver], None]):
         _registered_funcs.append((func, task_name, cron, db_name, data_bulk_size))
-        run_logger.debug("REGISTER", f"成功注册任务函数 {task_name}")
+        run_logger.debug(f"成功注册任务函数 {task_name}")
         return func
 
     return outer
