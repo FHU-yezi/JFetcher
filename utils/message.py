@@ -19,21 +19,27 @@ def get_feishu_token() -> str:
     headers = {"Content-Type": "application/json; charset=utf-8"}
     data = {
         "app_id": config.message_sender.app_id,
-        "app_secret": config.message_sender.app_secret
+        "app_secret": config.message_sender.app_secret,
     }
-    response = httpx_post("https://open.feishu.cn/open-apis/auth/v3/"
-                          "tenant_access_token/internal",
-                          headers=headers, json=data)
+    response = httpx_post(
+        "https://open.feishu.cn/open-apis/auth/v3/tenant_access_token/internal",
+        headers=headers,
+        json=data,
+    )
 
     if response.json()["code"] == 0:
         return "Bearer " + response.json()["tenant_access_token"]
     else:
-        run_logger.error("SENDER", "获取 Token 时发生错误，"
-                         f"错误码：{response.json()['code']}，"
-                         f"错误信息：{response.json()['msg']}")
-        raise ValueError("获取 Token 时发生错误，"
-                         f"错误码：{response.json()['code']}，"
-                         f"错误信息：{response.json()['msg']}")
+        run_logger.error(
+            "获取 Token 时发生错误，"
+            f"错误码：{response.json()['code']}，"
+            f"错误信息：{response.json()['msg']}",
+        )
+        raise ValueError(
+            "获取 Token 时发生错误，"
+            f"错误码：{response.json()['code']}，"
+            f"错误信息：{response.json()['msg']}"
+        )
 
 
 def send_feishu_card(card: Dict) -> None:
@@ -45,27 +51,35 @@ def send_feishu_card(card: Dict) -> None:
     Raises:
         ValueError: 发送飞书卡片失败
     """
-    headers = {"Content-Type": "application/json; charset=utf-8",
-               "Authorization": get_feishu_token()}
+    headers = {
+        "Content-Type": "application/json; charset=utf-8",
+        "Authorization": get_feishu_token(),
+    }
     data = {
         "email": config.message_sender.email,
         "msg_type": "interactive",
-        "card": card
+        "card": card,
     }
-    response = httpx_post("https://open.feishu.cn/open-apis/message/v4/send/",
-                          headers=headers, json=data)
+    response = httpx_post(
+        "https://open.feishu.cn/open-apis/message/v4/send/",
+        headers=headers,
+        json=data,
+    )
 
     if response.json()["code"] != 0:
-        run_logger.error("SENDER", "发送消息卡片时发生错误，"
-                         f"错误码：{response.json()['code']}，"
-                         f"错误信息：{response.json()['msg']}")
-        raise ValueError("发送消息卡片时发生错误，"
-                         f"错误码：{response.json()['code']}，"
-                         f"错误信息：{response.json()['msg']}")
+        run_logger.error(
+            "发送消息卡片时发生错误，"
+            f"错误码：{response.json()['code']}，"
+            f"错误信息：{response.json()['msg']}",
+        )
+        raise ValueError(
+            "发送消息卡片时发生错误，"
+            f"错误码：{response.json()['code']}，"
+            f"错误信息：{response.json()['msg']}"
+        )
 
 
-def send_task_success_card(task_name: str, data_count: int,
-                           cost_time_str: str) -> None:
+def send_task_success_card(task_name: str, data_count: int, cost_time_str: str) -> None:
     """发送任务成功卡片
 
     Args:
@@ -79,15 +93,12 @@ def send_task_success_card(task_name: str, data_count: int,
         "header": {
             "title": {
                 "tag": "plain_text",
-                "content": "采集任务运行成功"
+                "content": "采集任务运行成功",
             },
-            "template": "green"
+            "template": "green",
         },
         "elements": [
-            {
-                "tag": "markdown",
-                "content": f"**时间：**{time_now}"
-            },
+            {"tag": "markdown", "content": f"**时间：**{time_now}"},
             {
                 "tag": "div",
                 "fields": [
@@ -95,33 +106,33 @@ def send_task_success_card(task_name: str, data_count: int,
                         "is_short": True,
                         "text": {
                             "tag": "lark_md",
-                            "content": f"**任务名称**\n{task_name}"
-                        }
+                            "content": f"**任务名称**\n{task_name}",
+                        },
                     },
                     {
                         "is_short": False,
                         "text": {
                             "tag": "lark_md",
-                            "content": ""
-                        }
+                            "content": "",
+                        },
                     },
                     {
                         "is_short": True,
                         "text": {
                             "tag": "lark_md",
-                            "content": f"**耗时**\n{cost_time_str}"
-                        }
+                            "content": f"**耗时**\n{cost_time_str}",
+                        },
                     },
                     {
                         "is_short": True,
                         "text": {
                             "tag": "lark_md",
-                            "content": f"**采集数据量**\n{data_count}"
-                        }
-                    }
-                ]
-            }
-        ]
+                            "content": f"**采集数据量**\n{data_count}",
+                        },
+                    },
+                ],
+            },
+        ],
     }
 
     send_feishu_card(card)
@@ -140,14 +151,14 @@ def send_task_fail_card(task_name: str, error_message: str) -> None:
         "header": {
             "title": {
                 "tag": "plain_text",
-                "content": "采集任务运行失败"
+                "content": "采集任务运行失败",
             },
-            "template": "red"
+            "template": "red",
         },
         "elements": [
             {
                 "tag": "markdown",
-                "content": f"**时间：**{time_now}"
+                "content": f"**时间：**{time_now}",
             },
             {
                 "tag": "div",
@@ -156,26 +167,26 @@ def send_task_fail_card(task_name: str, error_message: str) -> None:
                         "is_short": True,
                         "text": {
                             "tag": "lark_md",
-                            "content": f"**任务名称**\n{task_name}"
-                        }
+                            "content": f"**任务名称**\n{task_name}",
+                        },
                     },
                     {
                         "is_short": False,
                         "text": {
                             "tag": "lark_md",
-                            "content": ""
-                        }
+                            "content": "",
+                        },
                     },
                     {
                         "is_short": True,
                         "text": {
                             "tag": "lark_md",
-                            "content": f"**错误信息**\n{error_message}"
-                        }
-                    }
-                ]
-            }
-        ]
+                            "content": f"**错误信息**\n{error_message}",
+                        },
+                    },
+                ],
+            },
+        ],
     }
 
     send_feishu_card(card)
