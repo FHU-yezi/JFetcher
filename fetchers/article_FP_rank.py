@@ -54,9 +54,7 @@ def data_processor(saver: Saver) -> None:
             },
         }
         if not item["author_name"]:  # 文章被删除导致相关信息无法访问
-            run_logger.warning(
-                "FETCHER", f"排名为 {item['ranking']} 的文章被删除，部分数据无法采集，已自动跳过"
-            )
+            run_logger.warning(f"排名为 {item['ranking']} 的文章被删除，部分数据无法采集，已自动跳过")
         else:
             data["article"]["title"] = item["title"]
             data["article"]["url"] = ArticleSlugToArticleUrl(item["aslug"])

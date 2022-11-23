@@ -25,7 +25,7 @@ def data_iterator() -> Generator:
     try:
         response.raise_for_status()
     except Exception:
-        run_logger.error("FETCHER", "无法获取大转盘抽奖数据")
+        run_logger.error("无法获取大转盘抽奖数据")
         return
 
     data_part = response.json()

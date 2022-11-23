@@ -31,7 +31,6 @@ def get_feishu_token() -> str:
         return "Bearer " + response.json()["tenant_access_token"]
     else:
         run_logger.error(
-            "SENDER",
             "获取 Token 时发生错误，"
             f"错误码：{response.json()['code']}，"
             f"错误信息：{response.json()['msg']}",
@@ -69,7 +68,6 @@ def send_feishu_card(card: Dict) -> None:
 
     if response.json()["code"] != 0:
         run_logger.error(
-            "SENDER",
             "发送消息卡片时发生错误，"
             f"错误码：{response.json()['code']}，"
             f"错误信息：{response.json()['msg']}",
