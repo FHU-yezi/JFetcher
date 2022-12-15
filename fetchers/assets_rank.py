@@ -1,5 +1,7 @@
 from typing import Generator
 
+from backoff import expo, on_exception
+from httpx import TimeoutException
 from JianshuResearchTools.convert import UserSlugToUserUrl
 from JianshuResearchTools.exceptions import APIError, ResourceError
 from JianshuResearchTools.objects import User, set_cache_status
@@ -14,6 +16,18 @@ from utils.time_helper import (
 )
 
 set_cache_status(False)
+
+GetAssetsRankData = on_exception(
+    expo,
+    TimeoutException,
+    base=2,
+    factor=4,
+    max_tries=5,
+    on_backoff=lambda details: run_logger.warning(
+        f"发生重试，尝试次数：{details['tries']}，"
+        f"等待时间：{round(details['wait'], 3)}"
+    ),
+)(GetAssetsRankData)
 
 
 def data_iterator(total_count: int) -> Generator:
@@ -57,7 +71,7 @@ def data_processor(saver: Saver) -> None:
                 data["assets"]["FTN"] = round(
                     data["assets"]["total"] - data["assets"]["FP"], 3
                 )
-            except (ResourceError, APIError):
+            except (ResourceError, APIError, TimeoutException):
                 run_logger.warning(f"无法获取 id 为 {item['uid']} 的用户的简书贝和简书贝信息，已自动跳过")
 
         saver.add_data(data)
