@@ -36,8 +36,9 @@ class DailyUpdateRankFetcher(Fetcher):
             "days": data["check_in_count"],
         }
 
-    def should_save(self, data: Dict) -> bool:
+    def should_save(self, data: Dict, saver: Saver) -> bool:
         del data
+        del saver
         return True
 
     def save_data(self, data: Dict, saver: Saver) -> None:
