@@ -37,6 +37,7 @@ class Saver:
             raise ValueError
 
         self._queue.append(data)
+        self._data_count += 1
 
         if self._should_save_to_db():
             self._save_to_db()
@@ -46,6 +47,7 @@ class Saver:
             raise ValueError
 
         self._queue.extend(data)
+        self._data_count += len(data)
 
         if self._should_save_to_db():
             self._save_to_db()
