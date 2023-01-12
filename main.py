@@ -26,8 +26,6 @@ for fetcher in fetchers:
         **fetcher.fetch_time_cron_kwargs,
     )
     run_logger.debug(f"已添加获取任务：{fetcher.task_name}（{fetcher.__class__.__name__}）")
-    if fetcher.task_name == "简书大转盘抽奖":
-        fetcher.run()
 
 scheduler.start()
 run_logger.info("调度器启动成功")
