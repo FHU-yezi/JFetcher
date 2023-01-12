@@ -16,7 +16,7 @@ class Saver:
 
     @property
     def data_count(self) -> int:
-        return self.data_count
+        return self._data_count
 
     def _should_save_to_db(self) -> bool:
         return len(self._queue) >= self._bulk_size
