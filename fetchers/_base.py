@@ -45,11 +45,11 @@ class Fetcher(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def run(self) -> Tuple[FETCH_RESULT, int]:
+    def run(self) -> Tuple[FETCH_RESULT, int, int]:
         start_time = time()
 
         if not self.should_fetch():
-            return (FETCH_RESULT.SKIPPED, 0)
+            return (FETCH_RESULT.SKIPPED, 0, 0)
 
         saver = Saver(self.collection_name, self.bulk_size)
 
@@ -64,4 +64,4 @@ class Fetcher(ABC):
         )
         cost_time = round(time() - start_time)
 
-        return (fetch_result, cost_time)
+        return (fetch_result, cost_time, saver.data_count)
