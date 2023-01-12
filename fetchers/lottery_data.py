@@ -1,74 +1,74 @@
-from datetime import datetime
-from typing import Generator
+from datetime import datetime, timedelta
+from typing import Dict, Generator
 
 from httpx import get as httpx_get
 from JianshuResearchTools.convert import UserSlugToUserUrl
-from utils.log import run_logger
-from utils.register import task_func
-from utils.saver import Saver
-from utils.time_helper import get_now_without_mileseconds
+
+from fetchers._base import Fetcher
+from saver import Saver
+from utils.retry import retry_on_timeout
 
 
-def is_already_in_db(db, id: int) -> int:
-    return db.count_documents({"_id": id}) != 0
-
-
-def data_iterator() -> Generator:
+def get_lottery_data():
+    url = "https://www.jianshu.com/asimov/ad_rewards/winner_list"
     params = {
         "count": 500,
     }
     response = httpx_get(
-        "https://www.jianshu.com/asimov/ad_rewards/winner_list",
+        url,
         params=params,
         timeout=20,
     )
-    try:
-        response.raise_for_status()
-    except Exception:
-        run_logger.error("无法获取大转盘抽奖数据")
-        return
 
-    data_part = response.json()
-    for item in data_part:
-        yield item
-    return
+    return response.json()
 
 
-def data_processor(saver: Saver) -> None:
-    for item in data_iterator():
-        # 特殊需求，需要获取底层数据库对象
-        if is_already_in_db(saver._db, item["id"]):
-            continue
+get_lottery_data = retry_on_timeout(get_lottery_data)
 
-        data = {
-            "_id": item["id"],
-            "time": datetime.fromtimestamp(item["created_at"]),
-            "reward_name": item["name"],
+
+class LotteryDataFetcher(Fetcher):
+    def __init__(self) -> None:
+        self.task_name = "简书大转盘抽奖"
+        self.fetch_time_cron = "0 0 2,9,14,21 1/1 * *"
+        self.collection_name = "lottery_data"
+        self.bulk_size = 100
+
+    def should_fetch(self, saver: Saver) -> bool:
+        return not saver.is_in_db(
+            {
+                "time": {
+                    "$gt": datetime.now() - timedelta(minutes=5),
+                },
+            },
+        )
+
+    def iter_data(self) -> Generator[Dict, None, None]:
+        for item in get_lottery_data():
+            yield item
+
+    def process_data(self, data: Dict) -> Dict:
+        return {
+            "_id": data["id"],
+            "time": datetime.fromtimestamp(data["created_at"]),
+            "reward_name": data["name"],
             "user": {
-                "id": item["user"]["id"],
-                "url": UserSlugToUserUrl(item["user"]["slug"]),
-                "name": item["user"]["nickname"],
+                "id": data["user"]["id"],
+                "url": UserSlugToUserUrl(data["user"]["slug"]),
+                "name": data["user"]["nickname"],
             },
         }
 
-        saver.add_data(data)
+    def should_save(self, data: Dict, saver: Saver) -> bool:
+        return not saver.is_in_db({"_id": data["_id"]})
 
-    saver.final_save()
+    def save_data(self, data: Dict, saver: Saver) -> None:
+        saver.add_one(data)
 
-
-@task_func(
-    task_name="简书大转盘抽奖",
-    cron="0 0 2,9,14,21 1/1 * *",
-    db_name="lottery_data",
-    data_bulk_size=100,
-)
-def main(saver: Saver):
-
-    start_time = get_now_without_mileseconds()
-
-    data_processor(saver)
-
-    stop_time = get_now_without_mileseconds()
-    cost_time = (stop_time - start_time).total_seconds()
-
-    return (True, saver.get_data_count(), cost_time, "")
+    def is_success(self, saver: Saver) -> bool:
+        return saver.is_in_db(
+            {
+                "time": {
+                    "$gt": datetime.now() - timedelta(minutes=5),
+                },
+            },
+        )

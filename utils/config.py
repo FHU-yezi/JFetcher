@@ -15,7 +15,7 @@ _DEFAULT_CONFIG = {
         "minimum_record_level": "DEBUG",
         "minimum_print_level": "INFO",
     },
-    "fetcher": {
+    "fetchers": {
         "base_path": "./fetchers",
     },
     "message_sender": {
@@ -61,8 +61,4 @@ class ConfigNode:
         return self._data[name]
 
 
-def InitConfig() -> Config:
-    return Config()  # 初始化日志文件
-
-
-config = InitConfig()
+config = Config()

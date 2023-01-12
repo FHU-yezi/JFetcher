@@ -1,43 +1,49 @@
 from datetime import timedelta
-from typing import Generator, Tuple
+from typing import Dict, Generator, Tuple
 
 from httpx import get as httpx_get
 from JianshuResearchTools.convert import (
     ArticleSlugToArticleUrl,
-    ArticleUrlToArticleSlug,
     UserSlugToUserUrl,
 )
 from JianshuResearchTools.rank import GetArticleFPRankData
+
+from fetchers._base import Fetcher
+from saver import Saver
 from utils.log import run_logger
-from utils.register import task_func
-from utils.saver import Saver
-from utils.time_helper import (
-    get_now_without_mileseconds,
-    get_today_in_datetime_obj,
-)
+from utils.retry import retry_on_timeout
+from utils.time_helper import get_today_in_datetime_obj
 
 
-def get_id_url_from_article_url(article_url: str) -> Tuple[int, str]:
-    aslug = ArticleUrlToArticleSlug(article_url)
-    response = httpx_get(f"https://www.jianshu.com/asimov/p/{aslug}")
+def get_user_id_url_from_article_slug(article_slug: str) -> Tuple[int, str]:
+    response = httpx_get(f"https://www.jianshu.com/asimov/p/{article_slug}")
     result = response.json()
-    if result.get("error"):
-        raise Exception("文章已被删除")
     return (result["user"]["id"], UserSlugToUserUrl(result["user"]["slug"]))
 
 
-def data_iterator() -> Generator:
-    data_part = GetArticleFPRankData("latest")
-    for item in data_part:
-        yield item
-    return
+get_user_id_url_from_article_slug = retry_on_timeout(get_user_id_url_from_article_slug)
 
 
-def data_processor(saver: Saver) -> None:
-    for item in data_iterator():
-        data = {
-            "date": get_today_in_datetime_obj() - timedelta(days=1),  # 昨天
-            "ranking": item["ranking"],
+class ArticleFPRankFetcher(Fetcher):
+    def __init__(self) -> None:
+        self.task_name = "简书文章收益排行榜"
+        self.fetch_time_cron = "0 0 1 1/1 * *"
+        self.collection_name = "article_FP_rank"
+        self.bulk_size = 100
+
+    def should_fetch(self, saver: Saver) -> bool:
+        return not saver.is_in_db(
+            {"date": get_today_in_datetime_obj() - timedelta(days=1)}
+        )
+
+    def iter_data(self) -> Generator[Dict, None, None]:
+        for item in GetArticleFPRankData("latest"):
+            yield item
+
+    def process_data(self, data: Dict) -> Dict:
+        result = {
+            "date": get_today_in_datetime_obj() - timedelta(days=1),
+            "ranking": data["ranking"],
             "article": {
                 "title": None,
                 "url": None,
@@ -48,42 +54,32 @@ def data_processor(saver: Saver) -> None:
                 "name": None,
             },
             "reward": {
-                "to_author": item["fp_to_author"],
-                "to_voter": item["fp_to_voter"],
-                "total": item["total_fp"],
+                "to_author": data["fp_to_author"],
+                "to_voter": data["fp_to_voter"],
+                "total": data["total_fp"],
             },
         }
-        if not item["author_name"]:  # 文章被删除导致相关信息无法访问
-            run_logger.warning(f"排名为 {item['ranking']} 的文章被删除，部分数据无法采集，已自动跳过")
-        else:
-            data["article"]["title"] = item["title"]
-            data["article"]["url"] = ArticleSlugToArticleUrl(item["aslug"])
-            data["author"]["name"] = item["author_name"]
+        if not data["author_name"]:  # 文章被删除导致相关信息无法访问
+            run_logger.warning(f"排名为 {data['ranking']} 的文章被删除，部分数据无法采集，已自动跳过")
+            return result
 
-            try:
-                uid, user_url = get_id_url_from_article_url(data["article"]["url"])
-                data["author"]["id"] = uid
-                data["author"]["url"] = user_url
-            except Exception:  # 无法获取信息
-                pass
+        result["article"]["title"] = data["title"]
+        result["article"]["url"] = ArticleSlugToArticleUrl(data["aslug"])
+        result["author"]["name"] = data["author_name"]
 
-        saver.add_data(data)
+        uid, user_url = get_user_id_url_from_article_slug(data["aslug"])
+        result["author"]["id"] = uid
+        result["author"]["url"] = user_url
 
-    saver.final_save()
+        return result
 
+    def should_save(self, data: Dict, saver: Saver) -> bool:
+        del data
+        del saver
+        return True
 
-@task_func(
-    task_name="简书文章收益排行榜",
-    cron="0 0 1 1/1 * *",
-    db_name="article_FP_rank",
-    data_bulk_size=100,
-)
-def main(saver: Saver):
-    start_time = get_now_without_mileseconds()
+    def save_data(self, data: Dict, saver: Saver) -> None:
+        saver.add_one(data)
 
-    data_processor(saver)
-
-    stop_time = get_now_without_mileseconds()
-    cost_time = (stop_time - start_time).total_seconds()
-
-    return (True, saver.get_data_count(), cost_time, "")
+    def is_success(self, saver: Saver) -> bool:
+        return saver.is_in_db({"date": get_today_in_datetime_obj() - timedelta(days=1)})
