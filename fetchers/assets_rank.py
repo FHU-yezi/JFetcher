@@ -1,51 +1,45 @@
-from typing import Generator
+from typing import Dict, Generator
 
-from backoff import expo, on_exception
 from httpx import TimeoutException
 from JianshuResearchTools.convert import UserSlugToUserUrl
 from JianshuResearchTools.exceptions import APIError, ResourceError
-from JianshuResearchTools.objects import User, set_cache_status
+from JianshuResearchTools.objects import User
 from JianshuResearchTools.rank import GetAssetsRankData
 
+from fetchers._base import Fetcher
+from saver import Saver
 from utils.log import run_logger
-from utils.register import task_func
-from utils.saver import Saver
-from utils.time_helper import (
-    get_now_without_mileseconds,
-    get_today_in_datetime_obj,
-)
+from utils.retry import retry_on_timeout
+from utils.time_helper import get_today_in_datetime_obj
 
-set_cache_status(False)
-
-GetAssetsRankData = on_exception(
-    expo,
-    TimeoutException,
-    base=2,
-    factor=4,
-    max_tries=5,
-    on_backoff=lambda details: run_logger.warning(
-        f"发生重试，尝试次数：{details['tries']}，"
-        f"等待时间：{round(details['wait'], 3)}"
-    ),
-)(GetAssetsRankData)
+GetAssetsRankData = retry_on_timeout(GetAssetsRankData)
 
 
-def data_iterator(total_count: int) -> Generator:
-    now = 1
-    while True:
-        data_part = GetAssetsRankData(now)
-        for item in data_part:
-            yield item
-            now += 1
-            if now > total_count:
-                return
+class AssetsRankFetcher(Fetcher):
+    def __init__(self) -> None:
+        self.task_name = "简书资产排行榜"
+        self.fetch_time_cron = "0 0 12 1/1 * *"
+        self.collection_name = "assets_rank"
+        self.bulk_size = 100
 
+    def should_fetch(self, saver: Saver) -> bool:
+        return not saver.is_in_db({"date": get_today_in_datetime_obj()})
 
-def data_processor(saver: Saver) -> None:
-    for item in data_iterator(1000):
-        data = {
+    def iter_data(self) -> Generator[Dict, None, None]:
+        total_count = 1000
+        now = 1
+        while True:
+            data_part = GetAssetsRankData(now)
+            for item in data_part:
+                yield item
+                now += 1
+                if now > total_count:
+                    return
+
+    def process_data(self, data: Dict) -> Dict:
+        result = {
             "date": get_today_in_datetime_obj(),
-            "ranking": item["ranking"],
+            "ranking": data["ranking"],
             "user": {
                 "id": None,
                 "url": None,
@@ -55,42 +49,35 @@ def data_processor(saver: Saver) -> None:
                 "FP": None,
                 "FTN": None,
                 # JRT 写错了
-                "total": item["FP"],
+                "total": data["FP"],
             },
         }
-        if not item["uid"]:  # 用户账号状态异常，相关信息无法获取
-            run_logger.warning(f"排名为 {item['ranking']} " "的用户账号状态异常，部分数据无法采集，已自动跳过")
-        else:
-            data["user"]["id"] = item["uid"]
-            data["user"]["url"] = UserSlugToUserUrl(item["uslug"])
-            data["user"]["name"] = item["name"]
+        if not data["uid"]:  # 用户账号状态异常，相关信息无法获取
+            run_logger.warning(f"排名为 {data['ranking']} 的用户账号状态异常，部分数据无法采集，已自动跳过")
+            return result
 
-            try:
-                user = User.from_slug(item["uslug"])
-                data["assets"]["FP"] = user.FP_count
-                data["assets"]["FTN"] = round(
-                    data["assets"]["total"] - data["assets"]["FP"], 3
-                )
-            except (ResourceError, APIError, TimeoutException):
-                run_logger.warning(f"无法获取 id 为 {item['uid']} 的用户的简书贝和简书贝信息，已自动跳过")
+        result["user"]["id"] = data["uid"]
+        result["user"]["url"] = UserSlugToUserUrl(data["uslug"])
+        result["user"]["name"] = data["name"]
 
-        saver.add_data(data)
+        try:
+            user = User.from_slug(data["uslug"])
+            result["assets"]["FP"] = user.FP_count
+            result["assets"]["FTN"] = round(
+                result["assets"]["total"] - result["assets"]["FP"], 3
+            )
+        except (ResourceError, APIError, TimeoutException):
+            run_logger.warning(f"无法获取 id 为 {data['uid']} 的用户的简书贝和简书贝信息，已自动跳过")
 
-    saver.final_save()
+        return result
 
+    def should_save(self, data: Dict, saver: Saver) -> bool:
+        del data
+        del saver
+        return True
 
-@task_func(
-    task_name="简书资产排行榜",
-    cron="0 0 12 1/1 * *",
-    db_name="assets_rank",
-    data_bulk_size=100,
-)
-def main(saver: Saver):
-    start_time = get_now_without_mileseconds()
+    def save_data(self, data: Dict, saver: Saver) -> None:
+        saver.add_one(data)
 
-    data_processor(saver)
-
-    stop_time = get_now_without_mileseconds()
-    cost_time = (stop_time - start_time).total_seconds()
-
-    return (True, saver.get_data_count(), cost_time, "")
+    def is_success(self, saver: Saver) -> bool:
+        return saver.is_in_db({"date": get_today_in_datetime_obj()})

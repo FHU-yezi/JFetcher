@@ -1,51 +1,48 @@
-from typing import Generator
+from typing import Dict, Generator
 
 from JianshuResearchTools.convert import UserSlugToUserUrl
 from JianshuResearchTools.rank import GetDailyArticleRankData
-from utils.register import task_func
-from utils.saver import Saver
-from utils.time_helper import (
-    get_now_without_mileseconds,
-    get_today_in_datetime_obj,
-)
+
+from fetchers._base import Fetcher
+from saver import Saver
+from utils.retry import retry_on_timeout
+from utils.time_helper import get_today_in_datetime_obj
+
+GetDailyArticleRankData = retry_on_timeout(GetDailyArticleRankData)
 
 
-def data_iterator() -> Generator:
-    data_part = GetDailyArticleRankData()
-    for item in data_part:
-        yield item
-    return
+class DailyUpdateRankFetcher(Fetcher):
+    def __init__(self) -> None:
+        self.task_name = "简书日更排行榜"
+        self.fetch_time_cron = "0 0 12 1/1 * *"
+        self.collection_name = "daily_update_rank"
+        self.bulk_size = 100
 
+    def should_fetch(self, saver: Saver) -> bool:
+        return not saver.is_in_db({"date": get_today_in_datetime_obj()})
 
-def data_processor(saver: Saver) -> None:
-    for item in data_iterator():
-        data = {
+    def iter_data(self) -> Generator[Dict, None, None]:
+        for item in GetDailyArticleRankData():
+            yield item
+
+    def process_data(self, data: Dict) -> Dict:
+        return {
             "date": get_today_in_datetime_obj(),
-            "ranking": item["ranking"],
+            "ranking": data["ranking"],
             "user": {
-                "name": item["name"],
-                "url": UserSlugToUserUrl(item["uslug"]),
+                "name": data["name"],
+                "url": UserSlugToUserUrl(data["uslug"]),
             },
-            "days": item["check_in_count"],
+            "days": data["check_in_count"],
         }
 
-        saver.add_data(data)
+    def should_save(self, data: Dict, saver: Saver) -> bool:
+        del data
+        del saver
+        return True
 
-    saver.final_save()
+    def save_data(self, data: Dict, saver: Saver) -> None:
+        saver.add_one(data)
 
-
-@task_func(
-    task_name="简书日更排行榜",
-    cron="0 0 12 1/1 * *",
-    db_name="daily_update_rank",
-    data_bulk_size=100,
-)
-def main(saver: Saver):
-    start_time = get_now_without_mileseconds()
-
-    data_processor(saver)
-
-    stop_time = get_now_without_mileseconds()
-    cost_time = (stop_time - start_time).total_seconds()
-
-    return (True, saver.get_data_count(), cost_time, "")
+    def is_success(self, saver: Saver) -> bool:
+        return saver.is_in_db({"date": get_today_in_datetime_obj()})
