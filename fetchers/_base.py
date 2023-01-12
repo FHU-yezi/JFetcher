@@ -34,7 +34,7 @@ class Fetcher(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def should_save(self, data: Dict) -> bool:
+    def should_save(self, data: Dict, saver: Saver) -> bool:
         raise NotImplementedError
 
     @abstractmethod
@@ -55,9 +55,9 @@ class Fetcher(ABC):
             run_logger.debug(f"已跳过任务 {self.task_name}")
             return (FETCH_RESULT.SKIPPED, 0, 0)
 
-        for data in self.iter_data():
-            processed_data: Dict = self.process_data(data)
-            if not self.should_save(data):
+        for original_data in self.iter_data():
+            processed_data: Dict = self.process_data(original_data)
+            if not self.should_save(processed_data, saver):
                 continue
             self.save_data(processed_data, saver)
 
