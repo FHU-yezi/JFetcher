@@ -9,7 +9,10 @@ from JianshuResearchTools.rank import GetAssetsRankData
 from fetchers._base import Fetcher
 from saver import Saver
 from utils.log import run_logger
+from utils.retry import retry_on_timeout
 from utils.time_helper import get_today_in_datetime_obj
+
+GetAssetsRankData = retry_on_timeout(GetAssetsRankData)
 
 
 class AssetsRankFetcher(Fetcher):
