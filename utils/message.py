@@ -2,11 +2,13 @@ from typing import Dict
 
 from httpx import post as httpx_post
 
+from utils.cache import timeout_cache
 from utils.config import config
 from utils.log import run_logger
 from utils.time_helper import get_now_without_mileseconds
 
 
+@timeout_cache(3600)
 def get_feishu_token() -> str:
     """获取飞书 Token
 
@@ -79,13 +81,13 @@ def send_feishu_card(card: Dict) -> None:
         )
 
 
-def send_task_success_card(task_name: str, data_count: int, cost_time_str: str) -> None:
+def send_task_success_card(task_name: str, cost_time: str, data_count: int) -> None:
     """发送任务成功卡片
 
     Args:
         task_name (str): 任务名称
+        cost_time (str): 耗时，已处理的字符串
         data_count (int): 采集的数据量
-        cost_time_str (str): 耗时，已处理的字符串
     """
     time_now = get_now_without_mileseconds()
 
@@ -120,7 +122,7 @@ def send_task_success_card(task_name: str, data_count: int, cost_time_str: str) 
                         "is_short": True,
                         "text": {
                             "tag": "lark_md",
-                            "content": f"**耗时**\n{cost_time_str}",
+                            "content": f"**耗时**\n{cost_time}",
                         },
                     },
                     {

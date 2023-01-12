@@ -10,7 +10,7 @@ def get_today_in_datetime_obj() -> datetime:
     return datetime.fromisoformat(date.today().strftime(r"%Y-%m-%d"))
 
 
-def human_readable_time_cost(cost_time: int) -> str:
+def human_readable_cost_time(cost_time: int) -> str:
     """将耗时转换成人类可读格式
 
     Args:
