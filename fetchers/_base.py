@@ -1,8 +1,9 @@
 from abc import ABC, abstractmethod
 from time import time
-from typing import Any, Dict, Generator, Tuple
+from typing import Dict, Generator, Tuple
 
 from const import FETCH_RESULT
+from utils.log import run_logger
 from saver import Saver
 from utils.time_helper import cron_str_to_kwargs
 
@@ -21,46 +22,47 @@ class Fetcher(ABC):
         return cron_str_to_kwargs(self.fetch_time_cron)
 
     @abstractmethod
-    def should_fetch(self) -> bool:
+    def should_fetch(self, saver: Saver) -> bool:
         raise NotImplementedError
 
     @abstractmethod
-    def iter_data(self) -> Generator[Any, None, None]:
+    def iter_data(self) -> Generator[Dict, None, None]:
         raise NotImplementedError
 
     @abstractmethod
-    def process_data(self, data: Any) -> Any:
+    def process_data(self, data: Dict) -> Dict:
         raise NotImplementedError
 
     @abstractmethod
-    def should_save(self, data: Any) -> bool:
+    def should_save(self, data: Dict) -> bool:
         raise NotImplementedError
 
     @abstractmethod
-    def save_data(self, data: Any, saver: Saver) -> None:
+    def save_data(self, data: Dict, saver: Saver) -> None:
         raise NotImplementedError
 
     @abstractmethod
-    def is_success(self) -> bool:
+    def is_success(self, saver: Saver) -> bool:
         raise NotImplementedError
 
-    @abstractmethod
     def run(self) -> Tuple[FETCH_RESULT, int, int]:
         start_time = time()
 
-        if not self.should_fetch():
+        saver = Saver(self.collection_name, self.bulk_size)
+        run_logger.debug(f"已为任务 {self.task_name} 创建存储对象")
+
+        if not self.should_fetch(saver):
+            run_logger.debug(f"已跳过任务 {self.task_name}")
             return (FETCH_RESULT.SKIPPED, 0, 0)
 
-        saver = Saver(self.collection_name, self.bulk_size)
-
         for data in self.iter_data():
-            processed_data: Any = self.process_data(data)
+            processed_data: Dict = self.process_data(data)
             if not self.should_save(data):
                 continue
             self.save_data(processed_data, saver)
 
         fetch_result = (
-            FETCH_RESULT.SUCCESSED if self.is_success() else FETCH_RESULT.FAILED
+            FETCH_RESULT.SUCCESSED if self.is_success(saver) else FETCH_RESULT.FAILED
         )
         cost_time = round(time() - start_time)
 

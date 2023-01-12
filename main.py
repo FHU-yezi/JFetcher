@@ -20,7 +20,7 @@ run_logger.debug("已注册事件回调")
 
 for fetcher in fetchers:
     scheduler.add_job(
-        fetcher.run(),
+        fetcher.run,
         "cron",
         id=fetcher.task_name,
         **fetcher.fetch_time_cron_kwargs,

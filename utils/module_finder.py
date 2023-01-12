@@ -18,7 +18,7 @@ def get_all_fetchers(base_path: str) -> List:
         module_obj = import_module(f"{base_path.split('/')[1]}.{module_name}")
 
         for name, obj in module_obj.__dict__.items():
-            if name.endswith("Fetcher"):
+            if name.endswith("Fetcher") and name != "Fetcher":
                 result.append(obj)
 
     return result
