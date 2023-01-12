@@ -1,41 +1,34 @@
 from time import sleep
+from typing import List
 
 from apscheduler.events import EVENT_JOB_ERROR, EVENT_JOB_EXECUTED
 from apscheduler.schedulers.background import BackgroundScheduler
 
-from event_handlers import on_fail_event, on_success_event
+from event_callbacks import on_error_event, on_executed_event
+from fetchers._base import Fetcher
 from utils.config import config
 from utils.log import run_logger
-from utils.module_finder import run_all_modules
-from utils.register import get_all_registered_funcs
-from utils.saver import Saver
-from utils.time_helper import cron_to_kwargs
+from utils.module_finder import get_all_fetchers
 
-run_all_modules(config.fetcher.base_path)  # 运行相关模块，继而对采集任务进行注册操作
+fetchers: List[Fetcher] = [x() for x in get_all_fetchers(config.fetchers.base_path)]
+run_logger.info(f"任务数量：{len(fetchers)}")
 
 scheduler = BackgroundScheduler()
-run_logger.info("成功初始化调度器")
+scheduler.add_listener(on_executed_event, EVENT_JOB_EXECUTED)
+scheduler.add_listener(on_error_event, EVENT_JOB_ERROR)
+run_logger.debug("已注册事件回调")
 
-funcs = get_all_registered_funcs()
-run_logger.info(f"获取到 {len(funcs)} 个任务函数")
-
-for func, task_name, cron, db_name, data_bulk_size in funcs:
-    saver: Saver = Saver(db_name, data_bulk_size)
+for fetcher in fetchers:
     scheduler.add_job(
-        func,
+        fetcher.run,
         "cron",
-        id=task_name,
-        **cron_to_kwargs(cron),
-        kwargs={"saver": saver},
+        id=fetcher.task_name,
+        **fetcher.fetch_time_cron_kwargs,
     )
-run_logger.info("已将任务函数加入调度")
-
-scheduler.add_listener(on_success_event, EVENT_JOB_EXECUTED)
-scheduler.add_listener(on_fail_event, EVENT_JOB_ERROR)
-run_logger.info("成功注册事件回调")
+    run_logger.debug(f"已添加获取任务：{fetcher.task_name}（{fetcher.__class__.__name__}）")
 
 scheduler.start()
-run_logger.info("调度器已启动")
+run_logger.info("调度器启动成功")
 
 while True:
-    sleep(10)
+    sleep(180)

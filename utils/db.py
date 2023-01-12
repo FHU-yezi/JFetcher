@@ -9,11 +9,9 @@ def init_DB(db_name: str):
     return db
 
 
-db = init_DB(config.db.main_database)
-
-
 def get_collection(collection_name: str):
     return db[collection_name]
 
 
+db = init_DB(config.db.main_database)
 run_log_db = db.log
