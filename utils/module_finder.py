@@ -4,10 +4,21 @@ from typing import List
 
 
 def get_all_modules(base_path: str) -> List[str]:
-    return [x.split(".")[0] for x in listdir(base_path) if x.endswith(".py")]
+    return [
+        x.split(".")[0]
+        for x in listdir(base_path)
+        if x.endswith(".py") and not x.startswith("_")
+    ]
 
 
-def run_all_modules(base_path: str) -> None:
+def get_all_fetchers(base_path: str) -> List:
     modules: List[str] = get_all_modules(base_path)
-    for module in modules:
-        import_module(f"{base_path.split('/')[1]}.{module}")
+    result: List = []
+    for module_name in modules:
+        module_obj = import_module(f"{base_path.split('/')[1]}.{module_name}")
+
+        for name, obj in module_obj.__dict__.items():
+            if name.endswith("Fetcher"):
+                result.append(obj)
+
+    return result

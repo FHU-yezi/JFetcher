@@ -7,6 +7,13 @@ from saver import Saver
 
 class Fetcher(ABC):
     @abstractmethod
+    def __init__(self) -> None:
+        self.fetch_time_cron = ""
+        self.collection_name = ""
+        self.bulk_size = 0
+        raise NotImplementedError
+
+    @abstractmethod
     def should_fetch(self) -> bool:
         raise NotImplementedError
 
@@ -31,9 +38,11 @@ class Fetcher(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def run(self, saver: Saver) -> FETCH_RESULT:
+    def run(self) -> FETCH_RESULT:
         if not self.should_fetch():
             return FETCH_RESULT.SKIPPED
+
+        saver = Saver(self.collection_name, self.bulk_size)
 
         for data in self.iter_data():
             processed_data: Any = self.process_data(data)
