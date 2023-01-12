@@ -39,7 +39,7 @@ def human_readable_time_cost(cost_time: int) -> str:
     return "".join(f"{value}{key}" for key, value in data.items())
 
 
-def cron_to_kwargs(cron: str) -> Dict[str, str]:
+def cron_str_to_kwargs(cron: str) -> Dict[str, str]:
     """将 Cron 表达式转换成 Apscheduler 可识别的参数组
 
     Args:
