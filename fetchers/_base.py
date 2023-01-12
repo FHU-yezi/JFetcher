@@ -1,17 +1,24 @@
 from abc import ABC, abstractmethod
-from typing import Any, Generator
+from time import time
+from typing import Any, Dict, Generator, Tuple
 
 from const import FETCH_RESULT
 from saver import Saver
+from utils.time_helper import cron_str_to_kwargs
 
 
 class Fetcher(ABC):
     @abstractmethod
     def __init__(self) -> None:
+        self.task_name = ""
         self.fetch_time_cron = ""
         self.collection_name = ""
         self.bulk_size = 0
         raise NotImplementedError
+
+    @property
+    def fetch_time_cron_kwargs(self) -> Dict[str, str]:
+        return cron_str_to_kwargs(self.fetch_time_cron)
 
     @abstractmethod
     def should_fetch(self) -> bool:
@@ -38,9 +45,11 @@ class Fetcher(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def run(self) -> FETCH_RESULT:
+    def run(self) -> Tuple[FETCH_RESULT, int]:
+        start_time = time()
+
         if not self.should_fetch():
-            return FETCH_RESULT.SKIPPED
+            return (FETCH_RESULT.SKIPPED, 0)
 
         saver = Saver(self.collection_name, self.bulk_size)
 
@@ -50,4 +59,9 @@ class Fetcher(ABC):
                 continue
             self.save_data(processed_data, saver)
 
-        return FETCH_RESULT.SUCCESSED if self.is_success() else FETCH_RESULT.FAILED
+        fetch_result = (
+            FETCH_RESULT.SUCCESSED if self.is_success() else FETCH_RESULT.FAILED
+        )
+        cost_time = round(time() - start_time)
+
+        return (fetch_result, cost_time)
