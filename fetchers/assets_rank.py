@@ -37,7 +37,6 @@ class AssetsRankFetcher(Fetcher):
                     return
 
     def process_data(self, data: Dict) -> Dict:
-        print(data["ranking"])
         result = {
             "date": get_today_in_datetime_obj(),
             "ranking": data["ranking"],

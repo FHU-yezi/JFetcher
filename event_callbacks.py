@@ -46,4 +46,5 @@ def on_task_failed(task_name: str, exception: Optional[Exception] = None) -> Non
 
 
 def on_task_skipped(task_name: str) -> None:
+    del task_name
     pass

@@ -20,6 +20,6 @@ def retry_on_timeout(func):
     )
     @wraps(func)
     def inner(*args, **kwargs):
-        func(*args, **kwargs)
+        return func(*args, **kwargs)
 
     return inner
