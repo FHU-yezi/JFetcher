@@ -1,7 +1,7 @@
 from enum import IntEnum
 
 
-class FETCH_RESULT(IntEnum):
+class FetchResult(IntEnum):
     FAILED = -1
     SUCCESSED = 0
     SKIPPED = 1

@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta
-from typing import Dict, Generator
+from typing import Dict, Generator, List
 
 from httpx import get as httpx_get
 from JianshuResearchTools.convert import UserSlugToUserUrl
@@ -9,7 +9,7 @@ from saver import Saver
 from utils.retry import retry_on_timeout
 
 
-def get_lottery_data():
+def get_lottery_data() -> List[Dict]:
     url = "https://www.jianshu.com/asimov/ad_rewards/winner_list"
     params = {
         "count": 500,
@@ -43,8 +43,7 @@ class LotteryDataFetcher(Fetcher):
         )
 
     def iter_data(self) -> Generator[Dict, None, None]:
-        for item in get_lottery_data():
-            yield item
+        yield from get_lottery_data()
 
     def process_data(self, data: Dict) -> Dict:
         return {

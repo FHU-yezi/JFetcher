@@ -29,9 +29,7 @@ def get_feishu_token() -> str:
         json=data,
     )
 
-    if response.json()["code"] == 0:
-        return "Bearer " + response.json()["tenant_access_token"]
-    else:
+    if response.json()["code"] != 0:
         run_logger.error(
             "获取 Token 时发生错误，"
             f"错误码：{response.json()['code']}，"
@@ -42,6 +40,8 @@ def get_feishu_token() -> str:
             f"错误码：{response.json()['code']}，"
             f"错误信息：{response.json()['msg']}"
         )
+
+    return "Bearer " + response.json()["tenant_access_token"]
 
 
 def send_feishu_card(card: Dict) -> None:

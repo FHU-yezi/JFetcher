@@ -37,8 +37,7 @@ class ArticleFPRankFetcher(Fetcher):
         )
 
     def iter_data(self) -> Generator[Dict, None, None]:
-        for item in GetArticleFPRankData("latest"):
-            yield item
+        yield from GetArticleFPRankData("latest")
 
     def process_data(self, data: Dict) -> Dict:
         result = {

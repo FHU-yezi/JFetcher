@@ -6,6 +6,8 @@ from threading import Thread
 from time import sleep
 from typing import Dict, List, Optional
 
+from pymongo.collection import Collection
+
 from utils.config import config
 from utils.db import run_log_db
 
@@ -40,7 +42,10 @@ BASE_DIR: str = _get_base_dir() + "/"
 
 def _get_filename() -> Optional[str]:
     try:
-        result: str = currentframe().f_back.f_back.f_back.f_code.co_filename  # type: ignore [union-attr]
+        result: str = (
+            currentframe().f_back.f_back  # type: ignore [union-attr]
+            .f_back.f_code.co_filename  # type: ignore [union-attr]
+        )
         return result.replace(BASE_DIR, "")
     except AttributeError:
         return None
@@ -56,7 +61,7 @@ def _get_line_number() -> Optional[int]:
 class RunLogger:
     def __init__(
         self,
-        db,
+        db: Collection,
         save_interval: int,
         minimum_record_level: str,
         minimum_print_level: str,
@@ -80,7 +85,7 @@ class RunLogger:
                 data_to_save.clear()
             sleep(self._save_interval)
 
-    def force_refresh(self):
+    def force_refresh(self) -> None:
         if self._data_queue.empty():  # 没有要保存的数据
             return
         data_to_save: List[Dict] = []
