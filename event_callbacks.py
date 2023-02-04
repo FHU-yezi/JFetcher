@@ -10,7 +10,7 @@ from utils.time_helper import human_readable_cost_time
 
 def on_executed_event(event: JobExecutionEvent) -> None:
     task_name: str = event.job_id
-    fetch_result, cost_time, data_count = event.retval
+    fetch_result, cost_time, data_count = event.retval  # type: ignore
 
     if fetch_result == FETCH_RESULT.SUCCESSED:
         on_task_successed(task_name, cost_time, data_count)
@@ -24,7 +24,7 @@ def on_executed_event(event: JobExecutionEvent) -> None:
 
 def on_error_event(event: JobExecutionEvent) -> None:
     task_name: str = event.job_id
-    exception: Exception = event.exception
+    exception: Exception = event.exception  # type: ignore
 
     on_task_failed(task_name, exception)
 

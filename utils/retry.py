@@ -15,7 +15,7 @@ def retry_on_timeout(func):
         max_tries=5,
         on_backoff=lambda details: run_logger.warning(
             f"函数 {func.__name__} 发生超时重试，尝试次数：{details['tries']}，"
-            f"等待时间：{round(details['wait'], 3)}"
+            f"等待时间：{round(details['wait'], 3)}"  # type: ignore
         ),
     )
     @wraps(func)
