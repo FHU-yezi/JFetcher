@@ -22,6 +22,10 @@ class Saver:
         return len(self._queue) >= self._bulk_size
 
     def _save_to_db(self) -> None:
+        # 队列为空时尝试保存数据会报错，此时直接返回
+        if not self._queue:
+            return
+
         self._collection.insert_many(self._queue)
         self._queue.clear()
 

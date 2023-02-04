@@ -2,7 +2,7 @@ from typing import Optional
 
 from apscheduler.events import JobExecutionEvent
 
-from const import FETCH_RESULT
+from const import FetchResult
 from utils.log import run_logger
 from utils.message import send_task_fail_card, send_task_success_card
 from utils.time_helper import human_readable_cost_time
@@ -10,13 +10,13 @@ from utils.time_helper import human_readable_cost_time
 
 def on_executed_event(event: JobExecutionEvent) -> None:
     task_name: str = event.job_id
-    fetch_result, cost_time, data_count = event.retval
+    fetch_result, cost_time, data_count = event.retval  # type: ignore
 
-    if fetch_result == FETCH_RESULT.SUCCESSED:
+    if fetch_result == FetchResult.SUCCESSED:
         on_task_successed(task_name, cost_time, data_count)
-    elif fetch_result == FETCH_RESULT.SKIPPED:
+    elif fetch_result == FetchResult.SKIPPED:
         on_task_skipped(task_name)
-    elif fetch_result == FETCH_RESULT.FAILED:
+    elif fetch_result == FetchResult.FAILED:
         on_task_failed(task_name)
     else:
         raise ValueError
@@ -24,7 +24,7 @@ def on_executed_event(event: JobExecutionEvent) -> None:
 
 def on_error_event(event: JobExecutionEvent) -> None:
     task_name: str = event.job_id
-    exception: Exception = event.exception
+    exception: Exception = event.exception  # type: ignore
 
     on_task_failed(task_name, exception)
 
