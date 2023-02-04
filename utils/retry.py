@@ -1,4 +1,5 @@
 from functools import wraps
+from typing import Any, Callable
 
 from backoff import expo, on_exception
 from httpx import TimeoutException
@@ -6,7 +7,7 @@ from httpx import TimeoutException
 from utils.log import run_logger
 
 
-def retry_on_timeout(func):
+def retry_on_timeout(func: Callable) -> Callable:
     @on_exception(
         expo,
         TimeoutException,
@@ -19,7 +20,7 @@ def retry_on_timeout(func):
         ),
     )
     @wraps(func)
-    def inner(*args, **kwargs):
+    def inner(*args: Any, **kwargs: Any) -> Any:
         return func(*args, **kwargs)
 
     return inner

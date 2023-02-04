@@ -22,8 +22,7 @@ class DailyUpdateRankFetcher(Fetcher):
         return not saver.is_in_db({"date": get_today_in_datetime_obj()})
 
     def iter_data(self) -> Generator[Dict, None, None]:
-        for item in GetDailyArticleRankData():
-            yield item
+        yield from GetDailyArticleRankData()
 
     def process_data(self, data: Dict) -> Dict:
         return {

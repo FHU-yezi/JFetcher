@@ -2,9 +2,9 @@ from abc import ABC, abstractmethod
 from time import time
 from typing import Dict, Generator, Tuple
 
-from const import FETCH_RESULT
-from utils.log import run_logger
+from const import FetchResult
 from saver import Saver
+from utils.log import run_logger
 from utils.time_helper import cron_str_to_kwargs
 
 
@@ -45,7 +45,7 @@ class Fetcher(ABC):
     def is_success(self, saver: Saver) -> bool:
         raise NotImplementedError
 
-    def run(self) -> Tuple[FETCH_RESULT, int, int]:
+    def run(self) -> Tuple[FetchResult, int, int]:
         start_time = time()
 
         saver = Saver(self.collection_name, self.bulk_size)
@@ -53,7 +53,7 @@ class Fetcher(ABC):
 
         if not self.should_fetch(saver):
             run_logger.debug(f"已跳过任务 {self.task_name}")
-            return (FETCH_RESULT.SKIPPED, 0, 0)
+            return (FetchResult.SKIPPED, 0, 0)
 
         for original_data in self.iter_data():
             processed_data: Dict = self.process_data(original_data)
@@ -63,7 +63,7 @@ class Fetcher(ABC):
         saver.final_save()
 
         fetch_result = (
-            FETCH_RESULT.SUCCESSED if self.is_success(saver) else FETCH_RESULT.FAILED
+            FetchResult.SUCCESSED if self.is_success(saver) else FetchResult.FAILED
         )
         cost_time = round(time() - start_time)
 
