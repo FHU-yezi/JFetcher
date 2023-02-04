@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "JFetcher"
-version = "2.0.0"
+version = "2.1.0"
 description = "简书数据采集工具"
 authors = ["FHU-yezi <yehaowei20060411@qq.com>"]
 license = "MIT"
@@ -15,9 +15,17 @@ backoff = "^2.2.1"
 
 [tool.poetry.group.dev.dependencies]
 black = "^22.8.0"
-flake8 = "^5.0.0"
-types-PyYAML = "^6.0.9"
+ruff = "^0.0.241"
+pyright = "^1.1.292"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.ruff]
+
+select = ["A", "ANN", "B", "C", "E", "F", "I", "N", "RET", "S", "SIM", "UP", "W"]
+
+ignore = ["ANN101", "ANN401"]
+
+target-version = "py38"

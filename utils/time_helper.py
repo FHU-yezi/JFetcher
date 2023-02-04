@@ -1,6 +1,11 @@
 from datetime import date, datetime
 from typing import Dict
 
+COST_TIME_MAPPING = {
+    "分": 60,
+    "秒": 1,
+}
+
 
 def get_now_without_mileseconds() -> datetime:
     return datetime.now().replace(microsecond=0)
@@ -19,13 +24,9 @@ def human_readable_cost_time(cost_time: int) -> str:
     Returns:
         str: 人类可读格式的耗时字符串
     """
-    MAPPING = {
-        "分": 60,
-        "秒": 1,
-    }
-    data = {key: 0 for key in MAPPING.keys()}
+    data = {key: 0 for key in COST_TIME_MAPPING}
 
-    for key, value in MAPPING.items():
+    for key, value in COST_TIME_MAPPING.items():
         while value <= cost_time:
             data[key] += 1
             cost_time -= value
@@ -49,7 +50,7 @@ def cron_str_to_kwargs(cron: str) -> Dict[str, str]:
         Dict[str, str]: 参数组
     """
     second, minute, hour, day, month, day_of_week = cron.split()
-    result = {
+    return {
         "second": second,
         "minute": minute,
         "hour": hour,
@@ -57,4 +58,3 @@ def cron_str_to_kwargs(cron: str) -> Dict[str, str]:
         "month": month,
         "day_of_week": day_of_week,
     }
-    return result
