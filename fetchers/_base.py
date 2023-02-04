@@ -60,6 +60,7 @@ class Fetcher(ABC):
             if not self.should_save(processed_data, saver):
                 continue
             self.save_data(processed_data, saver)
+        saver.final_save()
 
         fetch_result = (
             FETCH_RESULT.SUCCESSED if self.is_success(saver) else FETCH_RESULT.FAILED
