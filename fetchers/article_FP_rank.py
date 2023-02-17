@@ -11,7 +11,7 @@ from JianshuResearchTools.rank import GetArticleFPRankData
 from fetchers._base import Fetcher
 from saver import Saver
 from utils.log import run_logger
-from utils.retry import retry_on_timeout
+from utils.retry import retry_on_network_error
 from utils.time_helper import get_today_in_datetime_obj
 
 
@@ -21,7 +21,7 @@ def get_user_id_url_from_article_slug(article_slug: str) -> Tuple[int, str]:
     return (result["user"]["id"], UserSlugToUserUrl(result["user"]["slug"]))
 
 
-get_user_id_url_from_article_slug = retry_on_timeout(get_user_id_url_from_article_slug)
+get_user_id_url_from_article_slug = retry_on_network_error(get_user_id_url_from_article_slug)
 
 
 class ArticleFPRankFetcher(Fetcher):

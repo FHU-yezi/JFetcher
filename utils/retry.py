@@ -2,15 +2,15 @@ from functools import wraps
 from typing import Any, Callable
 
 from backoff import expo, on_exception
-from httpx import TimeoutException
+from httpx import ConnectError, TimeoutException
 
 from utils.log import run_logger
 
 
-def retry_on_timeout(func: Callable) -> Callable:
+def retry_on_network_error(func: Callable) -> Callable:
     @on_exception(
         expo,
-        TimeoutException,
+        (TimeoutException, ConnectError),
         base=2,
         factor=4,
         max_tries=5,
