@@ -2,7 +2,7 @@ from typing import Optional
 
 from apscheduler.events import JobExecutionEvent
 
-from const import FetchResult
+from constants import FetchResult
 from utils.log import run_logger
 from utils.message import send_task_fail_card, send_task_success_card
 from utils.time_helper import human_readable_cost_time
