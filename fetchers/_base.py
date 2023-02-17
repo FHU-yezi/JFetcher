@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from time import time
 from typing import Dict, Generator, Tuple
 
-from const import FetchResult
+from constants import FetchResult
 from saver import Saver
 from utils.log import run_logger
 from utils.time_helper import cron_str_to_kwargs
