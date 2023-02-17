@@ -15,7 +15,7 @@ backoff = "^2.2.1"
 
 [tool.poetry.group.dev.dependencies]
 black = "^22.8.0"
-ruff = "^0.0.241"
+ruff = "^0.0.246"
 pyright = "^1.1.292"
 
 [build-system]
@@ -26,6 +26,6 @@ build-backend = "poetry.core.masonry.api"
 
 select = ["A", "ANN", "B", "C", "E", "F", "I", "N", "RET", "S", "SIM", "UP", "W"]
 
-ignore = ["ANN101", "ANN401"]
+ignore = ["ANN101", "ANN102", "ANN401", "C901", "E501", "S104"]
 
 target-version = "py38"
