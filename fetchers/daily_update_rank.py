@@ -5,10 +5,10 @@ from JianshuResearchTools.rank import GetDailyArticleRankData
 
 from fetchers._base import Fetcher
 from saver import Saver
-from utils.retry import retry_on_timeout
+from utils.retry import retry_on_network_error
 from utils.time_helper import get_today_in_datetime_obj
 
-GetDailyArticleRankData = retry_on_timeout(GetDailyArticleRankData)
+GetDailyArticleRankData = retry_on_network_error(GetDailyArticleRankData)
 
 
 class DailyUpdateRankFetcher(Fetcher):

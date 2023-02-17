@@ -9,7 +9,7 @@ from JianshuResearchTools.objects import Collection, set_cache_status
 from fetchers._base import Fetcher
 from saver import Saver
 from utils.log import run_logger
-from utils.retry import retry_on_timeout
+from utils.retry import retry_on_network_error
 from utils.time_helper import get_today_in_datetime_obj
 
 set_cache_status(False)
@@ -33,7 +33,7 @@ class LPCollectionsFetcher(Fetcher):
     def _iter_one_collection(
         self, collection: Collection
     ) -> Generator[Dict, None, None]:
-        collection.articles_info = retry_on_timeout(collection.articles_info)
+        collection.articles_info = retry_on_network_error(collection.articles_info)
 
         page: int = 1
         total_count: int = 0
