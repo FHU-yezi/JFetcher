@@ -6,7 +6,7 @@ from JianshuResearchTools.convert import UserSlugToUserUrl
 
 from fetchers._base import Fetcher
 from saver import Saver
-from utils.retry import retry_on_timeout
+from utils.retry import retry_on_network_error
 
 
 def get_lottery_data() -> List[Dict]:
@@ -23,7 +23,7 @@ def get_lottery_data() -> List[Dict]:
     return response.json()
 
 
-get_lottery_data = retry_on_timeout(get_lottery_data)
+get_lottery_data = retry_on_network_error(get_lottery_data)
 
 
 class LotteryDataFetcher(Fetcher):
