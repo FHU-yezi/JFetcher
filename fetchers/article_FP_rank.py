@@ -22,6 +22,7 @@ def get_user_id_url_from_article_slug(article_slug: str) -> Tuple[int, str]:
 
 
 get_user_id_url_from_article_slug = retry_on_network_error(get_user_id_url_from_article_slug)
+GetArticleFPRankData = retry_on_network_error(GetArticleFPRankData)
 
 
 class ArticleFPRankFetcher(Fetcher):
