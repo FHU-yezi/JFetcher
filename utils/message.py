@@ -1,8 +1,8 @@
 from typing import Dict
 
 from httpx import post as httpx_post
+from sspeedup.cache.timeout import timeout_cache
 
-from utils.cache import timeout_cache
 from utils.config import config
 from utils.log import run_logger
 from utils.time_helper import get_now_without_mileseconds
@@ -31,9 +31,9 @@ def get_feishu_token() -> str:
 
     if response.json()["code"] != 0:
         run_logger.error(
-            "获取 Token 时发生错误，"
-            f"错误码：{response.json()['code']}，"
-            f"错误信息：{response.json()['msg']}",
+            "获取 Token 时发生错误",
+            error_code=response.json()["code"],
+            error_message=response.json()["msg"],
         )
         raise ValueError(
             "获取 Token 时发生错误，"
@@ -70,9 +70,9 @@ def send_feishu_card(card: Dict) -> None:
 
     if response.json()["code"] != 0:
         run_logger.error(
-            "发送消息卡片时发生错误，"
-            f"错误码：{response.json()['code']}，"
-            f"错误信息：{response.json()['msg']}",
+            "发送消息卡片时发生错误",
+            error_code=response.json()["code"],
+            error_message=response.json()["msg"],
         )
         raise ValueError(
             "发送消息卡片时发生错误，"

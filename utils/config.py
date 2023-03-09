@@ -12,7 +12,7 @@ _DEFAULT_CONFIG = {
         "main_database": "JFetcherData",
     },
     "log": {
-        "minimum_record_level": "DEBUG",
+        "minimum_save_level": "DEBUG",
         "minimum_print_level": "INFO",
     },
     "fetchers": {
