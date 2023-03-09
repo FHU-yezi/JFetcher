@@ -11,7 +11,6 @@ APScheduler = "^3.9.1"
 PyYAML = "^6.0"
 pymongo = "^4.1.1"
 JianshuResearchTools = "2.10.1"
-backoff = "^2.2.1"
 sspeedup = { version = "^0.3.1", extras = ["logging"] }
 
 [tool.poetry.group.dev.dependencies]
