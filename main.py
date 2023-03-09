@@ -10,14 +10,12 @@ from utils.config import config
 from utils.log import run_logger
 from utils.module_finder import get_all_fetchers
 
-fetchers: List[Fetcher] = [x() for x in get_all_fetchers(config.fetchers.base_path)]
-run_logger.info(f"任务数量：{len(fetchers)}")
-
 scheduler = BackgroundScheduler()
 scheduler.add_listener(on_executed_event, EVENT_JOB_EXECUTED)
 scheduler.add_listener(on_error_event, EVENT_JOB_ERROR)
 run_logger.debug("已注册事件回调")
 
+fetchers: List[Fetcher] = [x() for x in get_all_fetchers(config.fetchers.base_path)]
 for fetcher in fetchers:
     scheduler.add_job(
         fetcher.run,
@@ -25,7 +23,11 @@ for fetcher in fetchers:
         id=fetcher.task_name,
         **fetcher.fetch_time_cron_kwargs,
     )
-    run_logger.debug(f"已添加获取任务：{fetcher.task_name}（{fetcher.__class__.__name__}）")
+run_logger.debug(
+    "已添加获取任务",
+    fetchers_name=[fetcher.task_name for fetcher in fetchers],
+    fetchers_count=len(fetchers),
+)
 
 scheduler.start()
 run_logger.info("调度器启动成功")
