@@ -21,7 +21,9 @@ def get_user_id_url_from_article_slug(article_slug: str) -> Tuple[int, str]:
     return (result["user"]["id"], UserSlugToUserUrl(result["user"]["slug"]))
 
 
-get_user_id_url_from_article_slug = retry_on_network_error(get_user_id_url_from_article_slug)
+get_user_id_url_from_article_slug = retry_on_network_error(
+    get_user_id_url_from_article_slug
+)
 GetArticleFPRankData = retry_on_network_error(GetArticleFPRankData)
 
 
@@ -60,7 +62,11 @@ class ArticleFPRankFetcher(Fetcher):
             },
         }
         if not data["author_name"]:  # 文章被删除导致相关信息无法访问
-            run_logger.warning(f"排名为 {data['ranking']} 的文章被删除，部分数据无法采集，已自动跳过")
+            run_logger.warning(
+                "文章被删除，部分数据无法采集，已自动跳过",
+                task_name=self.task_name,
+                ranking=data["ranking"],
+            )
             return result
 
         result["article"]["title"] = data["title"]

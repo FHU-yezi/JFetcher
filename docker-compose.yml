@@ -6,7 +6,7 @@ networks:
 
 services:
   main:
-    image: jfetcher:2.3.0
+    image: jfetcher:2.4.0
     build: .
     volumes:
       - "./config.yaml:/app/config.yaml:ro"
@@ -18,7 +18,7 @@ services:
       resources:
         limits:
           cpus: "0.30"
-          memory: 192M
+          memory: 96M
       restart_policy:
         condition: on-failure
         delay: 5s
