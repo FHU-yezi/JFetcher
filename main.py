@@ -23,7 +23,7 @@ for fetcher in fetchers:
         id=fetcher.task_name,
         **fetcher.fetch_time_cron_kwargs,
     )
-run_logger.debug(
+run_logger.info(
     "已添加获取任务",
     fetchers_name=[fetcher.task_name for fetcher in fetchers],
     fetchers_count=len(fetchers),
