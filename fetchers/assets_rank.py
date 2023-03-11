@@ -53,7 +53,11 @@ class AssetsRankFetcher(Fetcher):
             },
         }
         if not data["uid"]:  # 用户账号状态异常，相关信息无法获取
-            run_logger.warning(f"排名为 {data['ranking']} 的用户账号状态异常，部分数据无法采集，已自动跳过")
+            run_logger.warning(
+                "用户账号状态异常，部分数据无法采集，已自动跳过",
+                task_name=self.task_name,
+                ranking=data["ranking"],
+            )
             return result
 
         result["user"]["id"] = data["uid"]
@@ -67,7 +71,11 @@ class AssetsRankFetcher(Fetcher):
                 result["assets"]["total"] - result["assets"]["FP"], 3
             )
         except (ResourceError, APIError, TimeoutException):
-            run_logger.warning(f"无法获取 id 为 {data['uid']} 的用户的简书贝和简书贝信息，已自动跳过")
+            run_logger.warning(
+                "简书贝和总资产信息获取失败，已自动跳过",
+                task_name=self.task_name,
+                user_id=data["uid"],
+            )
 
         return result
 
