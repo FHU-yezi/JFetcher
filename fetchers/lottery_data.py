@@ -9,23 +9,6 @@ from saver import Saver
 from utils.retry import retry_on_network_error
 
 
-def get_lottery_data() -> List[Dict]:
-    url = "https://www.jianshu.com/asimov/ad_rewards/winner_list"
-    params = {
-        "count": 500,
-    }
-    response = httpx_get(
-        url,
-        params=params,
-        timeout=20,
-    )
-
-    return response.json()
-
-
-get_lottery_data = retry_on_network_error(get_lottery_data)
-
-
 class LotteryDataFetcher(Fetcher):
     def __init__(self) -> None:
         self.task_name = "简书大转盘抽奖"
@@ -33,17 +16,31 @@ class LotteryDataFetcher(Fetcher):
         self.collection_name = "lottery_data"
         self.bulk_size = 100
 
+    @retry_on_network_error
+    def get_lottery_data(self) -> List[Dict]:
+        url = "https://www.jianshu.com/asimov/ad_rewards/winner_list"
+        params = {
+            "count": 500,
+        }
+        response = httpx_get(
+            url,
+            params=params,
+            timeout=20,
+        )
+
+        return response.json()
+
     def should_fetch(self, saver: Saver) -> bool:
         return not saver.is_in_db(
             {
                 "time": {
-                    "$gt": datetime.now() - timedelta(minutes=5),
+                    "$gt": datetime.now() - timedelta(hours=3),
                 },
             },
         )
 
     def iter_data(self) -> Generator[Dict, None, None]:
-        yield from get_lottery_data()
+        yield from self.get_lottery_data()
 
     def process_data(self, data: Dict) -> Dict:
         return {
@@ -64,10 +61,4 @@ class LotteryDataFetcher(Fetcher):
         saver.add_one(data)
 
     def is_success(self, saver: Saver) -> bool:
-        return saver.is_in_db(
-            {
-                "time": {
-                    "$gt": datetime.now() - timedelta(minutes=5),
-                },
-            },
-        )
+        return saver.data_count != 0

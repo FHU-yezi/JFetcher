@@ -7,23 +7,13 @@ from JianshuResearchTools.convert import (
     UserSlugToUserUrl,
 )
 from JianshuResearchTools.rank import GetArticleFPRankData
+from sspeedup.time_helper import get_today_in_datetime_obj
 
 from fetchers._base import Fetcher
 from saver import Saver
 from utils.log import run_logger
 from utils.retry import retry_on_network_error
-from utils.time_helper import get_today_in_datetime_obj
 
-
-def get_user_id_url_from_article_slug(article_slug: str) -> Tuple[int, str]:
-    response = httpx_get(f"https://www.jianshu.com/asimov/p/{article_slug}")
-    result = response.json()
-    return (result["user"]["id"], UserSlugToUserUrl(result["user"]["slug"]))
-
-
-get_user_id_url_from_article_slug = retry_on_network_error(
-    get_user_id_url_from_article_slug
-)
 GetArticleFPRankData = retry_on_network_error(GetArticleFPRankData)
 
 
@@ -33,6 +23,12 @@ class ArticleFPRankFetcher(Fetcher):
         self.fetch_time_cron = "0 0 1 1/1 * *"
         self.collection_name = "article_FP_rank"
         self.bulk_size = 100
+
+    @retry_on_network_error
+    def get_user_id_url_from_article_slug(self, article_slug: str) -> Tuple[int, str]:
+        response = httpx_get(f"https://www.jianshu.com/asimov/p/{article_slug}")
+        result = response.json()
+        return (result["user"]["id"], UserSlugToUserUrl(result["user"]["slug"]))
 
     def should_fetch(self, saver: Saver) -> bool:
         return not saver.is_in_db(
@@ -73,7 +69,7 @@ class ArticleFPRankFetcher(Fetcher):
         result["article"]["url"] = ArticleSlugToArticleUrl(data["aslug"])
         result["author"]["name"] = data["author_name"]
 
-        uid, user_url = get_user_id_url_from_article_slug(data["aslug"])
+        uid, user_url = self.get_user_id_url_from_article_slug(data["aslug"])
         result["author"]["id"] = uid
         result["author"]["url"] = user_url
 

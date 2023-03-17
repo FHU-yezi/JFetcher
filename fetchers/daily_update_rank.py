@@ -2,11 +2,11 @@ from typing import Dict, Generator
 
 from JianshuResearchTools.convert import UserSlugToUserUrl
 from JianshuResearchTools.rank import GetDailyArticleRankData
+from sspeedup.time_helper import get_today_in_datetime_obj
 
 from fetchers._base import Fetcher
 from saver import Saver
 from utils.retry import retry_on_network_error
-from utils.time_helper import get_today_in_datetime_obj
 
 GetDailyArticleRankData = retry_on_network_error(GetDailyArticleRankData)
 

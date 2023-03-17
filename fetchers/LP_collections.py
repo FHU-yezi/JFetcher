@@ -5,12 +5,12 @@ from JianshuResearchTools.convert import (
     UserSlugToUserUrl,
 )
 from JianshuResearchTools.objects import Collection, set_cache_status
+from sspeedup.time_helper import get_today_in_datetime_obj
 
 from fetchers._base import Fetcher
 from saver import Saver
 from utils.log import run_logger
 from utils.retry import retry_on_network_error
-from utils.time_helper import get_today_in_datetime_obj
 
 set_cache_status(False)
 
