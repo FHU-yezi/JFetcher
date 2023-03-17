@@ -7,12 +7,12 @@ from JianshuResearchTools.convert import (
     UserSlugToUserUrl,
 )
 from JianshuResearchTools.rank import GetArticleFPRankData
+from sspeedup.time_helper import get_today_in_datetime_obj
 
 from fetchers._base import Fetcher
 from saver import Saver
 from utils.log import run_logger
 from utils.retry import retry_on_network_error
-from utils.time_helper import get_today_in_datetime_obj
 
 
 def get_user_id_url_from_article_slug(article_slug: str) -> Tuple[int, str]:

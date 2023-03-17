@@ -2,11 +2,12 @@ from abc import ABC, abstractmethod
 from time import time
 from typing import Dict, Generator
 
+from sspeedup.time_helper import cron_str_to_kwargs
+
 from constants import FetchStatus
 from model import FetchResult
 from saver import Saver
 from utils.log import run_logger
-from utils.time_helper import cron_str_to_kwargs
 
 
 class Fetcher(ABC):
