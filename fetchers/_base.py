@@ -1,11 +1,13 @@
 from abc import ABC, abstractmethod
 from time import time
-from typing import Dict, Generator, Tuple
+from typing import Dict, Generator
 
-from constants import FetchResult
+from sspeedup.time_helper import cron_str_to_kwargs
+
+from constants import FetchStatus
+from model import FetchResult
 from saver import Saver
 from utils.log import run_logger
-from utils.time_helper import cron_str_to_kwargs
 
 
 class Fetcher(ABC):
@@ -45,7 +47,7 @@ class Fetcher(ABC):
     def is_success(self, saver: Saver) -> bool:
         raise NotImplementedError
 
-    def run(self) -> Tuple[FetchResult, int, int]:
+    def run(self) -> FetchResult:
         start_time = time()
 
         saver = Saver(self.collection_name, self.bulk_size)
@@ -53,7 +55,12 @@ class Fetcher(ABC):
 
         if not self.should_fetch(saver):
             run_logger.debug(f"已跳过任务 {self.task_name}")
-            return (FetchResult.SKIPPED, 0, 0)
+            return FetchResult(
+                task_name=self.task_name,
+                fetch_status=FetchStatus.SKIPPED,
+                cost_time=0,
+                data_count=0,
+            )
 
         for original_data in self.iter_data():
             processed_data: Dict = self.process_data(original_data)
@@ -62,9 +69,11 @@ class Fetcher(ABC):
             self.save_data(processed_data, saver)
         saver.final_save()
 
-        fetch_result = (
-            FetchResult.SUCCESSED if self.is_success(saver) else FetchResult.FAILED
+        return FetchResult(
+            task_name=self.task_name,
+            fetch_status=(
+                FetchStatus.SUCCESSED if self.is_success(saver) else FetchStatus.FAILED
+            ),
+            cost_time=round(time() - start_time),
+            data_count=saver.data_count,
         )
-        cost_time = round(time() - start_time)
-
-        return (fetch_result, cost_time, saver.data_count)

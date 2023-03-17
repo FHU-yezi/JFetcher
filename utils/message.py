@@ -2,10 +2,10 @@ from typing import Dict
 
 from httpx import post as httpx_post
 from sspeedup.cache.timeout import timeout_cache
+from sspeedup.time_helper import get_now_without_mileseconds
 
 from utils.config import config
 from utils.log import run_logger
-from utils.time_helper import get_now_without_mileseconds
 
 
 @timeout_cache(3600)
