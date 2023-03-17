@@ -37,7 +37,7 @@ class LotteryDataFetcher(Fetcher):
         return not saver.is_in_db(
             {
                 "time": {
-                    "$gt": datetime.now() - timedelta(minutes=5),
+                    "$gt": datetime.now() - timedelta(hours=3),
                 },
             },
         )
@@ -64,10 +64,4 @@ class LotteryDataFetcher(Fetcher):
         saver.add_one(data)
 
     def is_success(self, saver: Saver) -> bool:
-        return saver.is_in_db(
-            {
-                "time": {
-                    "$gt": datetime.now() - timedelta(minutes=5),
-                },
-            },
-        )
+        return saver.data_count != 0
