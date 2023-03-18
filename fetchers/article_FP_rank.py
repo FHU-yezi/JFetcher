@@ -9,6 +9,7 @@ from JianshuResearchTools.convert import (
 from JianshuResearchTools.rank import GetArticleFPRankData
 from sspeedup.time_helper import get_today_in_datetime_obj
 
+from constants import NoticePolicy
 from fetchers._base import Fetcher
 from saver import Saver
 from utils.log import run_logger
@@ -23,6 +24,7 @@ class ArticleFPRankFetcher(Fetcher):
         self.fetch_time_cron = "0 0 1 1/1 * *"
         self.collection_name = "article_FP_rank"
         self.bulk_size = 100
+        self.notice_policy = NoticePolicy.ALWAYS
 
     @retry_on_network_error
     def get_user_id_url_from_article_slug(self, article_slug: str) -> Tuple[int, str]:

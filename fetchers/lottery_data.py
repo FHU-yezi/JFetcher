@@ -4,6 +4,7 @@ from typing import Dict, Generator, List
 from httpx import get as httpx_get
 from JianshuResearchTools.convert import UserSlugToUserUrl
 
+from constants import NoticePolicy
 from fetchers._base import Fetcher
 from saver import Saver
 from utils.retry import retry_on_network_error
@@ -15,6 +16,7 @@ class LotteryDataFetcher(Fetcher):
         self.fetch_time_cron = "0 0 2,9,14,21 1/1 * *"
         self.collection_name = "lottery_data"
         self.bulk_size = 100
+        self.notice_policy = NoticePolicy.ALWAYS
 
     @retry_on_network_error
     def get_lottery_data(self) -> List[Dict]:
