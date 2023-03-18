@@ -7,6 +7,7 @@ from JianshuResearchTools.objects import User
 from JianshuResearchTools.rank import GetAssetsRankData
 from sspeedup.time_helper import get_today_in_datetime_obj
 
+from constants import NoticePolicy
 from fetchers._base import Fetcher
 from saver import Saver
 from utils.log import run_logger
@@ -21,6 +22,7 @@ class AssetsRankFetcher(Fetcher):
         self.fetch_time_cron = "0 0 12 1/1 * *"
         self.collection_name = "assets_rank"
         self.bulk_size = 100
+        self.notice_policy = NoticePolicy.ALWAYS
 
     def should_fetch(self, saver: Saver) -> bool:
         return not saver.is_in_db({"date": get_today_in_datetime_obj()})

@@ -7,6 +7,7 @@ from JianshuResearchTools.convert import (
 from JianshuResearchTools.objects import Collection, set_cache_status
 from sspeedup.time_helper import get_today_in_datetime_obj
 
+from constants import NoticePolicy
 from fetchers._base import Fetcher
 from saver import Saver
 from utils.log import run_logger
@@ -21,6 +22,7 @@ class LPCollectionsFetcher(Fetcher):
         self.fetch_time_cron = "0 0 0 1/1 * *"
         self.collection_name = "LP_collections"
         self.bulk_size = 60
+        self.notice_policy = NoticePolicy.ALWAYS
 
         self.collections_to_fetch: Set[Collection] = {
             Collection.from_url("https://www.jianshu.com/c/f61832508891"),  # 理事会点赞汇总
