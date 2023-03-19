@@ -4,7 +4,7 @@ from typing import Dict, Generator
 
 from sspeedup.time_helper import cron_str_to_kwargs
 
-from constants import FetchStatus
+from constants import FetchStatus, NoticePolicy
 from model import FetchResult
 from saver import Saver
 from utils.log import run_logger
@@ -17,6 +17,7 @@ class Fetcher(ABC):
         self.fetch_time_cron = ""
         self.collection_name = ""
         self.bulk_size = 0
+        self.notice_policy = NoticePolicy.ALWAYS
         raise NotImplementedError
 
     @property
@@ -57,6 +58,7 @@ class Fetcher(ABC):
             run_logger.debug(f"已跳过任务 {self.task_name}")
             return FetchResult(
                 task_name=self.task_name,
+                notice_policy=self.notice_policy,
                 fetch_status=FetchStatus.SKIPPED,
                 cost_time=0,
                 data_count=0,
@@ -71,6 +73,7 @@ class Fetcher(ABC):
 
         return FetchResult(
             task_name=self.task_name,
+            notice_policy=self.notice_policy,
             fetch_status=(
                 FetchStatus.SUCCESSED if self.is_success(saver) else FetchStatus.FAILED
             ),

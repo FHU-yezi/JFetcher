@@ -2,7 +2,7 @@ from typing import Optional
 
 from apscheduler.events import JobExecutionEvent
 
-from constants import FetchStatus
+from constants import FetchStatus, NoticePolicy
 from model import FetchResult
 from utils.log import run_logger
 from utils.message import send_task_fail_card, send_task_success_card
@@ -38,11 +38,12 @@ def on_task_successed(fetch_result: FetchResult) -> None:
         cost_time=fetch_result.cost_time,
     )
 
-    send_task_success_card(
-        fetch_result.task_name,
-        human_readable_cost_time(fetch_result.cost_time),
-        fetch_result.data_count,
-    )
+    if fetch_result.notice_policy == NoticePolicy.ALWAYS:
+        send_task_success_card(
+            fetch_result.task_name,
+            human_readable_cost_time(fetch_result.cost_time),
+            fetch_result.data_count,
+        )
 
 
 def on_task_failed(task_name: str, exception: Optional[Exception] = None) -> None:
