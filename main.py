@@ -28,9 +28,6 @@ run_logger.info(
     fetchers_name=[fetcher.task_name for fetcher in fetchers],
     fetchers_count=len(fetchers),
 )
-from datetime import datetime
-for job in scheduler.get_jobs():
-    job.modify(next_run_time=datetime.now())
 
 scheduler.start()
 run_logger.info("调度器启动成功")
