@@ -50,8 +50,7 @@ class AssetsRankFetcher(Fetcher):
             "assets": {
                 "FP": None,
                 "FTN": None,
-                # JRT 写错了
-                "total": data["FP"],
+                "total": data["assets"],
             },
         }
         if not data["uid"]:  # 用户账号状态异常，相关信息无法获取
