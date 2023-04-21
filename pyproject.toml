@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "JFetcher"
-version = "2.6.0"
+version = "2.7.0"
 description = "简书数据采集工具"
 authors = ["FHU-yezi <yehaowei20060411@qq.com>"]
 license = "MIT"
@@ -10,12 +10,12 @@ python = "^3.8"
 APScheduler = "^3.9.1"
 PyYAML = "^6.0"
 pymongo = "^4.1.1"
-JianshuResearchTools = "2.10.1"
-sspeedup = { version = "^0.4.0", extras = ["logging"] }
+JianshuResearchTools = "2.11.0"
+sspeedup = { version = "^0.8.0", extras = ["logging"] }
 
 [tool.poetry.group.dev.dependencies]
 black = "^23.1.0"
-ruff = "^0.0.256"
+ruff = "^0.0.262"
 pyright = "^1.1.292"
 
 [build-system]
