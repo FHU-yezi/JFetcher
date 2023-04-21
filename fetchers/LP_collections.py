@@ -61,13 +61,12 @@ class LPCollectionsFetcher(Fetcher):
     def process_data(self, data: Dict) -> Dict:
         return {
             "fetch_date": get_today_in_datetime_obj(),
-            # TODO
             "from_collection": "理事会点赞汇总",
             "article": {
                 "id": data["aid"],
                 "url": ArticleSlugToArticleUrl(data["aslug"]),
                 "title": data["title"],
-                "release_time": data["release_time"].replace(tzinfo=None),
+                "release_time": data["release_time"],
                 "views_count": data["views_count"],
                 "likes_count": data["likes_count"],
                 "comments_count": data["comments_count"],
