@@ -12,16 +12,16 @@ from utils.retry import retry_on_network_error
 
 class AssetsRankFetcher(Fetcher):
     def get_fetch_time(self) -> datetime:
-        """保证数据获取时间对齐十分钟间隔
-        """
+        """保证数据获取时间对齐十分钟间隔"""
         result = get_now_without_mileseconds()
         result = result.replace(second=0)
         while result.minute % 10 != 0:
             result = result - timedelta(minutes=1)
         return result
 
-    @retry_on_network_error
-    def get_FTN_macket_data(self, type_: Literal["buy", "sell"]) -> Generator[Dict, None, None]:  # noqa: N802
+    def get_FTN_macket_data(
+        self, type_: Literal["buy", "sell"]
+    ) -> Generator[Dict, None, None]:  # noqa: N802
         page = 1
         while True:
             url = "https://20221023.tp.lanrenmb.net/api/getList/furnish.bei/"
@@ -57,7 +57,9 @@ class AssetsRankFetcher(Fetcher):
                 ],
             }
 
-            response = httpx_post(url, params=params, json=body_json)
+            response = retry_on_network_error(httpx_post)(
+                url, params=params, json=body_json
+            )
             if response.status_code != 200:
                 raise ValueError()
             response_json = response.json()
@@ -106,7 +108,7 @@ class AssetsRankFetcher(Fetcher):
                 "id": data["member.user"][0]["id"],
                 "name": data["member.user"][0]["username"],
                 "name_md5": data["member.user"][0]["username_md5"],
-            }
+            },
         }
 
     def should_save(self, data: Dict, saver: Saver) -> bool:

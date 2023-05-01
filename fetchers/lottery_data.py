@@ -18,13 +18,12 @@ class LotteryDataFetcher(Fetcher):
         self.bulk_size = 100
         self.notice_policy = NoticePolicy.ALWAYS
 
-    @retry_on_network_error
     def get_lottery_data(self) -> List[Dict]:
         url = "https://www.jianshu.com/asimov/ad_rewards/winner_list"
         params = {
             "count": 500,
         }
-        response = httpx_get(
+        response = retry_on_network_error(httpx_get)(
             url,
             params=params,
             timeout=20,
