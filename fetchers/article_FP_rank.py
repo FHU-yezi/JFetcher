@@ -26,9 +26,10 @@ class ArticleFPRankFetcher(Fetcher):
         self.bulk_size = 100
         self.notice_policy = NoticePolicy.ALWAYS
 
-    @retry_on_network_error
     def get_user_id_url_from_article_slug(self, article_slug: str) -> Tuple[int, str]:
-        response = httpx_get(f"https://www.jianshu.com/asimov/p/{article_slug}")
+        response = retry_on_network_error(httpx_get)(
+            f"https://www.jianshu.com/asimov/p/{article_slug}"
+        )
         result = response.json()
         return (result["user"]["id"], UserSlugToUserUrl(result["user"]["slug"]))
 
