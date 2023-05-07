@@ -1,6 +1,6 @@
 from typing import Dict, Generator
 
-from httpx import TimeoutException
+from httpx import RequestError
 from JianshuResearchTools.convert import UserSlugToUserUrl
 from JianshuResearchTools.exceptions import APIError, ResourceError
 from JianshuResearchTools.objects import User
@@ -71,7 +71,7 @@ class AssetsRankFetcher(Fetcher):
             result["assets"]["FTN"] = round(
                 result["assets"]["total"] - result["assets"]["FP"], 3
             )
-        except (ResourceError, APIError, TimeoutException):
+        except (ResourceError, APIError, RequestError):
             run_logger.warning(
                 "简书贝和总资产信息获取失败，已自动跳过",
                 task_name=self.task_name,
