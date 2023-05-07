@@ -60,7 +60,7 @@ class ArticleFPRankFetcher(Fetcher):
                 "total": data["total_fp"],
             },
         }
-        if not data["author_name"]:  # 文章被删除导致相关信息无法访问
+        if not data["aslug"]:  # 文章被删除导致相关信息无法访问
             run_logger.warning(
                 "文章被删除，部分数据无法采集，已自动跳过",
                 task_name=self.task_name,
