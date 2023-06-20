@@ -86,7 +86,6 @@ class LPCollectionsFetcher(Fetcher):
     def should_save(self, data: Dict, saver: Saver) -> bool:
         return not saver.is_in_db(
             {
-                "fetch_date": data["fetch_date"],
                 "article.id": data["article"]["id"],
             },
         )
