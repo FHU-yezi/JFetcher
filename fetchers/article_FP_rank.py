@@ -1,5 +1,5 @@
 from datetime import timedelta
-from typing import Dict, Generator, Tuple
+from typing import Dict, Generator, Optional, Tuple
 
 from httpx import get as httpx_get
 from JianshuResearchTools.convert import (
@@ -26,11 +26,18 @@ class ArticleFPRankFetcher(Fetcher):
         self.bulk_size = 100
         self.notice_policy = NoticePolicy.ALWAYS
 
-    def get_user_id_url_from_article_slug(self, article_slug: str) -> Tuple[int, str]:
+    def get_user_id_url_from_article_slug(
+        self, article_slug: str
+    ) -> Tuple[Optional[int], Optional[str]]:
         response = retry_on_network_error(httpx_get)(
             f"https://www.jianshu.com/asimov/p/{article_slug}"
         )
         result = response.json()
+
+        # 如果作者被封无法获取数据，则跳过采集
+        if "error" in result:
+            return (None, None)
+
         return (result["user"]["id"], UserSlugToUserUrl(result["user"]["slug"]))
 
     def should_fetch(self, saver: Saver) -> bool:
