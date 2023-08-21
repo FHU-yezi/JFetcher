@@ -19,12 +19,12 @@ class AssetsRankFetcher(Fetcher):
             result = result - timedelta(minutes=1)
         return result
 
-    def get_FTN_macket_data(
+    def get_FTN_macket_data(  # noqa: N802
         self, type_: Literal["buy", "sell"]
-    ) -> Generator[Dict, None, None]:  # noqa: N802
+    ) -> Generator[Dict, None, None]:
         page = 1
         while True:
-            url = "https://20221023.tp.lanrenmb.net/api/getList/furnish.bei/"
+            url = "https://20221023.jianshubei.com/api/getList/furnish.bei/"
             params: Dict[str, Any] = {
                 "page": page,
             }
