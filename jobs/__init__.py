@@ -1,6 +1,7 @@
 from typing import Any, Coroutine, Tuple
 
 from prefect import Flow
+from prefect.client.schemas.schedules import CronSchedule
 from prefect.deployments.runner import RunnerDeployment
 
 from jobs.fetch_article_earning_rank_records import (
@@ -26,8 +27,11 @@ def create_flow(job: Job) -> FlowType:
 def create_deployment(job: Job, flow: FlowType) -> DeploymentType:
     return flow.to_deployment(
         name=f"JFetcher - {flow.name}",
-        cron=job.cron,
         version=job.version,
+        schedule=CronSchedule(
+            cron=job.cron,
+            timezone="Asia/Shanghai",
+        ),
     )
 
 
