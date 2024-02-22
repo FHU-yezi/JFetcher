@@ -1,0 +1,8 @@
+version: v3.0.0
+mongodb:
+  host: localhost
+  port: 27017
+  database: jfetcher
+log:
+  save_level: DEBUG
+  print_level: DEBUG

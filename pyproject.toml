@@ -11,6 +11,7 @@ python = "^3.8"
 prefect = "^2.15.0"
 jkit = "^3.0.0a9"
 beanie = "^1.25.0"
+sspeedup = "^0.25.1"
 
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.2.0"
