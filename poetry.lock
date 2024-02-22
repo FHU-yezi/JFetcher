@@ -2722,6 +2722,32 @@ pymysql = ["pymysql"]
 sqlcipher = ["sqlcipher3_binary"]
 
 [[package]]
+name = "sspeedup"
+version = "0.25.1"
+description = "开发工具箱"
+optional = false
+python-versions = ">=3.8,<4.0"
+files = [
+    {file = "sspeedup-0.25.1-py3-none-any.whl", hash = "sha256:be94775b8c33518954ce334841c41dadbe48d822c0b06448c95d4cc4e8be8073"},
+    {file = "sspeedup-0.25.1.tar.gz", hash = "sha256:179bde7edf899205077dbf00929265df6acfb0362754d8bbfb66f5f5a6f6b1e8"},
+]
+
+[package.dependencies]
+motor = ">=3.3.0,<4.0.0"
+pymongo = ">=4.3.0,<5.0.0"
+
+[package.extras]
+ability-word-split = ["httpx (==0.*)"]
+api-litestar = ["litestar (>=2.3.0,<3.0.0)", "msgspec (==0.*)"]
+api-sanic = ["pydantic (>=2.0.0,<3.0.0)", "sanic (>=23.3.0,<24.0.0)", "ujson (>=5.8.0,<6.0.0)"]
+config = ["msgspec (==0.*)"]
+feishu-auth = ["httpx (==0.*)"]
+feishu-bitable = ["httpx (==0.*)", "msgspec (==0.*)"]
+pywebio = ["pywebio (>=1.8.0,<2.0.0)"]
+qrcode = ["qrcode (>=7.4.0,<8.0.0)"]
+word-split-jieba = ["jieba (>=0.42.0,<0.43.0)"]
+
+[[package]]
 name = "text-unidecode"
 version = "1.3"
 description = "The most basic Text::Unidecode port"
@@ -3029,4 +3055,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.8"
-content-hash = "f839bee0ae452d951a1394c351c328ba9d14315599b5ba01d844a0db1ac3eb17"
+content-hash = "111b391843d856da523b6a5b168f641fc25d141a21e8128fda5bdb8185795032"
