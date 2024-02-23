@@ -970,13 +970,13 @@ i18n = ["Babel (>=2.7)"]
 
 [[package]]
 name = "jkit"
-version = "3.0.0a11"
+version = "3.0.0a12"
 description = "简书非官方 SDK - 创造可能性"
 optional = false
 python-versions = ">=3.8,<4.0"
 files = [
-    {file = "jkit-3.0.0a11-py3-none-any.whl", hash = "sha256:391e2578449a2045d5d111cc6a97620b5b71f80ee7722fdb6d7d5d4fc987479c"},
-    {file = "jkit-3.0.0a11.tar.gz", hash = "sha256:daf11b2f51570bec1872d5b199a0c9e20017b339c145a86263d070d78e75ddd6"},
+    {file = "jkit-3.0.0a12-py3-none-any.whl", hash = "sha256:f2006220a05d56457f2d2e9ded00a515522f543aef3930f3e732bde3b9678e06"},
+    {file = "jkit-3.0.0a12.tar.gz", hash = "sha256:cf9580ed9b82da0d177ba798c730def1c1bd369da28497c5f9346eb15acfdded"},
 ]
 
 [package.dependencies]
@@ -3024,4 +3024,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.8"
-content-hash = "7277de1dcd2bbe957a3033ecba551c85a0ac4070939847fd5567ac7cb36c5d95"
+content-hash = "6a0b2b076b3010227250036671f7f37ecc1f32e4469af9cf89623d674430b876"

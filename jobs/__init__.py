@@ -7,6 +7,7 @@ from prefect.deployments.runner import RunnerDeployment
 from jobs.fetch_article_earning_ranking_records import (
     fetch_article_earning_ranking_records_job,
 )
+from jobs.fetch_assets_ranking_records import fetch_assets_ranking_records_job
 from jobs.fetch_daily_update_ranking_records import (
     fetch_daily_update_ranking_records_job,
 )
@@ -42,6 +43,7 @@ def create_deployment(job: Job, flow: FlowType) -> DeploymentType:
 
 JOBS: Tuple[Job, ...] = (
     fetch_article_earning_ranking_records_job,
+    fetch_assets_ranking_records_job,
     fetch_daily_update_ranking_records_job,
     fetch_jianshu_lottery_win_records_job,
     fetch_jpep_ftn_trade_orders_job,
