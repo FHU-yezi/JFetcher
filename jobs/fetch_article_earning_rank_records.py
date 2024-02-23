@@ -1,35 +1,49 @@
 from datetime import date, datetime, timedelta
-from typing import AsyncGenerator, List
+from typing import List, Optional
 
+from beanie import Document
 from jkit.article import Article
 from jkit.ranking.article_earning import ArticleEarningRanking, RecordField
 from jkit.user import User
 from prefect import flow, get_run_logger
+from pydantic import BaseModel, Field, PastDate, PositiveFloat, PositiveInt
 
-from models.article_earning_rank_record import (
-    ArticleEarningRankRecordModel,
-    ArticleField,
-    AuthorField,
-    EarningField,
-)
 from utils.db import init_db
 from utils.job_model import Job
 
 
-async def get_user_from_article_slug(article_slug: str) -> User:
+class ArticleField(BaseModel):
+    title: Optional[str]
+    slug: Optional[str]
+
+
+class AuthorField(BaseModel):
+    id: Optional[PositiveInt]
+    slug: Optional[str]
+    name: Optional[str]
+
+
+class EarningField(BaseModel):
+    to_author: PositiveFloat = Field(serialization_alias="toAuthor")
+    to_voter: PositiveFloat = Field(serialization_alias="toVoter")
+
+
+class ArticleEarningRankRecordModel(Document):
+    date: PastDate
+    ranking: PositiveInt
+    article: ArticleField
+    author: AuthorField
+    earning: EarningField
+
+    class Settings:
+        name = "article_earning_rank_record"
+        indexes = ("date", "ranking")
+
+
+async def get_article_author(article_slug: str, /) -> User:
     article = Article.from_slug(article_slug)._as_checked()
     article_info = await article.info
     return article_info.author_info.to_user_obj()
-
-
-async def fetch_data(*, target_date: date) -> AsyncGenerator[RecordField, None]:
-    logger = get_run_logger()
-
-    ranking_obj = ArticleEarningRanking(target_date)
-    logger.debug(f"已创建文章收益排行榜对象 target_date={ranking_obj._target_date}")
-
-    async for item in ranking_obj:
-        yield item
 
 
 async def process_data(
@@ -38,7 +52,7 @@ async def process_data(
     logger = get_run_logger()
 
     if item.slug:
-        author = await get_user_from_article_slug(item.slug)
+        author = await get_article_author(item.slug)
     else:
         logger.warning(f"文章走丢了，跳过采集文章与作者信息 ranking={item.ranking}")
         author = None
@@ -62,22 +76,22 @@ async def process_data(
     )
 
 
-async def save_data(data: List[ArticleEarningRankRecordModel]) -> None:
-    await ArticleEarningRankRecordModel.insert_many(data)
-
-
 @flow
 async def main() -> None:
+    logger = get_run_logger()
+
     await init_db([ArticleEarningRankRecordModel])
+    logger.info("初始化 ODM 模型成功")
 
     target_date = datetime.now().date() - timedelta(days=1)
+    logger.info(f"target_date={target_date}")
 
     data: List[ArticleEarningRankRecordModel] = []
-    async for item in fetch_data(target_date=target_date):
+    async for item in ArticleEarningRanking(target_date):
         processed_item = await process_data(item, target_date=target_date)
         data.append(processed_item)
 
-    await save_data(data)
+    await ArticleEarningRankRecordModel.insert_many(data)
 
 
 fetch_article_earning_rank_records_job = Job(
