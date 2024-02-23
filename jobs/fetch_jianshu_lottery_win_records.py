@@ -23,7 +23,7 @@ class JianshuLotteryWinRecordModel(Document):
 
     class Settings:
         name = "jianshu_lottery_win_records"
-        indexes = ("record_id", "time", "award_name", "user.slug", "user.name")
+        indexes = ("record_id")
 
 
 async def get_latest_stored_record_id() -> int:
