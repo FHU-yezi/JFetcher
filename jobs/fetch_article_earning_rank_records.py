@@ -68,7 +68,7 @@ async def save_data(data: List[ArticleEarningRankRecordModel]) -> None:
 
 
 @flow
-async def fetch_article_earning_rank_records() -> None:
+async def main() -> None:
     await init_db()
 
     target_date = datetime.now().date() - timedelta(days=1)
@@ -82,7 +82,7 @@ async def fetch_article_earning_rank_records() -> None:
 
 
 fetch_article_earning_rank_records_job = Job(
-    func=fetch_article_earning_rank_records,
+    func=main,
     name="采集文章收益排行榜记录",
-    cron="0 0 1 1/1 * *",
+    cron="0 1 * * *",
 )
