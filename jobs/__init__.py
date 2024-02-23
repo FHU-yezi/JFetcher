@@ -10,6 +10,7 @@ from jobs.fetch_article_earning_ranking_records import (
 from jobs.fetch_daily_update_ranking_records import (
     fetch_daily_update_ranking_records_job,
 )
+from jobs.fetch_jianshu_lottery_win_records import fetch_jianshu_lottery_win_records_job
 from utils.job_model import Job
 
 FlowType = Flow[[], Coroutine[Any, Any, None]]
@@ -41,6 +42,7 @@ def create_deployment(job: Job, flow: FlowType) -> DeploymentType:
 JOBS: Tuple[Job, ...] = (
     fetch_article_earning_ranking_records_job,
     fetch_daily_update_ranking_records_job,
+    fetch_jianshu_lottery_win_records_job,
 )
 
 FLOWS: Tuple[FlowType, ...] = tuple(map(create_flow, JOBS))
