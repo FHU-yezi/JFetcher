@@ -4,8 +4,11 @@ from prefect import Flow
 from prefect.client.schemas.schedules import CronSchedule
 from prefect.deployments.runner import RunnerDeployment
 
-from jobs.fetch_article_earning_rank_records import (
-    fetch_article_earning_rank_records_job,
+from jobs.fetch_article_earning_ranking_records import (
+    fetch_article_earning_ranking_records_job,
+)
+from jobs.fetch_daily_update_ranking_records import (
+    fetch_daily_update_ranking_records_job,
 )
 from utils.job_model import Job
 
@@ -35,7 +38,10 @@ def create_deployment(job: Job, flow: FlowType) -> DeploymentType:
     )
 
 
-JOBS: Tuple[Job, ...] = (fetch_article_earning_rank_records_job,)
+JOBS: Tuple[Job, ...] = (
+    fetch_article_earning_ranking_records_job,
+    fetch_daily_update_ranking_records_job,
+)
 
 FLOWS: Tuple[FlowType, ...] = tuple(map(create_flow, JOBS))
 DEPLOYMENTS: Tuple[DeploymentType, ...] = tuple(

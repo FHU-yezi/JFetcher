@@ -36,7 +36,7 @@ class ArticleEarningRankingRecordModel(Document):
     earning: EarningField
 
     class Settings:
-        name = "article_earning_ranking_record"
+        name = "article_earning_ranking_records"
         indexes = ("date", "ranking")
 
 
