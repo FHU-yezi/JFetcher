@@ -28,7 +28,7 @@ class EarningField(BaseModel):
     to_voter: PositiveFloat = Field(serialization_alias="toVoter")
 
 
-class ArticleEarningRankRecordModel(Document):
+class ArticleEarningRankingRecordModel(Document):
     date: PastDate
     ranking: PositiveInt
     article: ArticleField
@@ -36,7 +36,7 @@ class ArticleEarningRankRecordModel(Document):
     earning: EarningField
 
     class Settings:
-        name = "article_earning_rank_record"
+        name = "article_earning_ranking_record"
         indexes = ("date", "ranking")
 
 
@@ -46,9 +46,9 @@ async def get_article_author(article_slug: str, /) -> User:
     return article_info.author_info.to_user_obj()
 
 
-async def process_data(
+async def process_item(
     item: RecordField, /, *, target_date: date
-) -> ArticleEarningRankRecordModel:
+) -> ArticleEarningRankingRecordModel:
     logger = get_run_logger()
 
     if item.slug:
@@ -57,7 +57,7 @@ async def process_data(
         logger.warning(f"文章走丢了，跳过采集文章与作者信息 ranking={item.ranking}")
         author = None
 
-    return ArticleEarningRankRecordModel(
+    return ArticleEarningRankingRecordModel(
         date=target_date,
         ranking=item.ranking,
         article=ArticleField(
@@ -80,21 +80,21 @@ async def process_data(
 async def main() -> None:
     logger = get_run_logger()
 
-    await init_db([ArticleEarningRankRecordModel])
+    await init_db([ArticleEarningRankingRecordModel])
     logger.info("初始化 ODM 模型成功")
 
     target_date = datetime.now().date() - timedelta(days=1)
     logger.info(f"target_date={target_date}")
 
-    data: List[ArticleEarningRankRecordModel] = []
+    data: List[ArticleEarningRankingRecordModel] = []
     async for item in ArticleEarningRanking(target_date):
-        processed_item = await process_data(item, target_date=target_date)
+        processed_item = await process_item(item, target_date=target_date)
         data.append(processed_item)
 
-    await ArticleEarningRankRecordModel.insert_many(data)
+    await ArticleEarningRankingRecordModel.insert_many(data)
 
 
-fetch_article_earning_rank_records_job = Job(
+fetch_article_earning_ranking_records_job = Job(
     func=main,
     name="采集文章收益排行榜记录",
     cron="0 1 * * *",
