@@ -2,7 +2,7 @@ from datetime import date, datetime, timedelta
 from typing import AsyncGenerator, List
 
 from jkit.article import Article
-from jkit.ranking.article_earning import ArticleEarningRank, ArticleEarningRankRecord
+from jkit.ranking.article_earning import ArticleEarningRanking, RecordField
 from jkit.user import User
 from prefect import flow, task
 
@@ -24,18 +24,16 @@ async def get_user_from_article_slug(article_slug: str) -> User:
 
 
 @task
-async def fetch_data(
-    *, target_date: date
-) -> AsyncGenerator[ArticleEarningRankRecord, None]:
-    rank_obj = ArticleEarningRank(target_date)
+async def fetch_data(*, target_date: date) -> AsyncGenerator[RecordField, None]:
+    ranking_obj = ArticleEarningRanking(target_date)
     logger.debug(f"已创建 {target_date} 的文章收益排行榜对象")
 
-    for item in (await rank_obj.get_data()).records:
+    async for item in ranking_obj:
         yield item
 
 
 async def process_data(
-    item: ArticleEarningRankRecord, /, *, target_date: date
+    item: RecordField, /, *, target_date: date
 ) -> ArticleEarningRankRecordModel:
     if item.slug:
         author = await get_user_from_article_slug(item.slug)
