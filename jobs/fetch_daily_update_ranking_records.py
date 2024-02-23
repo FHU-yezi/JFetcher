@@ -33,7 +33,10 @@ def process_item(
         date=current_date,
         ranking=item.ranking,
         days=item.days,
-        user_info=UserInfoField(slug=item.user_info.slug, name=item.user_info.name),
+        user_info=UserInfoField(
+            slug=item.user_info.slug,
+            name=item.user_info.name,
+        ),
     )
 
 
