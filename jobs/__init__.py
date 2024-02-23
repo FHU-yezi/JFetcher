@@ -11,6 +11,7 @@ from jobs.fetch_daily_update_ranking_records import (
     fetch_daily_update_ranking_records_job,
 )
 from jobs.fetch_jianshu_lottery_win_records import fetch_jianshu_lottery_win_records_job
+from jobs.fetch_jpep_ftn_trade_orders import fetch_jpep_ftn_trade_orders_job
 from utils.job_model import Job
 
 FlowType = Flow[[], Coroutine[Any, Any, None]]
@@ -43,6 +44,7 @@ JOBS: Tuple[Job, ...] = (
     fetch_article_earning_ranking_records_job,
     fetch_daily_update_ranking_records_job,
     fetch_jianshu_lottery_win_records_job,
+    fetch_jpep_ftn_trade_orders_job,
 )
 
 FLOWS: Tuple[FlowType, ...] = tuple(map(create_flow, JOBS))
