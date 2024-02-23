@@ -17,11 +17,12 @@ services:
       - prefect
     environment:
       - PYTHONUNBUFFERED=1
+      - PREFECT_API_URL=http://prefect:4200/api
     deploy:
       resources:
         limits:
-          cpus: "0.50"
-          memory: 128M
+          cpus: "1.00"
+          memory: 512M
       restart_policy:
         condition: on-failure
         delay: 5s
