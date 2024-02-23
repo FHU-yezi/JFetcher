@@ -2,6 +2,7 @@ from datetime import date, datetime
 from typing import List, Optional
 
 from beanie import Document
+from jkit.exceptions import ResourceUnavailableError
 from jkit.ranking.assets import AssetsRanking, AssetsRankingRecord
 from prefect import flow, get_run_logger
 from pydantic import BaseModel, NonNegativeFloat, PositiveFloat, PositiveInt
@@ -38,6 +39,15 @@ async def process_item(
 
     if item.user_info.slug:
         user_obj = item.user_info.to_user_obj()
+        try:
+            await user_obj.check()
+        except ResourceUnavailableError:
+            logger.warning(
+                f"用户已注销或被封禁，跳过采集简书钻与简书贝信息 ranking={item.ranking}"
+            )
+            fp_amount = None
+            ftn_amount = None
+
         fp_amount = await user_obj.fp_amount
         ftn_amount = abs(round(item.assets_amount - fp_amount, 3))
     else:
