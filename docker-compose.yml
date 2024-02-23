@@ -1,0 +1,29 @@
+version: "3"
+
+networks:
+  mongodb:
+    external: true
+  prefect:
+    external: true
+
+services:
+  main:
+    image: jfetcher:3.0.0
+    build: .
+    volumes:
+      - ./config.yaml:/app/config.yaml:ro
+    networks:
+      - mongodb
+      - prefect
+    environment:
+      - PYTHONUNBUFFERED=1
+    deploy:
+      resources:
+        limits:
+          cpus: "0.50"
+          memory: 128M
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+    stop_grace_period: 5s
