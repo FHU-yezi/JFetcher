@@ -41,7 +41,6 @@ class JPEPFTNTradeOrder(Document):
 
     class Settings:
         name = "jpep_ftn_trade_orders"
-        indexes = ("fetch_time", "order_id")
 
 
 def get_fetch_time() -> datetime:

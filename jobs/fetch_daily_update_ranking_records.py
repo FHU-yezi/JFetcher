@@ -23,7 +23,6 @@ class DailyUpdateRankingRecordModel(Document):
 
     class Settings:
         name = "daily_update_ranking_records"
-        indexes = ("date", "ranking", "days")
 
 
 def process_item(

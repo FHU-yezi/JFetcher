@@ -29,7 +29,6 @@ class AssetsRankingRecordModel(Document):
 
     class Settings:
         name = "assets_ranking_records"
-        indexes = ("date", "ranking", "user_info.slug")
 
 
 async def process_item(
@@ -40,6 +39,9 @@ async def process_item(
     if item.user_info.slug:
         user_obj = item.user_info.to_user_obj()
         try:
+            # TODO
+            # 强制重新检查
+            user_obj._checked = False
             await user_obj.check()
         except ResourceUnavailableError:
             logger.warning(

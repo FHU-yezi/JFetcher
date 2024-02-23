@@ -37,7 +37,6 @@ class ArticleEarningRankingRecordModel(Document):
 
     class Settings:
         name = "article_earning_ranking_records"
-        indexes = ("date", "ranking")
 
 
 async def get_article_author(article_slug: str, /) -> User:
