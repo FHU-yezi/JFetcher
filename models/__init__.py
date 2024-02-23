@@ -1,7 +1,7 @@
-from typing import List, Type, Union
+from typing import List, Type
 
-from beanie import Document, View
+from beanie import Document
 
 from models.article_earning_rank_record import ArticleEarningRankRecordModel
 
-MODELS: List[Union[Type[Document], Type[View], str]] = [ArticleEarningRankRecordModel]
+MODELS: List[Type[Document]] = [ArticleEarningRankRecordModel]

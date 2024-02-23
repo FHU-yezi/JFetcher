@@ -4,7 +4,7 @@ from typing import AsyncGenerator, List
 from jkit.article import Article
 from jkit.ranking.article_earning import ArticleEarningRanking, RecordField
 from jkit.user import User
-from prefect import flow, task
+from prefect import flow, get_run_logger
 
 from models.article_earning_rank_record import (
     ArticleEarningRankRecordModel,
@@ -14,7 +14,6 @@ from models.article_earning_rank_record import (
 )
 from utils.db import init_db
 from utils.job_model import Job
-from utils.log import logger
 
 
 async def get_user_from_article_slug(article_slug: str) -> User:
@@ -23,10 +22,11 @@ async def get_user_from_article_slug(article_slug: str) -> User:
     return article_info.author_info.to_user_obj()
 
 
-@task
 async def fetch_data(*, target_date: date) -> AsyncGenerator[RecordField, None]:
+    logger = get_run_logger()
+
     ranking_obj = ArticleEarningRanking(target_date)
-    logger.debug(f"已创建 {target_date} 的文章收益排行榜对象")
+    logger.debug(f"已创建文章收益排行榜对象 target_date={ranking_obj._target_date}")
 
     async for item in ranking_obj:
         yield item
@@ -35,10 +35,12 @@ async def fetch_data(*, target_date: date) -> AsyncGenerator[RecordField, None]:
 async def process_data(
     item: RecordField, /, *, target_date: date
 ) -> ArticleEarningRankRecordModel:
+    logger = get_run_logger()
+
     if item.slug:
         author = await get_user_from_article_slug(item.slug)
     else:
-        logger.warning("文章走丢了，跳过采集文章与作者信息", ranking=item.ranking)
+        logger.warning(f"文章走丢了，跳过采集文章与作者信息 ranking={item.ranking}")
         author = None
 
     return ArticleEarningRankRecordModel(
@@ -60,14 +62,13 @@ async def process_data(
     )
 
 
-@task
 async def save_data(data: List[ArticleEarningRankRecordModel]) -> None:
     await ArticleEarningRankRecordModel.insert_many(data)
 
 
 @flow
 async def main() -> None:
-    await init_db()
+    await init_db([ArticleEarningRankRecordModel])
 
     target_date = datetime.now().date() - timedelta(days=1)
 
