@@ -16,8 +16,8 @@ services:
       - mongodb
       - prefect
     environment:
-      - PYTHONUNBUFFERED=1
-      - PREFECT_API_URL=http://prefect:4200/api
+      - PYTHONUNBUFFERED: 1
+      - PREFECT_API_URL: http://prefect:4200/api
     deploy:
       resources:
         limits:
