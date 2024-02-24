@@ -1,23 +1,29 @@
 from datetime import datetime
-from typing import List, Optional
+from typing import List, Literal, Optional
 
-from beanie import Document
-from jkit.jpep.ftn_macket import FTNMacket, FTNMacketOrderRecord
-from prefect import flow, get_run_logger
-from prefect.states import Completed, State
-from pydantic import (
-    BaseModel,
+from bson import ObjectId
+from jkit._constraints import (
     NonNegativeInt,
-    PastDatetime,
     PositiveFloat,
     PositiveInt,
 )
+from jkit.jpep.ftn_macket import FTNMacket, FTNMacketOrderRecord
+from prefect import flow
+from prefect.states import Completed, State
 
-from utils.db import init_db
+from utils.db import DB
+from utils.document_model import (
+    DOCUMENT_OBJECT_CONFIG,
+    FIELD_OBJECT_CONFIG,
+    Documemt,
+    Field,
+)
 from utils.job_model import Job
 
+COLLECTION = DB.jpep_ftn_trade_orders
 
-class PublisherInfoField(BaseModel):
+
+class PublisherInfoField(Field, **FIELD_OBJECT_CONFIG):
     is_anonymous: bool
     id: Optional[PositiveInt]
     name: Optional[str]
@@ -25,9 +31,10 @@ class PublisherInfoField(BaseModel):
     credit: Optional[NonNegativeInt]
 
 
-class JPEPFTNTradeOrder(Document):
+class JPEPFTNTradeOrderDocument(Documemt, **DOCUMENT_OBJECT_CONFIG):
     fetch_time: datetime
     order_id: PositiveInt
+    type: Literal["buy", "sell"]
     price: PositiveFloat
 
     total_amount: PositiveInt
@@ -36,12 +43,9 @@ class JPEPFTNTradeOrder(Document):
     minimum_trade_amount: PositiveInt
 
     traded_count: NonNegativeInt
-    publish_time: PastDatetime
+    publish_time: datetime
 
     publisher_info: PublisherInfoField
-
-    class Settings:
-        name = "jpep_ftn_trade_orders"
 
 
 def get_fetch_time() -> datetime:
@@ -52,9 +56,15 @@ def get_fetch_time() -> datetime:
 
 
 def process_item(
-    item: FTNMacketOrderRecord, /, *, fetch_time: datetime
-) -> JPEPFTNTradeOrder:
-    return JPEPFTNTradeOrder(
+    item: FTNMacketOrderRecord,
+    /,
+    *,
+    fetch_time: datetime,
+    type: Literal["buy", "sell"],  # noqa: A002
+) -> JPEPFTNTradeOrderDocument:
+    return JPEPFTNTradeOrderDocument(
+        _id=ObjectId(),
+        type=type,
         fetch_time=fetch_time,
         order_id=item.id,
         price=item.price,
@@ -76,26 +86,21 @@ def process_item(
 
 @flow
 async def main() -> State:
-    logger = get_run_logger()
-
     fetch_time = get_fetch_time()
 
-    await init_db([JPEPFTNTradeOrder])
-    logger.info("初始化 ODM 模型成功")
-
-    buy_data: List[JPEPFTNTradeOrder] = []
+    buy_data: List[JPEPFTNTradeOrderDocument] = []
     async for item in FTNMacket().iter_orders(type="buy"):
-        processed_item = process_item(item, fetch_time=fetch_time)
+        processed_item = process_item(item, fetch_time=fetch_time, type="buy")
         buy_data.append(processed_item)
 
-    await JPEPFTNTradeOrder.insert_many(buy_data)
+    await COLLECTION.insert_many(x.to_dict() for x in buy_data)
 
-    sell_data: List[JPEPFTNTradeOrder] = []
+    sell_data: List[JPEPFTNTradeOrderDocument] = []
     async for item in FTNMacket().iter_orders(type="sell"):
-        processed_item = process_item(item, fetch_time=fetch_time)
+        processed_item = process_item(item, fetch_time=fetch_time, type="sell")
         sell_data.append(processed_item)
 
-    await JPEPFTNTradeOrder.insert_many(sell_data)
+    await COLLECTION.insert_many(x.to_dict() for x in sell_data)
 
     return Completed(
         message=f"fetch_time={fetch_time}, buy_data_count={len(buy_data)}, "

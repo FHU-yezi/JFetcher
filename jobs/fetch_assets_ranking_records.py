@@ -1,25 +1,33 @@
 from datetime import date, datetime
 from typing import List, Optional
 
-from beanie import Document
+from bson import ObjectId
+from jkit._constraints import NonNegativeFloat, PositiveFloat, PositiveInt
 from jkit.config import CONFIG
 from jkit.exceptions import ResourceUnavailableError
 from jkit.ranking.assets import AssetsRanking, AssetsRankingRecord
 from prefect import flow, get_run_logger
 from prefect.states import Completed, State
-from pydantic import BaseModel, NonNegativeFloat, PositiveFloat, PositiveInt
 
-from utils.db import init_db
+from utils.db import DB
+from utils.document_model import (
+    DOCUMENT_OBJECT_CONFIG,
+    FIELD_OBJECT_CONFIG,
+    Documemt,
+    Field,
+)
 from utils.job_model import Job
 
+COLLECTION = DB.assets_ranking_records
 
-class UserInfoField(BaseModel):
+
+class UserInfoField(Field, **FIELD_OBJECT_CONFIG):
     id: Optional[PositiveInt]
     slug: Optional[str]
     name: Optional[str]
 
 
-class AssetsRankingRecordModel(Document):
+class AssetsRankingRecordDocument(Documemt, **DOCUMENT_OBJECT_CONFIG):
     date: date
     ranking: PositiveInt
 
@@ -29,13 +37,10 @@ class AssetsRankingRecordModel(Document):
 
     user_info: UserInfoField
 
-    class Settings:
-        name = "assets_ranking_records"
-
 
 async def process_item(
     item: AssetsRankingRecord, /, *, target_date: date
-) -> AssetsRankingRecordModel:
+) -> AssetsRankingRecordDocument:
     logger = get_run_logger()
 
     if item.user_info.slug:
@@ -61,7 +66,8 @@ async def process_item(
         fp_amount = None
         ftn_amount = None
 
-    return AssetsRankingRecordModel(
+    return AssetsRankingRecordDocument(
+        _id=ObjectId(),
         date=target_date,
         ranking=item.ranking,
         fp_amount=fp_amount,
@@ -77,14 +83,9 @@ async def process_item(
 
 @flow
 async def main() -> State:
-    logger = get_run_logger()
-
-    await init_db([AssetsRankingRecordModel])
-    logger.info("初始化 ODM 模型成功")
-
     target_date = datetime.now().date()
 
-    data: List[AssetsRankingRecordModel] = []
+    data: List[AssetsRankingRecordDocument] = []
     async for item in AssetsRanking():
         processed_item = await process_item(item, target_date=target_date)
         data.append(processed_item)
@@ -92,7 +93,7 @@ async def main() -> State:
         if len(data) == 1000:
             break
 
-    await AssetsRankingRecordModel.insert_many(data)
+    await COLLECTION.insert_many(x.to_dict() for x in data)
 
     return Completed(message=f"target_date={target_date}, data_count={len(data)}")
 

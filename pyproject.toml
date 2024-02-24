@@ -10,7 +10,6 @@ readme = "README.md"
 python = "^3.8"
 prefect = "^2.16.0"
 jkit = "^3.0.0a13"
-beanie = "^1.25.0"
 sspeedup = "^0.25.1"
 
 [tool.poetry.group.dev.dependencies]
