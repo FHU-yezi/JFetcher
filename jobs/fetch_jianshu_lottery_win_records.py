@@ -3,6 +3,7 @@ from typing import List
 from beanie import Document
 from jkit.jianshu_lottery import JianshuLottery, JianshuLotteryWinRecord
 from prefect import flow, get_run_logger
+from prefect.states import Completed, State
 from pydantic import BaseModel, PastDatetime, PositiveInt
 
 from utils.db import init_db
@@ -23,7 +24,7 @@ class JianshuLotteryWinRecordModel(Document):
 
     class Settings:
         name = "jianshu_lottery_win_records"
-        indexes = ("record_id", )
+        indexes = ("record_id",)
 
 
 async def get_latest_stored_record_id() -> int:
@@ -50,7 +51,7 @@ def process_item(item: JianshuLotteryWinRecord, /) -> JianshuLotteryWinRecordMod
 
 
 @flow
-async def main() -> None:
+async def main() -> State:
     logger = get_run_logger()
 
     await init_db([JianshuLotteryWinRecordModel])
@@ -71,12 +72,12 @@ async def main() -> None:
     else:
         logger.warning("采集数据量达到上限")
 
-    logger.info(f"采集数据量：{len(data)}")
-
     if data:
         await JianshuLotteryWinRecordModel.insert_many(data)
     else:
         logger.info("无数据，不执行保存操作")
+
+    return Completed(message=f"data_count={len(data)}")
 
 
 fetch_jianshu_lottery_win_records_job = Job(

@@ -7,6 +7,7 @@ from jkit.config import CONFIG
 from jkit.ranking.article_earning import ArticleEarningRanking, RecordField
 from jkit.user import User
 from prefect import flow, get_run_logger
+from prefect.states import Completed, State
 from pydantic import BaseModel, Field, PastDate, PositiveFloat, PositiveInt
 
 from utils.db import init_db
@@ -55,10 +56,13 @@ async def process_item(
         # TODO: 临时解决简书系统问题数据负数导致的报错
         CONFIG.data_validation.enabled = False
         author = await get_article_author(item.slug)
+        author_id = await author.id
+        author_slug = author.slug
         CONFIG.data_validation.enabled = True
     else:
         logger.warning(f"文章走丢了，跳过采集文章与作者信息 ranking={item.ranking}")
-        author = None
+        author_id = None
+        author_slug = None
 
     return ArticleEarningRankingRecordModel(
         date=target_date,
@@ -68,8 +72,8 @@ async def process_item(
             slug=item.slug,
         ),
         author=AuthorField(
-            id=(await author.id) if author else None,
-            slug=author.slug if author else None,
+            id=author_id,
+            slug=author_slug,
             name=item.author_info.name,
         ),
         earning=EarningField(
@@ -80,14 +84,13 @@ async def process_item(
 
 
 @flow
-async def main() -> None:
+async def main() -> State:
     logger = get_run_logger()
 
     await init_db([ArticleEarningRankingRecordModel])
     logger.info("初始化 ODM 模型成功")
 
     target_date = datetime.now().date() - timedelta(days=1)
-    logger.info(f"target_date={target_date}")
 
     data: List[ArticleEarningRankingRecordModel] = []
     async for item in ArticleEarningRanking(target_date):
@@ -95,6 +98,8 @@ async def main() -> None:
         data.append(processed_item)
 
     await ArticleEarningRankingRecordModel.insert_many(data)
+
+    return Completed(message=f"target_date={target_date}, data_count={len(data)}")
 
 
 fetch_article_earning_ranking_records_job = Job(
