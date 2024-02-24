@@ -1,11 +1,12 @@
 from datetime import date, datetime
-from typing import List, Optional
+from typing import List, Optional, Tuple
 
 from bson import ObjectId
 from jkit._constraints import NonNegativeFloat, PositiveFloat, PositiveInt
 from jkit.config import CONFIG
 from jkit.exceptions import ResourceUnavailableError
 from jkit.ranking.assets import AssetsRanking, AssetsRankingRecord
+from jkit.user import User
 from prefect import flow, get_run_logger
 from prefect.states import Completed, State
 
@@ -38,33 +39,38 @@ class AssetsRankingRecordDocument(Documemt, **DOCUMENT_OBJECT_CONFIG):
     user_info: UserInfoField
 
 
+async def get_fp_ftn_amount(
+    item: AssetsRankingRecord, /
+) -> Tuple[Optional[float], Optional[float]]:
+    logger = get_run_logger()
+
+    if not item.user_info.slug:
+        logger.warning(
+            f"用户已注销或被封禁，跳过采集简书钻与简书贝信息 ranking={item.ranking}"
+        )
+        return None, None
+
+    try:
+        # TODO: 临时解决简书系统问题数据负数导致的报错
+        CONFIG.data_validation.enabled = False
+        # 此处使用用户 Slug 初始化用户对象，以对其进行可用性检查
+        user_obj = User.from_slug(item.user_info.slug)
+        fp_amount = await user_obj.fp_amount
+        ftn_amount = abs(round(item.assets_amount - fp_amount, 3))
+        CONFIG.data_validation.enabled = True
+
+        return fp_amount, ftn_amount
+    except ResourceUnavailableError:
+        logger.warning(
+            f"用户已注销或被封禁，跳过采集简书钻与简书贝信息 ranking={item.ranking}"
+        )
+        return None, None
+
+
 async def process_item(
     item: AssetsRankingRecord, /, *, target_date: date
 ) -> AssetsRankingRecordDocument:
-    logger = get_run_logger()
-
-    if item.user_info.slug:
-        user_obj = item.user_info.to_user_obj()
-        try:
-            # TODO: 强制重新检查
-            # TODO: 临时解决简书系统问题数据负数导致的报错
-            CONFIG.resource_check.force_check_safe_data = True
-            CONFIG.data_validation.enabled = False
-            fp_amount = await user_obj.fp_amount
-            ftn_amount = abs(round(item.assets_amount - fp_amount, 3))
-            CONFIG.data_validation.enabled = True
-            CONFIG.resource_check.force_check_safe_data = False
-        except ResourceUnavailableError:
-            logger.warning(
-                f"用户已注销或被封禁，跳过采集简书钻与简书贝信息 ranking={item.ranking}"
-            )
-            fp_amount = None
-            ftn_amount = None
-
-    else:
-        logger.warning(f"用户不存在，跳过采集简书钻与简书贝信息 ranking={item.ranking}")
-        fp_amount = None
-        ftn_amount = None
+    fp_amount, ftn_amount = await get_fp_ftn_amount(item)
 
     return AssetsRankingRecordDocument(
         _id=ObjectId(),
@@ -86,6 +92,8 @@ async def main() -> State:
     target_date = datetime.now().date()
 
     data: List[AssetsRankingRecordDocument] = []
+    # FIXME: jkit.exceptions.ValidationError: Expected `str` matching regex
+    # '^https?:\\/\\/.*\\.jianshu\\.io\\/[\\w%-\\/]*\\/?$' - at `$.user_info.avatar_url`
     async for item in AssetsRanking():
         processed_item = await process_item(item, target_date=target_date)
         data.append(processed_item)

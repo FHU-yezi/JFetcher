@@ -26,7 +26,7 @@ class UserInfoField(Field, **FIELD_OBJECT_CONFIG):
 
 
 class JianshuLotteryWinRecordDocument(Documemt, **DOCUMENT_OBJECT_CONFIG):
-    _id: PositiveInt
+    _id: PositiveInt  # type: ignore
     time: datetime
     award_name: str
     user_info: UserInfoField
