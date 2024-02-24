@@ -4,6 +4,7 @@ from typing import List, Optional
 from beanie import Document
 from jkit.jpep.ftn_macket import FTNMacket, FTNMacketOrderRecord
 from prefect import flow, get_run_logger
+from prefect.states import Completed, State
 from pydantic import (
     BaseModel,
     NonNegativeInt,
@@ -74,7 +75,7 @@ def process_item(
 
 
 @flow
-async def main() -> None:
+async def main() -> State:
     logger = get_run_logger()
 
     fetch_time = get_fetch_time()
@@ -88,7 +89,6 @@ async def main() -> None:
         buy_data.append(processed_item)
 
     await JPEPFTNTradeOrder.insert_many(buy_data)
-    logger.info(f"采集买单数据成功（{len(buy_data)} 条）")
 
     sell_data: List[JPEPFTNTradeOrder] = []
     async for item in FTNMacket().iter_orders(type="sell"):
@@ -96,7 +96,11 @@ async def main() -> None:
         sell_data.append(processed_item)
 
     await JPEPFTNTradeOrder.insert_many(sell_data)
-    logger.info(f"采集卖单数据成功（{len(sell_data)} 条）")
+
+    return Completed(
+        message=f"fetch_time={fetch_time}, buy_data_count={len(buy_data)}, "
+        f"sell_data_count={len(sell_data)}"
+    )
 
 
 fetch_jpep_ftn_trade_orders_job = Job(

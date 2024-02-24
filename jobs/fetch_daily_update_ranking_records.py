@@ -4,6 +4,7 @@ from typing import List
 from beanie import Document
 from jkit.ranking.daily_update import DailyUpdateRanking, DailyUpdateRankingRecord
 from prefect import flow, get_run_logger
+from prefect.states import Completed, State
 from pydantic import BaseModel, PositiveInt
 
 from utils.db import init_db
@@ -40,7 +41,7 @@ def process_item(
 
 
 @flow
-async def main() -> None:
+async def main() -> State:
     logger = get_run_logger()
 
     current_date = datetime.now().date()
@@ -54,6 +55,8 @@ async def main() -> None:
         data.append(processed_item)
 
     await DailyUpdateRankingRecordModel.insert_many(data)
+
+    return Completed(message=f"data_count={len(data)}")
 
 
 fetch_daily_update_ranking_records_job = Job(

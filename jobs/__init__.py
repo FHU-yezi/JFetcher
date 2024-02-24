@@ -3,6 +3,7 @@ from typing import Any, Coroutine, Tuple
 from prefect import Flow
 from prefect.client.schemas.schedules import CronSchedule
 from prefect.deployments.runner import RunnerDeployment
+from prefect.states import State
 
 from jobs.fetch_article_earning_ranking_records import (
     fetch_article_earning_ranking_records_job,
@@ -15,7 +16,7 @@ from jobs.fetch_jianshu_lottery_win_records import fetch_jianshu_lottery_win_rec
 from jobs.fetch_jpep_ftn_trade_orders import fetch_jpep_ftn_trade_orders_job
 from utils.job_model import Job
 
-FlowType = Flow[[], Coroutine[Any, Any, None]]
+FlowType = Flow[[], Coroutine[Any, Any, State]]
 DeploymentType = Coroutine[Any, Any, RunnerDeployment]
 
 
