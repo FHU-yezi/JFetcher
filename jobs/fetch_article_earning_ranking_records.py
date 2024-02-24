@@ -3,6 +3,7 @@ from typing import List, Optional
 
 from beanie import Document
 from jkit.article import Article
+from jkit.config import CONFIG
 from jkit.ranking.article_earning import ArticleEarningRanking, RecordField
 from jkit.user import User
 from prefect import flow, get_run_logger
@@ -51,7 +52,10 @@ async def process_item(
     logger = get_run_logger()
 
     if item.slug:
+        # TODO: 临时解决简书系统问题数据负数导致的报错
+        CONFIG.data_validation.enabled = False
         author = await get_article_author(item.slug)
+        CONFIG.data_validation.enabled = True
     else:
         logger.warning(f"文章走丢了，跳过采集文章与作者信息 ranking={item.ranking}")
         author = None

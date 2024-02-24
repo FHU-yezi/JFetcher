@@ -2,6 +2,7 @@ from datetime import date, datetime
 from typing import List, Optional
 
 from beanie import Document
+from jkit.config import CONFIG
 from jkit.exceptions import ResourceUnavailableError
 from jkit.ranking.assets import AssetsRanking, AssetsRankingRecord
 from prefect import flow, get_run_logger
@@ -39,10 +40,10 @@ async def process_item(
     if item.user_info.slug:
         user_obj = item.user_info.to_user_obj()
         try:
-            # TODO
-            # 强制重新检查
-            user_obj._checked = False
+            # TODO: 强制重新检查
+            CONFIG.resource_check.force_check_safe_data = True
             await user_obj.check()
+            CONFIG.resource_check.force_check_safe_data = False
         except ResourceUnavailableError:
             logger.warning(
                 f"用户已注销或被封禁，跳过采集简书钻与简书贝信息 ranking={item.ranking}"
@@ -50,8 +51,11 @@ async def process_item(
             fp_amount = None
             ftn_amount = None
 
+        # TODO: 临时解决简书系统问题数据负数导致的报错
+        CONFIG.data_validation.enabled = False
         fp_amount = await user_obj.fp_amount
         ftn_amount = abs(round(item.assets_amount - fp_amount, 3))
+        CONFIG.data_validation.enabled = True
     else:
         logger.warning(f"用户不存在，跳过采集简书钻与简书贝信息 ranking={item.ranking}")
         fp_amount = None
