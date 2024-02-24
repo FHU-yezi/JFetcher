@@ -1,12 +1,11 @@
 from datetime import date, datetime, timedelta
-from typing import List, Optional
+from typing import List, Optional, Tuple
 
 from bson import ObjectId
 from jkit._constraints import PositiveFloat, PositiveInt
-from jkit.article import Article
 from jkit.config import CONFIG
+from jkit.exceptions import ResourceUnavailableError
 from jkit.ranking.article_earning import ArticleEarningRanking, RecordField
-from jkit.user import User
 from prefect import flow, get_run_logger
 from prefect.states import Completed, State
 
@@ -46,28 +45,36 @@ class ArticleEarningRankingRecordDocument(Documemt, **DOCUMENT_OBJECT_CONFIG):
     earning: EarningField
 
 
-async def get_article_author(article_slug: str, /) -> User:
-    article = Article.from_slug(article_slug)._as_checked()
-    article_info = await article.info
-    return article_info.author_info.to_user_obj()
+async def get_author_id_and_slug(
+    item: RecordField, /
+) -> Tuple[Optional[int], Optional[str]]:
+    logger = get_run_logger()
+
+    if not item.slug:
+        logger.warning(f"文章走丢了，跳过采集文章与作者信息 ranking={item.ranking}")
+        return None, None
+
+    try:
+        # TODO: 临时解决简书系统问题数据负数导致的报错
+        CONFIG.data_validation.enabled = False
+        article_obj = item.to_article_obj()
+        author = (await article_obj.info).author_info.to_user_obj()
+
+        result = (await author.id, author.slug)
+        CONFIG.data_validation.enabled = True
+
+        return result
+    except ResourceUnavailableError:
+        logger.warning(
+            f"文章或作者状态异常，跳过采集文章与作者信息 ranking={item.ranking}"
+        )
+        return None, None
 
 
 async def process_item(
     item: RecordField, /, *, target_date: date
 ) -> ArticleEarningRankingRecordDocument:
-    logger = get_run_logger()
-
-    if item.slug:
-        # TODO: 临时解决简书系统问题数据负数导致的报错
-        CONFIG.data_validation.enabled = False
-        author = await get_article_author(item.slug)
-        author_id = await author.id
-        author_slug = author.slug
-        CONFIG.data_validation.enabled = True
-    else:
-        logger.warning(f"文章走丢了，跳过采集文章与作者信息 ranking={item.ranking}")
-        author_id = None
-        author_slug = None
+    author_id, author_slug = await get_author_id_and_slug(item)
 
     return ArticleEarningRankingRecordDocument(
         _id=ObjectId(),
