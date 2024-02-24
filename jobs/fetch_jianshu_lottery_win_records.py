@@ -1,45 +1,51 @@
+from datetime import datetime
 from typing import List
 
-from beanie import Document
+from jkit._constraints import PositiveInt
 from jkit.jianshu_lottery import JianshuLottery, JianshuLotteryWinRecord
 from prefect import flow, get_run_logger
 from prefect.states import Completed, State
-from pydantic import BaseModel, PastDatetime, PositiveInt
+from pymongo import DESCENDING
 
-from utils.db import init_db
+from utils.db import DB
+from utils.document_model import (
+    DOCUMENT_OBJECT_CONFIG,
+    FIELD_OBJECT_CONFIG,
+    Documemt,
+    Field,
+)
 from utils.job_model import Job
 
+COLLECTION = DB.jianshu_lottery_win_records
 
-class UserInfoField(BaseModel):
+
+class UserInfoField(Field, **FIELD_OBJECT_CONFIG):
     id: PositiveInt
     slug: str
     name: str
 
 
-class JianshuLotteryWinRecordModel(Document):
-    record_id: PositiveInt
-    time: PastDatetime
+class JianshuLotteryWinRecordDocument(Documemt, **DOCUMENT_OBJECT_CONFIG):
+    _id: PositiveInt
+    time: datetime
     award_name: str
     user_info: UserInfoField
 
-    class Settings:
-        name = "jianshu_lottery_win_records"
-        indexes = ("record_id",)
-
 
 async def get_latest_stored_record_id() -> int:
-    latest_data = (
-        await JianshuLotteryWinRecordModel.find().sort("-record_id").first_or_none()
-    )
-    if not latest_data:
+    try:
+        latest_data = JianshuLotteryWinRecordDocument.from_dict(
+            await COLLECTION.find().sort("_id", DESCENDING).__anext__()
+        )
+    except StopAsyncIteration:
         return 0
 
-    return latest_data.record_id
+    return latest_data._id
 
 
-def process_item(item: JianshuLotteryWinRecord, /) -> JianshuLotteryWinRecordModel:
-    return JianshuLotteryWinRecordModel(
-        record_id=item.id,
+def process_item(item: JianshuLotteryWinRecord, /) -> JianshuLotteryWinRecordDocument:
+    return JianshuLotteryWinRecordDocument(
+        _id=item.id,
         time=item.time,
         award_name=item.award_name,
         user_info=UserInfoField(
@@ -54,15 +60,12 @@ def process_item(item: JianshuLotteryWinRecord, /) -> JianshuLotteryWinRecordMod
 async def main() -> State:
     logger = get_run_logger()
 
-    await init_db([JianshuLotteryWinRecordModel])
-    logger.info("初始化 ODM 模型成功")
-
     stop_id = await get_latest_stored_record_id()
     logger.info(f"获取到最新的已存储 ID：{stop_id}")
     if stop_id == 0:
         logger.warning("数据库中没有记录")
 
-    data: List[JianshuLotteryWinRecordModel] = []
+    data: List[JianshuLotteryWinRecordDocument] = []
     async for item in JianshuLottery().iter_win_records():
         if item.id == stop_id:
             break
@@ -73,7 +76,7 @@ async def main() -> State:
         logger.warning("采集数据量达到上限")
 
     if data:
-        await JianshuLotteryWinRecordModel.insert_many(data)
+        await COLLECTION.insert_many(x.to_dict() for x in data)
     else:
         logger.info("无数据，不执行保存操作")
 

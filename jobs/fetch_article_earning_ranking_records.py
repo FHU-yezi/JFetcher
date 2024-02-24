@@ -1,44 +1,49 @@
 from datetime import date, datetime, timedelta
 from typing import List, Optional
 
-from beanie import Document
+from bson import ObjectId
+from jkit._constraints import PositiveFloat, PositiveInt
 from jkit.article import Article
 from jkit.config import CONFIG
 from jkit.ranking.article_earning import ArticleEarningRanking, RecordField
 from jkit.user import User
 from prefect import flow, get_run_logger
 from prefect.states import Completed, State
-from pydantic import BaseModel, Field, PastDate, PositiveFloat, PositiveInt
 
-from utils.db import init_db
+from utils.db import DB
+from utils.document_model import (
+    DOCUMENT_OBJECT_CONFIG,
+    FIELD_OBJECT_CONFIG,
+    Documemt,
+    Field,
+)
 from utils.job_model import Job
 
+COLLECTION = DB.article_earning_ranking_records
 
-class ArticleField(BaseModel):
+
+class ArticleField(Field, **FIELD_OBJECT_CONFIG):
     title: Optional[str]
     slug: Optional[str]
 
 
-class AuthorField(BaseModel):
+class AuthorField(Field, **FIELD_OBJECT_CONFIG):
     id: Optional[PositiveInt]
     slug: Optional[str]
     name: Optional[str]
 
 
-class EarningField(BaseModel):
-    to_author: PositiveFloat = Field(serialization_alias="toAuthor")
-    to_voter: PositiveFloat = Field(serialization_alias="toVoter")
+class EarningField(Field, **FIELD_OBJECT_CONFIG):
+    to_author: PositiveFloat
+    to_voter: PositiveFloat
 
 
-class ArticleEarningRankingRecordModel(Document):
-    date: PastDate
+class ArticleEarningRankingRecordDocument(Documemt, **DOCUMENT_OBJECT_CONFIG):
+    date: date
     ranking: PositiveInt
     article: ArticleField
     author: AuthorField
     earning: EarningField
-
-    class Settings:
-        name = "article_earning_ranking_records"
 
 
 async def get_article_author(article_slug: str, /) -> User:
@@ -49,7 +54,7 @@ async def get_article_author(article_slug: str, /) -> User:
 
 async def process_item(
     item: RecordField, /, *, target_date: date
-) -> ArticleEarningRankingRecordModel:
+) -> ArticleEarningRankingRecordDocument:
     logger = get_run_logger()
 
     if item.slug:
@@ -64,7 +69,8 @@ async def process_item(
         author_id = None
         author_slug = None
 
-    return ArticleEarningRankingRecordModel(
+    return ArticleEarningRankingRecordDocument(
+        _id=ObjectId(),
         date=target_date,
         ranking=item.ranking,
         article=ArticleField(
@@ -85,19 +91,14 @@ async def process_item(
 
 @flow
 async def main() -> State:
-    logger = get_run_logger()
-
-    await init_db([ArticleEarningRankingRecordModel])
-    logger.info("初始化 ODM 模型成功")
-
     target_date = datetime.now().date() - timedelta(days=1)
 
-    data: List[ArticleEarningRankingRecordModel] = []
+    data: List[ArticleEarningRankingRecordDocument] = []
     async for item in ArticleEarningRanking(target_date):
         processed_item = await process_item(item, target_date=target_date)
         data.append(processed_item)
 
-    await ArticleEarningRankingRecordModel.insert_many(data)
+    await COLLECTION.insert_many(x.to_dict() for x in data)
 
     return Completed(message=f"target_date={target_date}, data_count={len(data)}")
 

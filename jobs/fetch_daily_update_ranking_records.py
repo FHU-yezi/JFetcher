@@ -1,35 +1,41 @@
 from datetime import date, datetime
 from typing import List
 
-from beanie import Document
+from bson import ObjectId
+from jkit._constraints import PositiveInt
 from jkit.ranking.daily_update import DailyUpdateRanking, DailyUpdateRankingRecord
-from prefect import flow, get_run_logger
+from prefect import flow
 from prefect.states import Completed, State
-from pydantic import BaseModel, PositiveInt
 
-from utils.db import init_db
+from utils.db import DB
+from utils.document_model import (
+    DOCUMENT_OBJECT_CONFIG,
+    FIELD_OBJECT_CONFIG,
+    Documemt,
+    Field,
+)
 from utils.job_model import Job
 
+COLLECTION = DB.daily_update_ranking_records
 
-class UserInfoField(BaseModel):
+
+class UserInfoField(Field, **FIELD_OBJECT_CONFIG):
     slug: str
     name: str
 
 
-class DailyUpdateRankingRecordModel(Document):
+class DailyUpdateRankingRecordDocument(Documemt, **DOCUMENT_OBJECT_CONFIG):
     date: date
     ranking: PositiveInt
     days: PositiveInt
     user_info: UserInfoField
 
-    class Settings:
-        name = "daily_update_ranking_records"
-
 
 def process_item(
     item: DailyUpdateRankingRecord, /, *, current_date: date
-) -> DailyUpdateRankingRecordModel:
-    return DailyUpdateRankingRecordModel(
+) -> DailyUpdateRankingRecordDocument:
+    return DailyUpdateRankingRecordDocument(
+        _id=ObjectId(),
         date=current_date,
         ranking=item.ranking,
         days=item.days,
@@ -42,19 +48,14 @@ def process_item(
 
 @flow
 async def main() -> State:
-    logger = get_run_logger()
-
     current_date = datetime.now().date()
 
-    await init_db([DailyUpdateRankingRecordModel])
-    logger.info("初始化 ODM 模型成功")
-
-    data: List[DailyUpdateRankingRecordModel] = []
+    data: List[DailyUpdateRankingRecordDocument] = []
     async for item in DailyUpdateRanking():
         processed_item = process_item(item, current_date=current_date)
         data.append(processed_item)
 
-    await DailyUpdateRankingRecordModel.insert_many(data)
+    await COLLECTION.insert_many(x.to_dict() for x in data)
 
     return Completed(message=f"data_count={len(data)}")
 

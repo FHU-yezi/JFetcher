@@ -223,30 +223,6 @@ files = [
 tzdata = ["tzdata"]
 
 [[package]]
-name = "beanie"
-version = "1.25.0"
-description = "Asynchronous Python ODM for MongoDB"
-optional = false
-python-versions = ">=3.7,<4.0"
-files = [
-    {file = "beanie-1.25.0-py3-none-any.whl", hash = "sha256:4436ac740718ccd62b21576778679ac972359fce2938557890c576adbbf5e244"},
-    {file = "beanie-1.25.0.tar.gz", hash = "sha256:f153866b9ba015274102e10a397602d088fc039b705bd806cb447c898cd2979b"},
-]
-
-[package.dependencies]
-click = ">=7"
-lazy-model = "0.2.0"
-motor = ">=2.5.0,<4.0.0"
-pydantic = ">=1.10,<3.0"
-toml = "*"
-typing-extensions = {version = ">=4.7", markers = "python_version < \"3.11\""}
-
-[package.extras]
-doc = ["Markdown (>=3.3)", "Pygments (>=2.8.0)", "jinja2 (>=3.0.3)", "mkdocs (>=1.4)", "mkdocs-material (>=9.0)", "pydoc-markdown (>=4.8)"]
-queue = ["beanie-batteries-queue (>=0.2)"]
-test = ["asgi-lifespan (>=1.0.1)", "dnspython (>=2.1.0)", "fastapi (>=0.100)", "flake8 (>=3)", "httpx (>=0.23.0)", "pre-commit (>=2.3.0)", "pydantic-extra-types (>=2)", "pydantic-settings (>=2)", "pydantic[email]", "pyright (>=0)", "pytest (>=6.0.0)", "pytest-asyncio (>=0.21.0)", "pytest-cov (>=2.8.1)"]
-
-[[package]]
 name = "cachetools"
 version = "5.3.2"
 description = "Extensible memoizing collections and decorators"
@@ -1073,20 +1049,6 @@ websocket-client = ">=0.32.0,<0.40.0 || >0.40.0,<0.41.dev0 || >=0.43.dev0"
 
 [package.extras]
 adal = ["adal (>=1.0.2)"]
-
-[[package]]
-name = "lazy-model"
-version = "0.2.0"
-description = ""
-optional = false
-python-versions = ">=3.7,<4.0"
-files = [
-    {file = "lazy-model-0.2.0.tar.gz", hash = "sha256:57c0e91e171530c4fca7aebc3ac05a163a85cddd941bf7527cc46c0ddafca47c"},
-    {file = "lazy_model-0.2.0-py3-none-any.whl", hash = "sha256:5a3241775c253e36d9069d236be8378288a93d4fc53805211fd152e04cc9c342"},
-]
-
-[package.dependencies]
-pydantic = ">=1.9.0"
 
 [[package]]
 name = "lxml"
@@ -3024,4 +2986,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.8"
-content-hash = "a124842eabf8eeae56034567022f0ded37efc2f77172f91185aa9c54aab6e07d"
+content-hash = "da6597a11cb3d8f6e587ec8aa35d1e9b0827496a9ffba20b352c03cf434e2b46"
