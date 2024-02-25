@@ -9,6 +9,7 @@ from jkit.ranking.article_earning import ArticleEarningRanking, RecordField
 from prefect import flow, get_run_logger
 from prefect.states import Completed, State
 
+from utils.config_generators import generate_deployment_config, generate_flow_config
 from utils.db import DB
 from utils.document_model import (
     DOCUMENT_OBJECT_CONFIG,
@@ -16,7 +17,6 @@ from utils.document_model import (
     Documemt,
     Field,
 )
-from utils.job_model import Job
 
 COLLECTION = DB.article_earning_ranking_records
 
@@ -96,8 +96,12 @@ async def process_item(
     )
 
 
-@flow
-async def main() -> State:
+@flow(
+    **generate_flow_config(
+        name="采集文章收益排行榜记录",
+    )
+)
+async def flow_func() -> State:
     target_date = datetime.now().date() - timedelta(days=1)
 
     data: List[ArticleEarningRankingRecordDocument] = []
@@ -110,8 +114,9 @@ async def main() -> State:
     return Completed(message=f"target_date={target_date}, data_count={len(data)}")
 
 
-fetch_article_earning_ranking_records_job = Job(
-    func=main,
-    name="采集文章收益排行榜记录",
-    cron="0 1 * * *",
+deployment = flow_func.to_deployment(
+    **generate_deployment_config(
+        name="采集文章收益排行榜记录",
+        cron="0 1 * * *",
+    )
 )

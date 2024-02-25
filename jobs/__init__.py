@@ -1,56 +1,27 @@
-from typing import Any, Coroutine, Tuple
+from importlib import import_module
+from typing import Any, Coroutine, Set, Tuple
 
-from prefect import Flow
-from prefect.client.schemas.schedules import CronSchedule
 from prefect.deployments.runner import RunnerDeployment
-from prefect.states import State
 
-from jobs.fetch_article_earning_ranking_records import (
-    fetch_article_earning_ranking_records_job,
-)
-from jobs.fetch_assets_ranking_records import fetch_assets_ranking_records_job
-from jobs.fetch_daily_update_ranking_records import (
-    fetch_daily_update_ranking_records_job,
-)
-from jobs.fetch_jianshu_lottery_win_records import fetch_jianshu_lottery_win_records_job
-from jobs.fetch_jpep_ftn_trade_orders import fetch_jpep_ftn_trade_orders_job
-from utils.job_model import Job
-
-FlowType = Flow[[], Coroutine[Any, Any, State]]
 DeploymentType = Coroutine[Any, Any, RunnerDeployment]
 
 
-def create_flow(job: Job) -> FlowType:
-    job.func.name = job.name
-    job.func.version = job.version
+def import_deployment(path: str) -> DeploymentType:
+    module_name, func_name = path.split(":")
 
-    job.func.retries = job.retries
-    job.func.retry_delay_seconds = job.retry_delay
-    job.func.timeout_seconds = job.timeout
-
-    return job.func
+    module = import_module(module_name)
+    return getattr(module, func_name)
 
 
-def create_deployment(job: Job, flow: FlowType) -> DeploymentType:
-    return flow.to_deployment(
-        name=f"JFetcher - {flow.name}",
-        version=job.version,
-        schedule=CronSchedule(
-            cron=job.cron,
-            timezone="Asia/Shanghai",
-        ),
-    )
+DEPLOYMENT_PATHS: Set[str] = {
+    "jobs.fetch_article_earning_ranking_records:deployment",
+    "jobs.fetch_assets_ranking_records:deployment",
+    "jobs.fetch_daily_update_ranking_records:deployment",
+    "jobs.fetch_jianshu_lottery_win_records:deployment",
+    "jobs.fetch_jpep_ftn_trade_orders:deployment",
+}
 
 
-JOBS: Tuple[Job, ...] = (
-    fetch_article_earning_ranking_records_job,
-    fetch_assets_ranking_records_job,
-    fetch_daily_update_ranking_records_job,
-    fetch_jianshu_lottery_win_records_job,
-    fetch_jpep_ftn_trade_orders_job,
-)
-
-FLOWS: Tuple[FlowType, ...] = tuple(map(create_flow, JOBS))
 DEPLOYMENTS: Tuple[DeploymentType, ...] = tuple(
-    (create_deployment(job, flow) for job, flow in zip(JOBS, FLOWS))
+    import_deployment(x) for x in DEPLOYMENT_PATHS
 )
