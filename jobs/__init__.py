@@ -18,7 +18,8 @@ DEPLOYMENT_PATHS: Set[str] = {
     "jobs.fetch_assets_ranking_records:deployment",
     "jobs.fetch_daily_update_ranking_records:deployment",
     "jobs.fetch_jianshu_lottery_win_records:deployment",
-    "jobs.fetch_jpep_ftn_trade_orders:deployment",
+    "jobs.fetch_jpep_ftn_trade_orders:buy_deployment",
+    "jobs.fetch_jpep_ftn_trade_orders:sell_deployment",
 }
 
 
