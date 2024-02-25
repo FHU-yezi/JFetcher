@@ -81,7 +81,7 @@ def process_item(
             hashed_name=item.publisher_info.hashed_name,
             credit=item.publisher_info.credit,
         ),
-    )
+    ).validate()
 
 
 @flow(

@@ -93,7 +93,7 @@ async def process_item(
             to_author=item.fp_to_author_anount,
             to_voter=item.fp_to_voter_amount,
         ),
-    )
+    ).validate()
 
 
 @flow(

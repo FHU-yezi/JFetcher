@@ -22,6 +22,9 @@ class Field(Struct, **FIELD_OBJECT_CONFIG):
 class Documemt(Struct, **DOCUMENT_OBJECT_CONFIG):
     _id: ObjectId
 
+    def validate(self) -> Self:
+        return convert(to_builtins(self), type=self.__class__)
+
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> Self:
         return convert(data, type=cls)

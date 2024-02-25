@@ -53,7 +53,7 @@ def process_item(item: JianshuLotteryWinRecord, /) -> JianshuLotteryWinRecordDoc
             slug=item.user_info.slug,
             name=item.user_info.name,
         ),
-    )
+    ).validate()
 
 
 @flow(

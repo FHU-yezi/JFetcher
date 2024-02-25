@@ -43,7 +43,7 @@ def process_item(
             slug=item.user_info.slug,
             name=item.user_info.name,
         ),
-    )
+    ).validate()
 
 
 @flow(
