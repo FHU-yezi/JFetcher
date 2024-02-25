@@ -7,6 +7,7 @@ from jkit.ranking.daily_update import DailyUpdateRanking, DailyUpdateRankingReco
 from prefect import flow
 from prefect.states import Completed, State
 
+from utils.config_generators import generate_deployment_config, generate_flow_config
 from utils.db import DB
 from utils.document_model import (
     DOCUMENT_OBJECT_CONFIG,
@@ -14,7 +15,6 @@ from utils.document_model import (
     Documemt,
     Field,
 )
-from utils.job_model import Job
 
 COLLECTION = DB.daily_update_ranking_records
 
@@ -46,8 +46,12 @@ def process_item(
     )
 
 
-@flow
-async def main() -> State:
+@flow(
+    **generate_flow_config(
+        name="采集日更排行榜记录",
+    )
+)
+async def flow_func() -> State:
     current_date = datetime.now().date()
 
     data: List[DailyUpdateRankingRecordDocument] = []
@@ -60,8 +64,9 @@ async def main() -> State:
     return Completed(message=f"data_count={len(data)}")
 
 
-fetch_daily_update_ranking_records_job = Job(
-    func=main,
-    name="采集日更排行榜记录",
-    cron="0 1 * * *",
+deployment = flow_func.to_deployment(
+    **generate_deployment_config(
+        name="采集日更排行榜记录",
+        cron="0 1 * * *",
+    )
 )

@@ -7,6 +7,7 @@ from prefect import flow, get_run_logger
 from prefect.states import Completed, State
 from pymongo import DESCENDING
 
+from utils.config_generators import generate_deployment_config, generate_flow_config
 from utils.db import DB
 from utils.document_model import (
     DOCUMENT_OBJECT_CONFIG,
@@ -14,7 +15,6 @@ from utils.document_model import (
     Documemt,
     Field,
 )
-from utils.job_model import Job
 
 COLLECTION = DB.jianshu_lottery_win_records
 
@@ -56,8 +56,12 @@ def process_item(item: JianshuLotteryWinRecord, /) -> JianshuLotteryWinRecordDoc
     )
 
 
-@flow
-async def main() -> State:
+@flow(
+    **generate_flow_config(
+        name="采集简书大转盘抽奖中奖记录",
+    )
+)
+async def flow_func() -> State:
     logger = get_run_logger()
 
     stop_id = await get_latest_stored_record_id()
@@ -83,8 +87,9 @@ async def main() -> State:
     return Completed(message=f"data_count={len(data)}")
 
 
-fetch_jianshu_lottery_win_records_job = Job(
-    func=main,
-    name="采集简书大转盘抽奖中奖记录",
-    cron="*/10 * * * *",
+deployment = flow_func.to_deployment(
+    **generate_deployment_config(
+        name="采集简书大转盘抽奖中奖记录",
+        cron="*/10 * * * *",
+    )
 )

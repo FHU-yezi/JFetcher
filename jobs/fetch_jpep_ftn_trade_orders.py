@@ -11,6 +11,7 @@ from jkit.jpep.ftn_macket import FTNMacket, FTNMacketOrderRecord
 from prefect import flow
 from prefect.states import Completed, State
 
+from utils.config_generators import generate_deployment_config, generate_flow_config
 from utils.db import DB
 from utils.document_model import (
     DOCUMENT_OBJECT_CONFIG,
@@ -18,7 +19,6 @@ from utils.document_model import (
     Documemt,
     Field,
 )
-from utils.job_model import Job
 
 COLLECTION = DB.jpep_ftn_trade_orders
 
@@ -84,8 +84,12 @@ def process_item(
     )
 
 
-@flow
-async def main() -> State:
+@flow(
+    **generate_flow_config(
+        name="采集简书积分兑换平台简书贝交易挂单",
+    ),
+)
+async def flow_func() -> State:
     fetch_time = get_fetch_time()
 
     buy_data: List[JPEPFTNTradeOrderDocument] = []
@@ -108,8 +112,9 @@ async def main() -> State:
     )
 
 
-fetch_jpep_ftn_trade_orders_job = Job(
-    func=main,
-    name="采集简书积分兑换平台简书贝交易挂单",
-    cron="*/10 * * * *",
+deployment = flow_func.to_deployment(
+    **generate_deployment_config(
+        name="采集简书积分兑换平台简书贝交易挂单",
+        cron="*/10 * * * *",
+    )
 )
