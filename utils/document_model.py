@@ -1,4 +1,5 @@
-from typing import Any, Dict
+from datetime import date, datetime
+from typing import Any, Dict, Tuple
 
 from bson import ObjectId
 from msgspec import Struct, convert, to_builtins
@@ -14,6 +15,19 @@ DOCUMENT_OBJECT_CONFIG = {
     "rename": "camel",
 }
 
+_BUILDIN_TYPES: Tuple[object, ...] = (ObjectId, datetime, date)
+
+
+def convert_date_to_datetime(data: Dict[str, Any]) -> Dict[str, Any]:
+    for key, value in data.items():
+        if isinstance(value, date):
+            data[key] = datetime.fromisoformat(value.isoformat())
+
+        if isinstance(value, dict):
+            data[key] = convert_date_to_datetime(value)
+
+    return data
+
 
 class Field(Struct, **FIELD_OBJECT_CONFIG):
     pass
@@ -24,7 +38,7 @@ class Documemt(Struct, **DOCUMENT_OBJECT_CONFIG):
 
     def validate(self) -> Self:
         return convert(
-            to_builtins(self, builtin_types=(ObjectId,)),
+            to_builtins(self, builtin_types=_BUILDIN_TYPES),
             type=self.__class__,
         )
 
@@ -33,4 +47,9 @@ class Documemt(Struct, **DOCUMENT_OBJECT_CONFIG):
         return convert(data, type=cls)
 
     def to_dict(self) -> Dict[str, Any]:
-        return to_builtins(self, builtin_types=(ObjectId,))
+        return convert_date_to_datetime(
+            to_builtins(
+                self,
+                builtin_types=_BUILDIN_TYPES,
+            )
+        )
