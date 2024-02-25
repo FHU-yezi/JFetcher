@@ -89,32 +89,31 @@ def process_item(
         name="采集简书积分兑换平台简书贝交易挂单",
     ),
 )
-async def flow_func() -> State:
+async def flow_func(type: Literal["buy", "sell"]) -> State:  # noqa: A002
     fetch_time = get_fetch_time()
 
-    buy_data: List[JPEPFTNTradeOrderDocument] = []
-    async for item in FTNMacket().iter_orders(type="buy"):
-        processed_item = process_item(item, fetch_time=fetch_time, type="buy")
-        buy_data.append(processed_item)
+    data: List[JPEPFTNTradeOrderDocument] = []
+    async for item in FTNMacket().iter_orders(type=type):
+        processed_item = process_item(item, fetch_time=fetch_time, type=type)
+        data.append(processed_item)
 
-    await COLLECTION.insert_many(x.to_dict() for x in buy_data)
+    await COLLECTION.insert_many(x.to_dict() for x in data)
 
-    sell_data: List[JPEPFTNTradeOrderDocument] = []
-    async for item in FTNMacket().iter_orders(type="sell"):
-        processed_item = process_item(item, fetch_time=fetch_time, type="sell")
-        sell_data.append(processed_item)
-
-    await COLLECTION.insert_many(x.to_dict() for x in sell_data)
-
-    return Completed(
-        message=f"fetch_time={fetch_time}, buy_data_count={len(buy_data)}, "
-        f"sell_data_count={len(sell_data)}"
-    )
+    return Completed(message=f"fetch_time={fetch_time}, data_count={len(data)}")
 
 
-deployment = flow_func.to_deployment(
+buy_deployment = flow_func.to_deployment(
+    parameters={"type": "buy"},
     **generate_deployment_config(
-        name="采集简书积分兑换平台简书贝交易挂单",
+        name="采集简书积分兑换平台简书贝交易买单",
         cron="*/10 * * * *",
-    )
+    ),
+)
+
+sell_deployment = flow_func.to_deployment(
+    parameters={"type": "sell"},
+    **generate_deployment_config(
+        name="采集简书积分兑换平台简书贝交易卖单",
+        cron="*/10 * * * *",
+    ),
 )
