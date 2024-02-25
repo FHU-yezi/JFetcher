@@ -23,7 +23,10 @@ class Documemt(Struct, **DOCUMENT_OBJECT_CONFIG):
     _id: ObjectId
 
     def validate(self) -> Self:
-        return convert(to_builtins(self), type=self.__class__)
+        return convert(
+            to_builtins(self, builtin_types=(ObjectId,)),
+            type=self.__class__,
+        )
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> Self:
