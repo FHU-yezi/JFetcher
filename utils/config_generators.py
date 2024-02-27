@@ -1,3 +1,4 @@
+from functools import partial
 from typing import Any, Dict, Union
 
 from prefect.client.schemas.schedules import CronSchedule
@@ -18,8 +19,8 @@ def generate_flow_config(
         "retries": retries,
         "retry_delay_seconds": retry_delay_seconds,
         "timeout_seconds": timeout,
-        "on_failure": [on_failure_or_crashed],
-        "on_crashed": [on_failure_or_crashed],
+        "on_failure": [partial(on_failure_or_crashed, status="Failed")],
+        "on_crashed": [partial(on_failure_or_crashed, status="Crashed")],
     }
 
 
