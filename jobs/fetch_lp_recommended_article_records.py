@@ -1,7 +1,6 @@
 from datetime import date, datetime
 from typing import List, Optional
 
-from bson import ObjectId
 from jkit._constraints import (
     ArticleSlug,
     NonEmptyStr,
@@ -73,7 +72,6 @@ async def process_item(
         return None
 
     return LPRecommendedArticleRecord(
-        _id=ObjectId(),
         date=current_date,
         id=item.id,
         slug=item.slug,

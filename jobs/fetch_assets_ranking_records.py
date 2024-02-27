@@ -1,7 +1,6 @@
 from datetime import date, datetime
 from typing import List, Optional, Tuple
 
-from bson import ObjectId
 from jkit._constraints import NonNegativeFloat, PositiveFloat, PositiveInt
 from jkit.config import CONFIG
 from jkit.exceptions import ResourceUnavailableError
@@ -73,7 +72,6 @@ async def process_item(
     fp_amount, ftn_amount = await get_fp_ftn_amount(item)
 
     return AssetsRankingRecordDocument(
-        _id=ObjectId(),
         date=target_date,
         ranking=item.ranking,
         fp_amount=fp_amount,

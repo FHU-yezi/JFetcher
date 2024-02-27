@@ -1,7 +1,6 @@
 from datetime import date, datetime, timedelta
 from typing import List, Optional, Tuple
 
-from bson import ObjectId
 from jkit._constraints import PositiveFloat, PositiveInt
 from jkit.config import CONFIG
 from jkit.exceptions import ResourceUnavailableError
@@ -77,7 +76,6 @@ async def process_item(
     author_id, author_slug = await get_author_id_and_slug(item)
 
     return ArticleEarningRankingRecordDocument(
-        _id=ObjectId(),
         date=target_date,
         ranking=item.ranking,
         article=ArticleField(
