@@ -1,7 +1,6 @@
 from datetime import datetime
 from typing import List, Literal, Optional
 
-from bson import ObjectId
 from jkit._constraints import (
     NonNegativeInt,
     PositiveFloat,
@@ -63,7 +62,6 @@ def process_item(
     type: Literal["buy", "sell"],  # noqa: A002
 ) -> JPEPFTNTradeOrderDocument:
     return JPEPFTNTradeOrderDocument(
-        _id=ObjectId(),
         type=type,
         fetch_time=fetch_time,
         order_id=item.id,

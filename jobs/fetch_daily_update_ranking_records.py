@@ -1,7 +1,6 @@
 from datetime import date, datetime
 from typing import List
 
-from bson import ObjectId
 from jkit._constraints import PositiveInt
 from jkit.ranking.daily_update import DailyUpdateRanking, DailyUpdateRankingRecord
 from prefect import flow
@@ -35,7 +34,6 @@ def process_item(
     item: DailyUpdateRankingRecord, /, *, current_date: date
 ) -> DailyUpdateRankingRecordDocument:
     return DailyUpdateRankingRecordDocument(
-        _id=ObjectId(),
         date=current_date,
         ranking=item.ranking,
         days=item.days,
