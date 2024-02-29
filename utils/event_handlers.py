@@ -27,7 +27,9 @@ async def on_failure_or_crashed(
                         "flow_name": flow.name,
                         "run_name": flow_run.name,
                         "parameters": str(flow_run.parameters),
-                        "start_time": flow_run.start_time.strftime(r"%Y-%m-%d %H:%M:%S")
+                        "start_time": flow_run.start_time.in_timezone(
+                            "Asia/Shanghai"
+                        ).strftime(r"%Y-%m-%d %H:%M:%S")
                         if flow_run.start_time
                         else "[未知]",
                         "retries": flow_run.empirical_policy.retries,
