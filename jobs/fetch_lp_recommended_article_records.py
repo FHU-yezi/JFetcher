@@ -12,8 +12,12 @@ from jkit.collection import Collection, CollectionArticleInfo
 from msgspec import field
 from prefect import flow, get_run_logger
 from prefect.states import Completed, State
+from pymongo import IndexModel
 
-from utils.config_generators import generate_deployment_config, generate_flow_config
+from utils.config_generators import (
+    generate_deployment_config,
+    generate_flow_config,
+)
 from utils.db import DB
 from utils.document_model import (
     DOCUMENT_OBJECT_CONFIG,
@@ -62,6 +66,10 @@ async def is_stored(item: CollectionArticleInfo) -> bool:
     return False
 
 
+async def init_db() -> None:
+    await COLLECTION.create_indexes([IndexModel(("date", "slug"), unique=True)])
+
+
 async def process_item(
     item: CollectionArticleInfo, /, *, current_date: date
 ) -> Optional[LPRecommendedArticleRecord]:
@@ -99,6 +107,8 @@ async def process_item(
     )
 )
 async def flow_func() -> State:
+    await init_db()
+
     logger = get_run_logger()
 
     current_date = datetime.now().date()

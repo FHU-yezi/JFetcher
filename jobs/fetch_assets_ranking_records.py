@@ -8,8 +8,12 @@ from jkit.ranking.assets import AssetsRanking, AssetsRankingRecord
 from jkit.user import User
 from prefect import flow, get_run_logger
 from prefect.states import Completed, State
+from pymongo import IndexModel
 
-from utils.config_generators import generate_deployment_config, generate_flow_config
+from utils.config_generators import (
+    generate_deployment_config,
+    generate_flow_config,
+)
 from utils.db import DB
 from utils.document_model import (
     DOCUMENT_OBJECT_CONFIG,
@@ -66,6 +70,10 @@ async def get_fp_ftn_amount(
         return None, None
 
 
+async def init_db() -> None:
+    await COLLECTION.create_indexes([IndexModel(("date", "ranking"), unique=True)])
+
+
 async def process_item(
     item: AssetsRankingRecord, /, *, target_date: date
 ) -> AssetsRankingRecordDocument:
@@ -91,6 +99,8 @@ async def process_item(
     )
 )
 async def flow_func() -> State:
+    await init_db()
+
     target_date = datetime.now().date()
 
     data: List[AssetsRankingRecordDocument] = []
