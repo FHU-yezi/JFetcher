@@ -20,7 +20,7 @@ DEPLOYMENT_PATHS: Set[str] = {
     "jobs.fetch_jianshu_lottery_win_records:deployment",
     "jobs.fetch_jpep_ftn_trade_orders:buy_deployment",
     "jobs.fetch_jpep_ftn_trade_orders:sell_deployment",
-    "jobs.fetch_lp_recommended_article_records:deployment"
+    "jobs.fetch_lp_recommended_article_records:deployment",
 }
 
 

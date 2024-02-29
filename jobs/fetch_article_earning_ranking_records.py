@@ -7,9 +7,12 @@ from jkit.exceptions import ResourceUnavailableError
 from jkit.ranking.article_earning import ArticleEarningRanking, RecordField
 from prefect import flow, get_run_logger
 from prefect.states import Completed, State
-from pymongo import ASCENDING, IndexModel
+from pymongo import IndexModel
 
-from utils.config_generators import generate_deployment_config, generate_flow_config
+from utils.config_generators import (
+    generate_deployment_config,
+    generate_flow_config,
+)
 from utils.db import DB
 from utils.document_model import (
     DOCUMENT_OBJECT_CONFIG,
@@ -71,6 +74,10 @@ async def get_author_id_and_slug(
         return None, None
 
 
+async def init_db() -> None:
+    await COLLECTION.create_indexes([IndexModel([("date", "ranking")], unique=True)])
+
+
 async def process_item(
     item: RecordField, /, *, target_date: date
 ) -> ArticleEarningRankingRecordDocument:
@@ -101,9 +108,7 @@ async def process_item(
     )
 )
 async def flow_func() -> State:
-    await COLLECTION.create_indexes(
-        [IndexModel([("date", ASCENDING), ("ranking", ASCENDING)], unique=True)]
-    )
+    await init_db()
 
     target_date = datetime.now().date() - timedelta(days=1)
 

@@ -5,9 +5,12 @@ from jkit._constraints import PositiveInt
 from jkit.jianshu_lottery import JianshuLottery, JianshuLotteryWinRecord
 from prefect import flow, get_run_logger
 from prefect.states import Completed, State
-from pymongo import ASCENDING, DESCENDING, IndexModel
+from pymongo import IndexModel
 
-from utils.config_generators import generate_deployment_config, generate_flow_config
+from utils.config_generators import (
+    generate_deployment_config,
+    generate_flow_config,
+)
 from utils.db import DB
 from utils.document_model import (
     DOCUMENT_OBJECT_CONFIG,
@@ -35,12 +38,16 @@ class JianshuLotteryWinRecordDocument(Documemt, **DOCUMENT_OBJECT_CONFIG):
 async def get_latest_stored_record_id() -> int:
     try:
         latest_data = JianshuLotteryWinRecordDocument.from_dict(
-            await COLLECTION.find().sort("_id", DESCENDING).__anext__()
+            await COLLECTION.find().sort("_id", -1).__anext__()
         )
     except StopAsyncIteration:
         return 0
 
     return latest_data.record_id
+
+
+async def init_db() -> None:
+    await COLLECTION.create_indexes([IndexModel(("recordId",), unique=True)])
 
 
 def process_item(item: JianshuLotteryWinRecord, /) -> JianshuLotteryWinRecordDocument:
@@ -62,9 +69,7 @@ def process_item(item: JianshuLotteryWinRecord, /) -> JianshuLotteryWinRecordDoc
     )
 )
 async def flow_func() -> State:
-    await COLLECTION.create_indexes(
-        [IndexModel([("recordId", ASCENDING)], unique=True)]
-    )
+    await init_db()
 
     logger = get_run_logger()
 

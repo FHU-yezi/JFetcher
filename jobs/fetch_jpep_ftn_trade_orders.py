@@ -9,8 +9,12 @@ from jkit._constraints import (
 from jkit.jpep.ftn_macket import FTNMacket, FTNMacketOrderRecord
 from prefect import flow
 from prefect.states import Completed, State
+from pymongo import IndexModel
 
-from utils.config_generators import generate_deployment_config, generate_flow_config
+from utils.config_generators import (
+    generate_deployment_config,
+    generate_flow_config,
+)
 from utils.db import DB
 from utils.document_model import (
     DOCUMENT_OBJECT_CONFIG,
@@ -54,6 +58,10 @@ def get_fetch_time() -> datetime:
     return current_dt.replace(minute=current_dt.minute // 10, second=0, microsecond=0)
 
 
+async def init_db() -> None:
+    await COLLECTION.create_indexes([IndexModel(("fetchTime", "orderId"), unique=True)])
+
+
 def process_item(
     item: FTNMacketOrderRecord,
     /,
@@ -88,6 +96,8 @@ def process_item(
     ),
 )
 async def flow_func(type: Literal["buy", "sell"]) -> State:  # noqa: A002
+    await init_db()
+
     fetch_time = get_fetch_time()
 
     data: List[JPEPFTNTradeOrderDocument] = []
