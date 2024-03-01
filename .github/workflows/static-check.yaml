@@ -4,7 +4,7 @@ on:
   push:
 
 jobs:
-  static-check-backend:
+  static-check:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
