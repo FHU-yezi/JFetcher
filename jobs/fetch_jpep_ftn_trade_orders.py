@@ -1,54 +1,20 @@
 from datetime import datetime
-from typing import List, Literal, Optional
+from typing import List, Literal
 
-from jkit._constraints import (
-    NonNegativeInt,
-    PositiveFloat,
-    PositiveInt,
-)
 from jkit.jpep.ftn_macket import FTNMacket, FTNMacketOrderRecord
 from prefect import flow
 from prefect.states import Completed, State
-from pymongo import IndexModel
 
+from models.jpep_ftn_trade_order import (
+    JPEPFTNTradeOrderDocument,
+    PublisherInfoField,
+    init_db,
+    insert_many,
+)
 from utils.config_generators import (
     generate_deployment_config,
     generate_flow_config,
 )
-from utils.db import DB
-from utils.document_model import (
-    DOCUMENT_OBJECT_CONFIG,
-    FIELD_OBJECT_CONFIG,
-    Documemt,
-    Field,
-)
-
-COLLECTION = DB.jpep_ftn_trade_orders
-
-
-class PublisherInfoField(Field, **FIELD_OBJECT_CONFIG):
-    is_anonymous: bool
-    id: Optional[PositiveInt]
-    name: Optional[str]
-    hashed_name: Optional[str]
-    credit: Optional[NonNegativeInt]
-
-
-class JPEPFTNTradeOrderDocument(Documemt, **DOCUMENT_OBJECT_CONFIG):
-    fetch_time: datetime
-    order_id: PositiveInt
-    type: Literal["buy", "sell"]
-    price: PositiveFloat
-
-    total_amount: PositiveInt
-    traded_amount: NonNegativeInt
-    tradable_amount: NonNegativeInt
-    minimum_trade_amount: PositiveInt
-
-    traded_count: NonNegativeInt
-    publish_time: datetime
-
-    publisher_info: PublisherInfoField
 
 
 def get_fetch_time() -> datetime:
@@ -56,10 +22,6 @@ def get_fetch_time() -> datetime:
 
     # 保证采集时间对齐 10 分钟间隔
     return current_dt.replace(minute=current_dt.minute // 10, second=0, microsecond=0)
-
-
-async def init_db() -> None:
-    await COLLECTION.create_indexes([IndexModel(("fetchTime", "orderId"), unique=True)])
 
 
 def process_item(
@@ -105,7 +67,7 @@ async def flow_func(type: Literal["buy", "sell"]) -> State:  # noqa: A002
         processed_item = process_item(item, fetch_time=fetch_time, type=type)
         data.append(processed_item)
 
-    await COLLECTION.insert_many(x.to_dict() for x in data)
+    await insert_many(data)
 
     return Completed(message=f"fetch_time={fetch_time}, data_count={len(data)}")
 

@@ -1,73 +1,24 @@
 from datetime import date, datetime
 from typing import List, Optional
 
-from jkit._constraints import (
-    ArticleSlug,
-    NonEmptyStr,
-    NonNegativeFloat,
-    NonNegativeInt,
-    PositiveInt,
-)
 from jkit.collection import Collection, CollectionArticleInfo
-from msgspec import field
 from prefect import flow, get_run_logger
 from prefect.states import Completed, State
-from pymongo import IndexModel
 
+from models.lp_recommend_article_record import (
+    AuthorInfoField,
+    LPRecommendedArticleRecord,
+    init_db,
+    insert_many,
+    is_record_stored,
+)
 from utils.config_generators import (
     generate_deployment_config,
     generate_flow_config,
 )
-from utils.db import DB
-from utils.document_model import (
-    DOCUMENT_OBJECT_CONFIG,
-    FIELD_OBJECT_CONFIG,
-    Documemt,
-    Field,
-)
-
-COLLECTION = DB.lp_recommended_article_records
 
 # 理事会点赞汇总专题
 LP_RECOMMENDED_COLLECTION = Collection.from_slug("f61832508891")
-
-
-class AuthorInfoField(Field, **FIELD_OBJECT_CONFIG):
-    id: PositiveInt
-    slug: str
-    name: str
-
-
-class LPRecommendedArticleRecord(Documemt, **DOCUMENT_OBJECT_CONFIG):
-    date: date
-    id: PositiveInt
-    slug: ArticleSlug
-    title: NonEmptyStr
-    published_at: datetime
-
-    views_count: NonNegativeInt
-    likes_count: NonNegativeInt
-    comments_count: NonNegativeInt
-    tips_count: NonNegativeFloat
-    earned_fp_amount: NonNegativeFloat = field(name="EarnedFPAmount")
-
-    is_paid: bool
-    can_comment: bool
-    description: str
-
-    author_info: AuthorInfoField
-
-
-async def is_stored(item: CollectionArticleInfo) -> bool:
-    result = await COLLECTION.find_one({"slug": item.slug})
-    if result:
-        return True
-
-    return False
-
-
-async def init_db() -> None:
-    await COLLECTION.create_indexes([IndexModel(("date", "slug"), unique=True)])
 
 
 async def process_item(
@@ -75,7 +26,7 @@ async def process_item(
 ) -> Optional[LPRecommendedArticleRecord]:
     logger = get_run_logger()
 
-    if await is_stored(item):
+    if await is_record_stored(item.slug):
         logger.warning(f"已保存过该文章记录，跳过 slug={item.slug}")
         return None
 
@@ -125,7 +76,7 @@ async def flow_func() -> State:
             break
 
     if data:
-        await COLLECTION.insert_many(x.to_dict() for x in data)
+        await insert_many(data)
     else:
         logger.info("无数据，不执行保存操作")
 

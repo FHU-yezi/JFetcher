@@ -1,45 +1,23 @@
 from datetime import date, datetime
 from typing import List, Optional, Tuple
 
-from jkit._constraints import NonNegativeFloat, PositiveFloat, PositiveInt
 from jkit.config import CONFIG
 from jkit.exceptions import ResourceUnavailableError
 from jkit.ranking.assets import AssetsRanking, AssetsRankingRecord
 from jkit.user import User
 from prefect import flow, get_run_logger
 from prefect.states import Completed, State
-from pymongo import IndexModel
 
+from models.assets_ranking_record import (
+    AssetsRankingRecordDocument,
+    UserInfoField,
+    init_db,
+    insert_many,
+)
 from utils.config_generators import (
     generate_deployment_config,
     generate_flow_config,
 )
-from utils.db import DB
-from utils.document_model import (
-    DOCUMENT_OBJECT_CONFIG,
-    FIELD_OBJECT_CONFIG,
-    Documemt,
-    Field,
-)
-
-COLLECTION = DB.assets_ranking_records
-
-
-class UserInfoField(Field, **FIELD_OBJECT_CONFIG):
-    id: Optional[PositiveInt]
-    slug: Optional[str]
-    name: Optional[str]
-
-
-class AssetsRankingRecordDocument(Documemt, **DOCUMENT_OBJECT_CONFIG):
-    date: date
-    ranking: PositiveInt
-
-    fp_amount: Optional[NonNegativeFloat]
-    ftn_amount: Optional[NonNegativeFloat]
-    assets_amount: PositiveFloat
-
-    user_info: UserInfoField
 
 
 async def get_fp_ftn_amount(
@@ -68,10 +46,6 @@ async def get_fp_ftn_amount(
             f"用户已注销或被封禁，跳过采集简书钻与简书贝信息 ranking={item.ranking}"
         )
         return None, None
-
-
-async def init_db() -> None:
-    await COLLECTION.create_indexes([IndexModel(("date", "ranking"), unique=True)])
 
 
 async def process_item(
@@ -104,8 +78,6 @@ async def flow_func() -> State:
     target_date = datetime.now().date()
 
     data: List[AssetsRankingRecordDocument] = []
-    # FIXME: jkit.exceptions.ValidationError: Expected `str` matching regex
-    # '^https?:\\/\\/.*\\.jianshu\\.io\\/[\\w%-\\/]*\\/?$' - at `$.user_info.avatar_url`
     async for item in AssetsRanking():
         processed_item = await process_item(item, target_date=target_date)
         data.append(processed_item)
@@ -113,7 +85,7 @@ async def flow_func() -> State:
         if len(data) == 1000:
             break
 
-    await COLLECTION.insert_many(x.to_dict() for x in data)
+    await insert_many(data)
 
     return Completed(message=f"target_date={target_date}, data_count={len(data)}")
 

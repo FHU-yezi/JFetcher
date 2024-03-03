@@ -9,7 +9,7 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = "^3.8"
 prefect = "^2.16.0"
-jkit = "^3.0.0a13"
+jkit = "^3.0.0a14"
 sspeedup = "^0.25.1"
 
 [tool.poetry.group.dev.dependencies]
