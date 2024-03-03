@@ -15,12 +15,14 @@ from models.article_earning_ranking_record import (
     init_db,
     insert_many,
 )
+from utils.async_retry import async_retry
 from utils.config_generators import (
     generate_deployment_config,
     generate_flow_config,
 )
 
 
+@async_retry()
 async def get_author_id_and_slug(
     item: RecordField, /
 ) -> Tuple[Optional[int], Optional[str]]:
