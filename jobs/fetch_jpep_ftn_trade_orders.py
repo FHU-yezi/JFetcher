@@ -22,7 +22,9 @@ def get_fetch_time() -> datetime:
     current_dt = datetime.now()
 
     # 保证采集时间对齐 10 分钟间隔
-    return current_dt.replace(minute=current_dt.minute // 10, second=0, microsecond=0)
+    return current_dt.replace(
+        minute=round(current_dt.minute / 10) * 10, second=0, microsecond=0
+    )
 
 
 def process_item(
