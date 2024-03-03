@@ -21,7 +21,13 @@ from utils.document_model import (
 COLLECTION = DB.assets_ranking_records
 
 
-class UserInfoField(Field, **FIELD_OBJECT_CONFIG):
+class AmountField(Field, **FIELD_OBJECT_CONFIG):
+    fp: Optional[NonNegativeFloat]
+    ftn: Optional[NonNegativeFloat]
+    assets: PositiveFloat
+
+
+class UserField(Field, **FIELD_OBJECT_CONFIG):
     id: Optional[PositiveInt]
     slug: Optional[UserSlug]
     name: Optional[UserName]
@@ -31,11 +37,8 @@ class AssetsRankingRecordDocument(Documemt, **DOCUMENT_OBJECT_CONFIG):
     date: date
     ranking: PositiveInt
 
-    fp_amount: Optional[NonNegativeFloat]
-    ftn_amount: Optional[NonNegativeFloat]
-    assets_amount: PositiveFloat
-
-    user_info: UserInfoField
+    amount: AmountField
+    user: UserField
 
 
 async def init_db() -> None:

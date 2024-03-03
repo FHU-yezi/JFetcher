@@ -19,7 +19,7 @@ from utils.document_model import (
 COLLECTION = DB.daily_update_ranking_records
 
 
-class UserInfoField(Field, **FIELD_OBJECT_CONFIG):
+class UserField(Field, **FIELD_OBJECT_CONFIG):
     slug: UserSlug
     name: UserName
 
@@ -28,12 +28,13 @@ class DailyUpdateRankingRecordDocument(Documemt, **DOCUMENT_OBJECT_CONFIG):
     date: date
     ranking: PositiveInt
     days: PositiveInt
-    user_info: UserInfoField
+
+    user: UserField
 
 
 async def init_db() -> None:
     await COLLECTION.create_indexes(
-        [IndexModel(["date", "userInfo.slug"], unique=True)],
+        [IndexModel(["date", "user.slug"], unique=True)],
     )
 
 

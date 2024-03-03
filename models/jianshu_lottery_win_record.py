@@ -20,33 +20,34 @@ from utils.document_model import (
 COLLECTION = DB.jianshu_lottery_win_records
 
 
-class UserInfoField(Field, **FIELD_OBJECT_CONFIG):
+class UserField(Field, **FIELD_OBJECT_CONFIG):
     id: PositiveInt
     slug: UserSlug
     name: UserName
 
 
 class JianshuLotteryWinRecordDocument(Documemt, **DOCUMENT_OBJECT_CONFIG):
-    record_id: PositiveInt
+    id: PositiveInt
     time: datetime
     award_name: NonEmptyStr
-    user_info: UserInfoField
+
+    user: UserField
 
 
 async def get_latest_record_id() -> int:
     try:
         latest_data = JianshuLotteryWinRecordDocument.from_dict(
-            await COLLECTION.find().sort("recordId", -1).__anext__()
+            await COLLECTION.find().sort("id", -1).__anext__()
         )
     except StopAsyncIteration:
         return 0
 
-    return latest_data.record_id
+    return latest_data.id
 
 
 async def init_db() -> None:
     await COLLECTION.create_indexes(
-        [IndexModel(["recordId"], unique=True)],
+        [IndexModel(["id"], unique=True)],
     )
 
 

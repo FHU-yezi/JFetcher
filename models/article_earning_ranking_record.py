@@ -41,6 +41,7 @@ class EarningField(Field, **FIELD_OBJECT_CONFIG):
 class ArticleEarningRankingRecordDocument(Documemt, **DOCUMENT_OBJECT_CONFIG):
     date: date
     ranking: PositiveInt
+
     article: ArticleField
     author: AuthorField
     earning: EarningField

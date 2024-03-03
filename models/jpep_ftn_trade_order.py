@@ -19,7 +19,14 @@ from utils.document_model import (
 COLLECTION = DB.jpep_ftn_trade_orders
 
 
-class PublisherInfoField(Field, **FIELD_OBJECT_CONFIG):
+class AmountField(Field, **FIELD_OBJECT_CONFIG):
+    total: PositiveInt
+    traded: NonNegativeInt
+    tradable: NonNegativeInt
+    minimum_trade: PositiveInt
+
+
+class PublisherField(Field, **FIELD_OBJECT_CONFIG):
     is_anonymous: bool
     id: Optional[PositiveInt]
     name: Optional[str]
@@ -29,24 +36,19 @@ class PublisherInfoField(Field, **FIELD_OBJECT_CONFIG):
 
 class JPEPFTNTradeOrderDocument(Documemt, **DOCUMENT_OBJECT_CONFIG):
     fetch_time: datetime
-    order_id: PositiveInt
+    id: PositiveInt
+    published_at: datetime
     type: Literal["buy", "sell"]
     price: PositiveFloat
-
-    total_amount: PositiveInt
-    traded_amount: NonNegativeInt
-    tradable_amount: NonNegativeInt
-    minimum_trade_amount: PositiveInt
-
     traded_count: NonNegativeInt
-    publish_time: datetime
 
-    publisher_info: PublisherInfoField
+    amount: AmountField
+    publisher: PublisherField
 
 
 async def init_db() -> None:
     await COLLECTION.create_indexes(
-        [IndexModel(["fetchTime", "orderId"], unique=True)],
+        [IndexModel(["fetchTime", "id"], unique=True)],
     )
 
 

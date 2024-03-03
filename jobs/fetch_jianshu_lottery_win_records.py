@@ -6,7 +6,7 @@ from prefect.states import Completed, State
 
 from models.jianshu_lottery_win_record import (
     JianshuLotteryWinRecordDocument,
-    UserInfoField,
+    UserField,
     get_latest_record_id,
     init_db,
     insert_many,
@@ -19,10 +19,10 @@ from utils.config_generators import (
 
 def process_item(item: JianshuLotteryWinRecord, /) -> JianshuLotteryWinRecordDocument:
     return JianshuLotteryWinRecordDocument(
-        record_id=item.id,
+        id=item.id,
         time=item.time,
         award_name=item.award_name,
-        user_info=UserInfoField(
+        user=UserField(
             id=item.user_info.id,
             slug=item.user_info.slug,
             name=item.user_info.name,

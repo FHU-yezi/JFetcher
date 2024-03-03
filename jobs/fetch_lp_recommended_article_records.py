@@ -6,7 +6,7 @@ from prefect import flow, get_run_logger
 from prefect.states import Completed, State
 
 from models.lp_recommend_article_record import (
-    AuthorInfoField,
+    AuthorField,
     LPRecommendedArticleRecord,
     init_db,
     insert_many,
@@ -44,7 +44,7 @@ async def process_item(
         is_paid=item.is_paid,
         can_comment=item.can_comment,
         description=item.description,
-        author_info=AuthorInfoField(
+        author=AuthorField(
             id=item.author_info.id,
             slug=item.author_info.slug,
             name=item.author_info.name,

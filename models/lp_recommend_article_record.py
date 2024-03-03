@@ -22,7 +22,7 @@ from utils.document_model import (
 COLLECTION = DB.lp_recommended_article_records
 
 
-class AuthorInfoField(Field, **FIELD_OBJECT_CONFIG):
+class AuthorField(Field, **FIELD_OBJECT_CONFIG):
     id: PositiveInt
     slug: str
     name: str
@@ -45,7 +45,7 @@ class LPRecommendedArticleRecord(Documemt, **DOCUMENT_OBJECT_CONFIG):
     can_comment: bool
     description: str
 
-    author_info: AuthorInfoField
+    author: AuthorField
 
 
 async def is_record_stored(article_slug: str) -> bool:
