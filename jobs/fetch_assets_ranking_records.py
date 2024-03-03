@@ -9,8 +9,9 @@ from prefect import flow, get_run_logger
 from prefect.states import Completed, State
 
 from models.assets_ranking_record import (
+    AmountField,
     AssetsRankingRecordDocument,
-    UserInfoField,
+    UserField,
     init_db,
     insert_many,
 )
@@ -56,10 +57,12 @@ async def process_item(
     return AssetsRankingRecordDocument(
         date=target_date,
         ranking=item.ranking,
-        fp_amount=fp_amount,
-        ftn_amount=ftn_amount,
-        assets_amount=item.assets_amount,
-        user_info=UserInfoField(
+        amount=AmountField(
+            fp=fp_amount,
+            ftn=ftn_amount,
+            assets=item.assets_amount,
+        ),
+        user=UserField(
             id=item.user_info.id,
             slug=item.user_info.slug,
             name=item.user_info.name,

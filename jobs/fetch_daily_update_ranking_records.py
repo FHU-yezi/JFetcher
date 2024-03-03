@@ -10,7 +10,7 @@ from prefect.states import Completed, State
 
 from models.daily_update_ranking_record import (
     DailyUpdateRankingRecordDocument,
-    UserInfoField,
+    UserField,
     init_db,
     insert_many,
 )
@@ -27,7 +27,7 @@ def process_item(
         date=current_date,
         ranking=item.ranking,
         days=item.days,
-        user_info=UserInfoField(
+        user=UserField(
             slug=item.user_info.slug,
             name=item.user_info.name,
         ),

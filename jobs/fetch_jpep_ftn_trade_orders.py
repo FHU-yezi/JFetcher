@@ -6,8 +6,9 @@ from prefect import flow
 from prefect.states import Completed, State
 
 from models.jpep_ftn_trade_order import (
+    AmountField,
     JPEPFTNTradeOrderDocument,
-    PublisherInfoField,
+    PublisherField,
     init_db,
     insert_many,
 )
@@ -32,17 +33,19 @@ def process_item(
     type: Literal["buy", "sell"],  # noqa: A002
 ) -> JPEPFTNTradeOrderDocument:
     return JPEPFTNTradeOrderDocument(
-        type=type,
         fetch_time=fetch_time,
-        order_id=item.id,
+        id=item.id,
+        published_at=item.publish_time,
+        type=type,
         price=item.price,
-        total_amount=item.total_amount,
-        traded_amount=item.traded_amount,
-        tradable_amount=item.tradable_amount,
-        minimum_trade_amount=item.minimum_trade_amount,
         traded_count=item.traded_count,
-        publish_time=item.publish_time,
-        publisher_info=PublisherInfoField(
+        amount=AmountField(
+            total=item.total_amount,
+            traded=item.traded_amount,
+            tradable=item.tradable_amount,
+            minimum_trade=item.minimum_trade_amount,
+        ),
+        publisher=PublisherField(
             is_anonymous=item.publisher_info.is_anonymous,
             id=item.publisher_info.id,
             name=item.publisher_info.name,
