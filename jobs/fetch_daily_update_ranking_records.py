@@ -1,43 +1,23 @@
 from datetime import date, datetime
 from typing import List
 
-from jkit._constraints import PositiveInt
-from jkit.ranking.daily_update import DailyUpdateRanking, DailyUpdateRankingRecord
+from jkit.ranking.daily_update import (
+    DailyUpdateRanking,
+    DailyUpdateRankingRecord,
+)
 from prefect import flow
 from prefect.states import Completed, State
-from pymongo import IndexModel
 
+from models.daily_update_ranking_record import (
+    DailyUpdateRankingRecordDocument,
+    UserInfoField,
+    init_db,
+    insert_many,
+)
 from utils.config_generators import (
     generate_deployment_config,
     generate_flow_config,
 )
-from utils.db import DB
-from utils.document_model import (
-    DOCUMENT_OBJECT_CONFIG,
-    FIELD_OBJECT_CONFIG,
-    Documemt,
-    Field,
-)
-
-COLLECTION = DB.daily_update_ranking_records
-
-
-class UserInfoField(Field, **FIELD_OBJECT_CONFIG):
-    slug: str
-    name: str
-
-
-class DailyUpdateRankingRecordDocument(Documemt, **DOCUMENT_OBJECT_CONFIG):
-    date: date
-    ranking: PositiveInt
-    days: PositiveInt
-    user_info: UserInfoField
-
-
-async def init_db() -> None:
-    await COLLECTION.create_indexes(
-        [IndexModel(("date", "user_info.slug"), unique=True)]
-    )
 
 
 def process_item(
@@ -69,7 +49,7 @@ async def flow_func() -> State:
         processed_item = process_item(item, current_date=current_date)
         data.append(processed_item)
 
-    await COLLECTION.insert_many(x.to_dict() for x in data)
+    await insert_many(data)
 
     return Completed(message=f"data_count={len(data)}")
 
