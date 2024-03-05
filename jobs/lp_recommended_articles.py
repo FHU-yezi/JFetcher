@@ -5,12 +5,15 @@ from jkit.collection import Collection, CollectionArticleInfo
 from prefect import flow, get_run_logger
 from prefect.states import Completed, State
 
+from models.jianshu_user import init_db as init_jianshu_user_db
 from models.jianshu_user import insert_or_update_one
 from models.lp_recommend_article_record import (
     LPRecommendedArticleRecord,
-    init_db,
     insert_many,
     is_record_stored,
+)
+from models.lp_recommend_article_record import (
+    init_db as init_lp_recommend_article_record_db,
 )
 from utils.config_generators import (
     generate_deployment_config,
@@ -61,7 +64,8 @@ async def process_item(
     )
 )
 async def flow_func() -> State:
-    await init_db()
+    await init_lp_recommend_article_record_db()
+    await init_jianshu_user_db()
 
     logger = get_run_logger()
 
