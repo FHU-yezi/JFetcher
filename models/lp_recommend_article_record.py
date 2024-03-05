@@ -7,6 +7,7 @@ from jkit._constraints import (
     NonNegativeFloat,
     NonNegativeInt,
     PositiveInt,
+    UserSlug,
 )
 from msgspec import field
 from pymongo import IndexModel
@@ -14,18 +15,10 @@ from pymongo import IndexModel
 from utils.db import DB
 from utils.document_model import (
     DOCUMENT_OBJECT_CONFIG,
-    FIELD_OBJECT_CONFIG,
     Documemt,
-    Field,
 )
 
 COLLECTION = DB.lp_recommended_article_records
-
-
-class AuthorField(Field, **FIELD_OBJECT_CONFIG):
-    id: PositiveInt
-    slug: str
-    name: str
 
 
 class LPRecommendedArticleRecord(Documemt, **DOCUMENT_OBJECT_CONFIG):
@@ -45,7 +38,7 @@ class LPRecommendedArticleRecord(Documemt, **DOCUMENT_OBJECT_CONFIG):
     can_comment: bool
     description: str
 
-    author: AuthorField
+    author_slug: UserSlug
 
 
 async def is_record_stored(article_slug: str) -> bool:

@@ -11,10 +11,10 @@ from prefect.states import Completed, State
 from models.assets_ranking_record import (
     AmountField,
     AssetsRankingRecordDocument,
-    UserField,
     init_db,
     insert_many,
 )
+from models.jianshu_user import insert_or_update_one
 from utils.async_retry import async_retry
 from utils.config_generators import (
     generate_deployment_config,
@@ -56,6 +56,14 @@ async def process_item(
 ) -> AssetsRankingRecordDocument:
     fp_amount, ftn_amount = await get_fp_ftn_amount(item)
 
+    if item.user_info.slug:
+        await insert_or_update_one(
+            slug=item.user_info.slug,
+            id=item.user_info.id,
+            name=item.user_info.name,
+            avatar_url=item.user_info.avatar_url,
+        )
+
     return AssetsRankingRecordDocument(
         date=target_date,
         ranking=item.ranking,
@@ -64,11 +72,7 @@ async def process_item(
             ftn=ftn_amount,
             assets=item.assets_amount,
         ),
-        user=UserField(
-            id=item.user_info.id,
-            slug=item.user_info.slug,
-            name=item.user_info.name,
-        ),
+        user_slug=item.user_info.slug,
     ).validate()
 
 

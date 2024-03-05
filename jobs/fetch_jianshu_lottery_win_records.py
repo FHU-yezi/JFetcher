@@ -6,27 +6,33 @@ from prefect.states import Completed, State
 
 from models.jianshu_lottery_win_record import (
     JianshuLotteryWinRecordDocument,
-    UserField,
     get_latest_record_id,
     init_db,
     insert_many,
 )
+from models.jianshu_user import insert_or_update_one
 from utils.config_generators import (
     generate_deployment_config,
     generate_flow_config,
 )
 
 
-def process_item(item: JianshuLotteryWinRecord, /) -> JianshuLotteryWinRecordDocument:
+async def process_item(
+    item: JianshuLotteryWinRecord, /
+) -> JianshuLotteryWinRecordDocument:
+    await insert_or_update_one(
+        slug=item.user_info.slug,
+        updated_at=item.time,
+        id=item.user_info.id,
+        name=item.user_info.name,
+        avatar_url=item.user_info.avatar_url,
+    )
+
     return JianshuLotteryWinRecordDocument(
         id=item.id,
         time=item.time,
         award_name=item.award_name,
-        user=UserField(
-            id=item.user_info.id,
-            slug=item.user_info.slug,
-            name=item.user_info.name,
-        ),
+        user_slug=item.user_info.slug,
     ).validate()
 
 
@@ -50,7 +56,7 @@ async def flow_func() -> State:
         if item.id == stop_id:
             break
 
-        processed_item = process_item(item)
+        processed_item = await process_item(item)
         data.append(processed_item)
     else:
         logger.warning("采集数据量达到上限")
