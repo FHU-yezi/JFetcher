@@ -11,9 +11,12 @@ from models.article_earning_ranking_record import (
     ArticleEarningRankingRecordDocument,
     ArticleField,
     EarningField,
-    init_db,
     insert_many,
 )
+from models.article_earning_ranking_record import (
+    init_db as init_article_earning_ranking_record_db,
+)
+from models.jianshu_user import init_db as init_jianshu_user_db
 from models.jianshu_user import insert_or_update_one
 from utils.async_retry import async_retry
 from utils.config_generators import (
@@ -81,7 +84,8 @@ async def process_item(
     )
 )
 async def flow_func() -> State:
-    await init_db()
+    await init_article_earning_ranking_record_db()
+    await init_jianshu_user_db()
 
     target_date = datetime.now().date() - timedelta(days=1)
 

@@ -7,9 +7,12 @@ from prefect.states import Completed, State
 from models.jianshu_lottery_win_record import (
     JianshuLotteryWinRecordDocument,
     get_latest_record_id,
-    init_db,
     insert_many,
 )
+from models.jianshu_lottery_win_record import (
+    init_db as init_jianshu_lottery_win_record_db,
+)
+from models.jianshu_user import init_db as init_jianshu_user_db
 from models.jianshu_user import insert_or_update_one
 from utils.config_generators import (
     generate_deployment_config,
@@ -42,7 +45,8 @@ async def process_item(
     )
 )
 async def flow_func() -> State:
-    await init_db()
+    await init_jianshu_lottery_win_record_db()
+    await init_jianshu_user_db()
 
     logger = get_run_logger()
 

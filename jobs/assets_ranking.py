@@ -11,9 +11,12 @@ from prefect.states import Completed, State
 from models.assets_ranking_record import (
     AmountField,
     AssetsRankingRecordDocument,
-    init_db,
     insert_many,
 )
+from models.assets_ranking_record import (
+    init_db as init_assets_ranking_record_db,
+)
+from models.jianshu_user import init_db as init_jianshu_user_db
 from models.jianshu_user import insert_or_update_one
 from utils.async_retry import async_retry
 from utils.config_generators import (
@@ -82,7 +85,8 @@ async def process_item(
     )
 )
 async def flow_func() -> State:
-    await init_db()
+    await init_assets_ranking_record_db()
+    await init_jianshu_user_db()
 
     target_date = datetime.now().date()
 
