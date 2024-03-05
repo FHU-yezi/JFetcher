@@ -26,7 +26,7 @@ class DailyUpdateRankingRecordDocument(Documemt, **DOCUMENT_OBJECT_CONFIG):
 
 async def init_db() -> None:
     await COLLECTION.create_indexes(
-        [IndexModel(["date", "user_slug"], unique=True)],
+        [IndexModel(["date", "userSlug"], unique=True)],
     )
 
 
