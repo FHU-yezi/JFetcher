@@ -4,7 +4,6 @@ from typing import Sequence
 from jkit._constraints import (
     NonEmptyStr,
     PositiveInt,
-    UserName,
     UserSlug,
 )
 from pymongo import IndexModel
@@ -12,18 +11,10 @@ from pymongo import IndexModel
 from utils.db import DB
 from utils.document_model import (
     DOCUMENT_OBJECT_CONFIG,
-    FIELD_OBJECT_CONFIG,
     Documemt,
-    Field,
 )
 
 COLLECTION = DB.jianshu_lottery_win_records
-
-
-class UserField(Field, **FIELD_OBJECT_CONFIG):
-    id: PositiveInt
-    slug: UserSlug
-    name: UserName
 
 
 class JianshuLotteryWinRecordDocument(Documemt, **DOCUMENT_OBJECT_CONFIG):
@@ -31,7 +22,7 @@ class JianshuLotteryWinRecordDocument(Documemt, **DOCUMENT_OBJECT_CONFIG):
     time: datetime
     award_name: NonEmptyStr
 
-    user: UserField
+    user_slug: UserSlug
 
 
 async def get_latest_record_id() -> int:

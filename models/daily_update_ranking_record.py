@@ -3,7 +3,6 @@ from typing import Sequence
 
 from jkit._constraints import (
     PositiveInt,
-    UserName,
     UserSlug,
 )
 from pymongo import IndexModel
@@ -11,17 +10,10 @@ from pymongo import IndexModel
 from utils.db import DB
 from utils.document_model import (
     DOCUMENT_OBJECT_CONFIG,
-    FIELD_OBJECT_CONFIG,
     Documemt,
-    Field,
 )
 
 COLLECTION = DB.daily_update_ranking_records
-
-
-class UserField(Field, **FIELD_OBJECT_CONFIG):
-    slug: UserSlug
-    name: UserName
 
 
 class DailyUpdateRankingRecordDocument(Documemt, **DOCUMENT_OBJECT_CONFIG):
@@ -29,12 +21,12 @@ class DailyUpdateRankingRecordDocument(Documemt, **DOCUMENT_OBJECT_CONFIG):
     ranking: PositiveInt
     days: PositiveInt
 
-    user: UserField
+    user_slug: UserSlug
 
 
 async def init_db() -> None:
     await COLLECTION.create_indexes(
-        [IndexModel(["date", "user.slug"], unique=True)],
+        [IndexModel(["date", "user_slug"], unique=True)],
     )
 
 

@@ -10,27 +10,30 @@ from prefect.states import Completed, State
 
 from models.daily_update_ranking_record import (
     DailyUpdateRankingRecordDocument,
-    UserField,
     init_db,
     insert_many,
 )
+from models.jianshu_user import insert_or_update_one
 from utils.config_generators import (
     generate_deployment_config,
     generate_flow_config,
 )
 
 
-def process_item(
+async def process_item(
     item: DailyUpdateRankingRecord, /, *, current_date: date
 ) -> DailyUpdateRankingRecordDocument:
+    await insert_or_update_one(
+        slug=item.user_info.slug,
+        name=item.user_info.name,
+        avatar_url=item.user_info.avatar_url,
+    )
+
     return DailyUpdateRankingRecordDocument(
         date=current_date,
         ranking=item.ranking,
         days=item.days,
-        user=UserField(
-            slug=item.user_info.slug,
-            name=item.user_info.name,
-        ),
+        user_slug=item.user_info.slug,
     ).validate()
 
 
@@ -46,7 +49,7 @@ async def flow_func() -> State:
 
     data: List[DailyUpdateRankingRecordDocument] = []
     async for item in DailyUpdateRanking():
-        processed_item = process_item(item, current_date=current_date)
+        processed_item = await process_item(item, current_date=current_date)
         data.append(processed_item)
 
     await insert_many(data)

@@ -5,7 +5,6 @@ from jkit._constraints import (
     NonNegativeFloat,
     PositiveFloat,
     PositiveInt,
-    UserName,
     UserSlug,
 )
 from pymongo import IndexModel
@@ -27,18 +26,12 @@ class AmountField(Field, **FIELD_OBJECT_CONFIG):
     assets: PositiveFloat
 
 
-class UserField(Field, **FIELD_OBJECT_CONFIG):
-    id: Optional[PositiveInt]
-    slug: Optional[UserSlug]
-    name: Optional[UserName]
-
-
 class AssetsRankingRecordDocument(Documemt, **DOCUMENT_OBJECT_CONFIG):
     date: date
     ranking: PositiveInt
 
     amount: AmountField
-    user: UserField
+    user_slug: Optional[UserSlug]
 
 
 async def init_db() -> None:

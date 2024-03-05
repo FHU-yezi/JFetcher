@@ -5,8 +5,8 @@ from jkit.collection import Collection, CollectionArticleInfo
 from prefect import flow, get_run_logger
 from prefect.states import Completed, State
 
+from models.jianshu_user import insert_or_update_one
 from models.lp_recommend_article_record import (
-    AuthorField,
     LPRecommendedArticleRecord,
     init_db,
     insert_many,
@@ -30,6 +30,13 @@ async def process_item(
         logger.warning(f"已保存过该文章记录，跳过 slug={item.slug}")
         return None
 
+    await insert_or_update_one(
+        slug=item.author_info.slug,
+        id=item.author_info.id,
+        name=item.author_info.name,
+        avatar_url=item.author_info.avatar_url,
+    )
+
     return LPRecommendedArticleRecord(
         date=current_date,
         id=item.id,
@@ -44,11 +51,7 @@ async def process_item(
         is_paid=item.is_paid,
         can_comment=item.can_comment,
         description=item.description,
-        author=AuthorField(
-            id=item.author_info.id,
-            slug=item.author_info.slug,
-            name=item.author_info.name,
-        ),
+        author_slug=item.author_info.slug,
     ).validate()
 
 

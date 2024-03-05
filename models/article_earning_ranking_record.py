@@ -6,7 +6,6 @@ from jkit._constraints import (
     NonEmptyStr,
     PositiveFloat,
     PositiveInt,
-    UserName,
     UserSlug,
 )
 from pymongo import IndexModel
@@ -27,12 +26,6 @@ class ArticleField(Field, **FIELD_OBJECT_CONFIG):
     title: Optional[NonEmptyStr]
 
 
-class AuthorField(Field, **FIELD_OBJECT_CONFIG):
-    id: Optional[PositiveInt]
-    slug: Optional[UserSlug]
-    name: Optional[UserName]
-
-
 class EarningField(Field, **FIELD_OBJECT_CONFIG):
     to_author: PositiveFloat
     to_voter: PositiveFloat
@@ -43,7 +36,7 @@ class ArticleEarningRankingRecordDocument(Documemt, **DOCUMENT_OBJECT_CONFIG):
     ranking: PositiveInt
 
     article: ArticleField
-    author: AuthorField
+    author_slug: Optional[UserSlug]
     earning: EarningField
 
 

@@ -10,11 +10,11 @@ from prefect.states import Completed, State
 from models.article_earning_ranking_record import (
     ArticleEarningRankingRecordDocument,
     ArticleField,
-    AuthorField,
     EarningField,
     init_db,
     insert_many,
 )
+from models.jianshu_user import insert_or_update_one
 from utils.async_retry import async_retry
 from utils.config_generators import (
     generate_deployment_config,
@@ -54,6 +54,12 @@ async def process_item(
 ) -> ArticleEarningRankingRecordDocument:
     author_id, author_slug = await get_author_id_and_slug(item)
 
+    if author_slug:
+        await insert_or_update_one(
+            slug=author_slug,
+            id=author_id,
+        )
+
     return ArticleEarningRankingRecordDocument(
         date=target_date,
         ranking=item.ranking,
@@ -61,11 +67,7 @@ async def process_item(
             title=item.title,
             slug=item.slug,
         ),
-        author=AuthorField(
-            id=author_id,
-            slug=author_slug,
-            name=item.author_info.name,
-        ),
+        author_slug=author_slug,
         earning=EarningField(
             to_author=item.fp_to_author_anount,
             to_voter=item.fp_to_voter_amount,
