@@ -4,6 +4,7 @@ from typing import List, Optional, Tuple
 from jkit.config import CONFIG
 from jkit.exceptions import ResourceUnavailableError
 from jkit.ranking.article_earning import ArticleEarningRanking, RecordField
+from jkit.user import UserInfo
 from prefect import flow, get_run_logger
 from prefect.states import Completed, State
 
@@ -26,13 +27,13 @@ from utils.config_generators import (
 
 
 @async_retry()
-async def get_author_id_and_slug(
+async def get_author_slug_and_info(
     item: RecordField, /
-) -> Tuple[Optional[int], Optional[str]]:
+) -> Tuple[Optional[str], Optional[UserInfo]]:
     logger = get_run_logger()
 
     if not item.slug:
-        logger.warning(f"文章走丢了，跳过采集文章与作者信息 ranking={item.ranking}")
+        logger.warning(f"文章走丢了，跳过采集作者信息 ranking={item.ranking}")
         return None, None
 
     try:
@@ -41,26 +42,26 @@ async def get_author_id_and_slug(
         article_obj = item.to_article_obj()
         author = (await article_obj.info).author_info.to_user_obj()
 
-        result = (await author.id, author.slug)
+        author_info = await author.info
         CONFIG.data_validation.enabled = True
 
-        return result
+        return (author.slug, author_info)
     except ResourceUnavailableError:
-        logger.warning(
-            f"文章或作者状态异常，跳过采集文章与作者信息 ranking={item.ranking}"
-        )
+        logger.warning(f"文章或作者状态异常，跳过采集作者信息 ranking={item.ranking}")
         return None, None
 
 
 async def process_item(
     item: RecordField, /, *, target_date: date
 ) -> ArticleEarningRankingRecordDocument:
-    author_id, author_slug = await get_author_id_and_slug(item)
+    author_slug, author_info = await get_author_slug_and_info(item)
 
-    if author_slug:
+    if author_slug is not None and author_info is not None:
         await insert_or_update_one(
             slug=author_slug,
-            id=author_id,
+            id=author_info.id,
+            name=author_info.name,
+            avatar_url=author_info.avatar_url,
         )
 
     return ArticleEarningRankingRecordDocument(
