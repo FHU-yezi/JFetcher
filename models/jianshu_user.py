@@ -55,8 +55,8 @@ async def insert_or_update_one(
             ).to_dict()
         )
 
-    # 此处用户必定存在，因此 current_data 不为 None
-    current_data = JianshuUser.from_dict(await COLLECTION.find_one({"slug": slug}))  # type: ignore
+    # 此处用户必定存在，因此 db_data 不为 None
+    db_data = JianshuUser.from_dict(await COLLECTION.find_one({"slug": slug}))  # type: ignore
 
     update_data: Dict[str, Any] = {
         "$set": {
@@ -65,26 +65,31 @@ async def insert_or_update_one(
         }
     }
     # 如果新数据中的 ID 与数据库不一致，报错
-    if id and current_data.id and id != current_data.id:
-        raise ValueError(f"ID 不一致（{id} 和 {current_data.id}）")
+    if (id is not None and db_data.id is not None) and id != db_data.id:
+        raise ValueError(f"ID 不一致（{id} 和 {db_data.id}）")
 
     # 如果获取到了之前未知的 ID，添加之
-    if id and not current_data.id:
+    if id is not None and db_data.id is None:
         update_data["$set"]["id"] = id
 
     # 如果获取到了之前未知的昵称，添加之
-    if name and not current_data.name:
+    if name is not None and db_data.name is None:
         update_data["$set"]["name"] = name
 
     # 如果新数据中的昵称与数据库不一致，说明昵称更改过
-    # 更新数据库中的昵称，并将之前的昵称加入历史昵称列表
-    if current_data.name is not None:
+    # 此时需要比较数据的更新时间，如果数据库中的数据相对较旧
+    # 则更新数据库中的昵称，并将之前的昵称加入历史昵称列表
+    if (
+        (name is not None and db_data.name is not None)
+        and name != db_data.name
+        and updated_at > db_data.updated_at
+    ):
         update_data["$set"]["name"] = name
-        update_data["$push"] = {"historyNames": current_data.name}
+        update_data["$push"] = {"historyNames": db_data.name}
 
     # 如果获取到了之前未知的头像链接，或头像链接与之前不一致，添加 / 更新之
-    if avatar_url and (
-        not current_data.avatar_url or avatar_url != current_data.avatar_url
+    if avatar_url is not None and (
+        db_data.avatar_url is None or avatar_url != db_data.avatar_url
     ):
         update_data["$set"]["avatarUrl"] = avatar_url
 
