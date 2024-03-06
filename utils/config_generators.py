@@ -3,7 +3,6 @@ from typing import Any, Dict, Union
 
 from prefect.client.schemas.schedules import CronSchedule
 
-from utils.config import CONFIG
 from utils.event_handlers import on_failure_or_crashed
 
 
@@ -15,7 +14,7 @@ def generate_flow_config(
 ) -> Dict[str, Any]:
     return {
         "name": name,
-        "version": CONFIG.version,
+        "version": None,
         "retries": retries,
         "retry_delay_seconds": retry_delay_seconds,
         "timeout_seconds": timeout,
@@ -27,7 +26,7 @@ def generate_flow_config(
 def generate_deployment_config(name: str, cron: str) -> Dict[str, Any]:
     return {
         "name": f"JFetcher - {name}",
-        "version": CONFIG.version,
+        "version": None,
         "schedule": CronSchedule(
             cron=cron,
             timezone="Asia/Shanghai",
