@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import List, Literal
 
 from jkit.jpep.ftn_macket import FTNMacket, FTNMacketOrderRecord
@@ -19,12 +19,18 @@ from utils.config_generators import (
 
 
 def get_fetch_time() -> datetime:
-    current_dt = datetime.now()
+    dt = datetime.now()
 
     # 保证采集时间对齐 10 分钟间隔
-    return current_dt.replace(
-        minute=round(current_dt.minute / 10) * 10, second=0, microsecond=0
+    discard = timedelta(
+        minutes=dt.minute % 10,
+        seconds=dt.second,
+        microseconds=dt.microsecond,
     )
+    dt -= discard
+    if discard >= timedelta(minutes=5):
+        dt += timedelta(minutes=10)
+    return dt
 
 
 def process_item(
