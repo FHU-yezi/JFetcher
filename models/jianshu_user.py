@@ -1,4 +1,5 @@
 from datetime import datetime
+from enum import Enum
 from typing import Any, Dict, List, Optional
 
 from jkit._constraints import PositiveInt, UserName, UserSlug, UserUploadedUrl
@@ -10,8 +11,14 @@ from utils.document_model import Documemt
 COLLECTION = DB.jianshu_users
 
 
+class JianshuUserStatus(Enum):
+    NORMAL = "NORMAL"
+    INACCESSABLE = "INACCESSIBLE"
+
+
 class JianshuUser(Documemt):
     slug: UserSlug
+    status: JianshuUserStatus
     updated_at: datetime
     id: Optional[PositiveInt]
     name: Optional[UserName]
@@ -47,6 +54,7 @@ async def insert_or_update_one(
         await COLLECTION.insert_one(
             JianshuUser(
                 slug=slug,
+                status=JianshuUserStatus.NORMAL,
                 updated_at=updated_at,
                 id=id,
                 name=name,
