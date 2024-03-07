@@ -12,13 +12,8 @@ from models.article_earning_ranking_record import (
     ArticleEarningRankingRecordDocument,
     ArticleField,
     EarningField,
-    insert_many,
 )
-from models.article_earning_ranking_record import (
-    init_db as init_article_earning_ranking_record_db,
-)
-from models.jianshu_user import init_db as init_jianshu_user_db
-from models.jianshu_user import insert_or_update_one
+from models.jianshu_user import JianshuUserDocument
 from utils.async_retry import async_retry
 from utils.config_generators import (
     generate_deployment_config,
@@ -57,7 +52,7 @@ async def process_item(
     author_slug, author_info = await get_author_slug_and_info(item)
 
     if author_slug is not None and author_info is not None:
-        await insert_or_update_one(
+        await JianshuUserDocument.insert_or_update_one(
             slug=author_slug,
             id=author_info.id,
             name=author_info.name,
@@ -85,8 +80,8 @@ async def process_item(
     )
 )
 async def flow_func() -> State:
-    await init_article_earning_ranking_record_db()
-    await init_jianshu_user_db()
+    await ArticleEarningRankingRecordDocument.ensure_indexes()
+    await JianshuUserDocument.ensure_indexes()
 
     target_date = datetime.now().date() - timedelta(days=1)
 
@@ -95,7 +90,7 @@ async def flow_func() -> State:
         processed_item = await process_item(item, target_date=target_date)
         data.append(processed_item)
 
-    await insert_many(data)
+    await ArticleEarningRankingRecordDocument.insert_many(data)
 
     return Completed(message=f"target_date={target_date}, data_count={len(data)}")
 

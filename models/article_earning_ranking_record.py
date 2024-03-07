@@ -1,5 +1,5 @@
 from datetime import date
-from typing import Optional, Sequence
+from typing import ClassVar, List, Optional
 
 from jkit._constraints import (
     ArticleSlug,
@@ -39,12 +39,8 @@ class ArticleEarningRankingRecordDocument(Documemt, **DOCUMENT_OBJECT_CONFIG):
     author_slug: Optional[UserSlug]
     earning: EarningField
 
-
-async def init_db() -> None:
-    await COLLECTION.create_indexes(
-        [IndexModel(["date", "ranking"], unique=True)],
-    )
-
-
-async def insert_many(data: Sequence[ArticleEarningRankingRecordDocument]) -> None:
-    await COLLECTION.insert_many(x.to_dict() for x in data)
+    class Settings:  # type: ignore
+        collection = COLLECTION
+        indexes: ClassVar[List[IndexModel]] = [
+            IndexModel(["date", "ranking"], unique=True),
+        ]

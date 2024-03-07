@@ -1,5 +1,5 @@
 from datetime import date
-from typing import Sequence
+from typing import ClassVar, List
 
 from jkit._constraints import (
     PositiveInt,
@@ -23,12 +23,8 @@ class DailyUpdateRankingRecordDocument(Documemt, **DOCUMENT_OBJECT_CONFIG):
 
     user_slug: UserSlug
 
-
-async def init_db() -> None:
-    await COLLECTION.create_indexes(
-        [IndexModel(["date", "userSlug"], unique=True)],
-    )
-
-
-async def insert_many(data: Sequence[DailyUpdateRankingRecordDocument]) -> None:
-    await COLLECTION.insert_many(x.to_dict() for x in data)
+    class Settings:  # type: ignore
+        collection = COLLECTION
+        indexes: ClassVar[List[IndexModel]] = [
+            IndexModel(["date", "userSlug"], unique=True),
+        ]

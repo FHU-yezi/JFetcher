@@ -9,8 +9,6 @@ from models.jpep_ftn_trade_order import (
     AmountField,
     JPEPFTNTradeOrderDocument,
     PublisherField,
-    init_db,
-    insert_many,
 )
 from utils.config_generators import (
     generate_deployment_config,
@@ -69,7 +67,7 @@ def process_item(
     ),
 )
 async def flow_func(type: Literal["buy", "sell"]) -> State:  # noqa: A002
-    await init_db()
+    await JPEPFTNTradeOrderDocument.ensure_indexes()
 
     fetch_time = get_fetch_time()
 
@@ -78,7 +76,7 @@ async def flow_func(type: Literal["buy", "sell"]) -> State:  # noqa: A002
         processed_item = process_item(item, fetch_time=fetch_time, type=type)
         data.append(processed_item)
 
-    await insert_many(data)
+    await JPEPFTNTradeOrderDocument.insert_many(data)
 
     return Completed(message=f"fetch_time={fetch_time}, data_count={len(data)}")
 
