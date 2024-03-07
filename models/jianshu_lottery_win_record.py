@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Sequence
+from typing import ClassVar, List
 
 from jkit._constraints import (
     NonEmptyStr,
@@ -24,23 +24,19 @@ class JianshuLotteryWinRecordDocument(Documemt, **DOCUMENT_OBJECT_CONFIG):
 
     user_slug: UserSlug
 
+    class Settings:  # type: ignore
+        collection = COLLECTION
+        indexes: ClassVar[List[IndexModel]] = [
+            IndexModel(["id"], unique=True),
+        ]
 
-async def get_latest_record_id() -> int:
-    try:
-        latest_data = JianshuLotteryWinRecordDocument.from_dict(
-            await COLLECTION.find().sort("id", -1).__anext__()
-        )
-    except StopAsyncIteration:
-        return 0
+    @classmethod
+    async def get_latest_record_id(cls) -> int:
+        try:
+            latest_data = JianshuLotteryWinRecordDocument.from_dict(
+                await COLLECTION.find().sort("id", -1).__anext__()
+            )
+        except StopAsyncIteration:
+            return 0
 
-    return latest_data.id
-
-
-async def init_db() -> None:
-    await COLLECTION.create_indexes(
-        [IndexModel(["id"], unique=True)],
-    )
-
-
-async def insert_many(data: Sequence[JianshuLotteryWinRecordDocument]) -> None:
-    await COLLECTION.insert_many(x.to_dict() for x in data)
+        return latest_data.id

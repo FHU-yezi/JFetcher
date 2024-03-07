@@ -1,5 +1,5 @@
 from datetime import date, datetime
-from typing import Sequence
+from typing import ClassVar, List
 
 from jkit._constraints import (
     ArticleSlug,
@@ -21,7 +21,7 @@ from utils.document_model import (
 COLLECTION = DB.lp_recommended_article_records
 
 
-class LPRecommendedArticleRecord(Documemt, **DOCUMENT_OBJECT_CONFIG):
+class LPRecommendedArticleRecordDocument(Documemt, **DOCUMENT_OBJECT_CONFIG):
     date: date
     id: PositiveInt
     slug: ArticleSlug
@@ -40,16 +40,12 @@ class LPRecommendedArticleRecord(Documemt, **DOCUMENT_OBJECT_CONFIG):
 
     author_slug: UserSlug
 
+    class Settings:  # type: ignore
+        collection = COLLECTION
+        indexes: ClassVar[List[IndexModel]] = [
+            IndexModel(["date", "slug"], unique=True),
+        ]
 
-async def is_record_stored(article_slug: str) -> bool:
-    result = await COLLECTION.find_one({"slug": article_slug})
-
-    return result is not None
-
-
-async def init_db() -> None:
-    await COLLECTION.create_indexes([IndexModel(["date", "slug"], unique=True)])
-
-
-async def insert_many(data: Sequence[LPRecommendedArticleRecord]) -> None:
-    await COLLECTION.insert_many(x.to_dict() for x in data)
+    @classmethod
+    async def is_record_exist(cls, slug: str) -> bool:
+        return await COLLECTION.find_one({"slug": slug}) is not None

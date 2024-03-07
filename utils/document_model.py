@@ -1,8 +1,10 @@
 from datetime import date, datetime
-from typing import Any, Dict, Tuple
+from typing import Any, ClassVar, Dict, List, Sequence, Tuple
 
 from bson import ObjectId
+from motor.core import AgnosticCollection
 from msgspec import Struct, convert, to_builtins
+from pymongo import IndexModel
 from typing_extensions import Self
 
 FIELD_OBJECT_CONFIG = {
@@ -34,6 +36,10 @@ class Field(Struct, **FIELD_OBJECT_CONFIG):
 
 
 class Documemt(Struct, **DOCUMENT_OBJECT_CONFIG):
+    class Settings(Struct):
+        collection: ClassVar[AgnosticCollection]
+        indexes: ClassVar[List[IndexModel]]
+
     def validate(self) -> Self:
         return convert(
             to_builtins(self, builtin_types=_BUILDIN_TYPES),
@@ -54,3 +60,18 @@ class Documemt(Struct, **DOCUMENT_OBJECT_CONFIG):
                 builtin_types=_BUILDIN_TYPES,
             )
         )
+
+    @classmethod
+    async def ensure_indexes(cls) -> None:
+        if not cls.Settings.indexes:
+            return
+
+        await cls.Settings.collection.create_indexes(cls.Settings.indexes)
+
+    @classmethod
+    async def insert_one(cls, data: Self) -> None:
+        await cls.Settings.collection.insert_one(data.to_dict())
+
+    @classmethod
+    async def insert_many(cls, data: Sequence[Self]) -> None:
+        await cls.Settings.collection.insert_many(x.to_dict() for x in data)

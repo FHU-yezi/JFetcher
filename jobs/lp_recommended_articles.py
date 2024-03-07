@@ -5,15 +5,9 @@ from jkit.collection import Collection, CollectionArticleInfo
 from prefect import flow, get_run_logger
 from prefect.states import Completed, State
 
-from models.jianshu_user import init_db as init_jianshu_user_db
-from models.jianshu_user import insert_or_update_one
+from models.jianshu_user import JianshuUserDocument
 from models.lp_recommend_article_record import (
-    LPRecommendedArticleRecord,
-    insert_many,
-    is_record_stored,
-)
-from models.lp_recommend_article_record import (
-    init_db as init_lp_recommend_article_record_db,
+    LPRecommendedArticleRecordDocument,
 )
 from utils.config_generators import (
     generate_deployment_config,
@@ -26,21 +20,21 @@ LP_RECOMMENDED_COLLECTION = Collection.from_slug("f61832508891")
 
 async def process_item(
     item: CollectionArticleInfo, /, *, current_date: date
-) -> Optional[LPRecommendedArticleRecord]:
+) -> Optional[LPRecommendedArticleRecordDocument]:
     logger = get_run_logger()
 
-    if await is_record_stored(item.slug):
+    if await LPRecommendedArticleRecordDocument.is_record_exist(item.slug):
         logger.warning(f"已保存过该文章记录，跳过 slug={item.slug}")
         return None
 
-    await insert_or_update_one(
+    await JianshuUserDocument.insert_or_update_one(
         slug=item.author_info.slug,
         id=item.author_info.id,
         name=item.author_info.name,
         avatar_url=item.author_info.avatar_url,
     )
 
-    return LPRecommendedArticleRecord(
+    return LPRecommendedArticleRecordDocument(
         date=current_date,
         id=item.id,
         slug=item.slug,
@@ -64,14 +58,14 @@ async def process_item(
     )
 )
 async def flow_func() -> State:
-    await init_lp_recommend_article_record_db()
-    await init_jianshu_user_db()
+    await LPRecommendedArticleRecordDocument.ensure_indexes()
+    await JianshuUserDocument.ensure_indexes()
 
     logger = get_run_logger()
 
     current_date = datetime.now().date()
 
-    data: List[LPRecommendedArticleRecord] = []
+    data: List[LPRecommendedArticleRecordDocument] = []
     itered_items_count = 0
     async for item in LP_RECOMMENDED_COLLECTION.iter_articles():
         processed_item = await process_item(item, current_date=current_date)
@@ -83,7 +77,7 @@ async def flow_func() -> State:
             break
 
     if data:
-        await insert_many(data)
+        await LPRecommendedArticleRecordDocument.insert_many(data)
     else:
         logger.info("无数据，不执行保存操作")
 

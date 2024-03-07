@@ -11,13 +11,8 @@ from prefect.states import Completed, State
 from models.assets_ranking_record import (
     AmountField,
     AssetsRankingRecordDocument,
-    insert_many,
 )
-from models.assets_ranking_record import (
-    init_db as init_assets_ranking_record_db,
-)
-from models.jianshu_user import init_db as init_jianshu_user_db
-from models.jianshu_user import insert_or_update_one
+from models.jianshu_user import JianshuUserDocument
 from utils.async_retry import async_retry
 from utils.config_generators import (
     generate_deployment_config,
@@ -60,7 +55,7 @@ async def process_item(
     fp_amount, ftn_amount = await get_fp_ftn_amount(item)
 
     if item.user_info.slug:
-        await insert_or_update_one(
+        await JianshuUserDocument.insert_or_update_one(
             slug=item.user_info.slug,
             id=item.user_info.id,
             name=item.user_info.name,
@@ -85,8 +80,8 @@ async def process_item(
     )
 )
 async def flow_func() -> State:
-    await init_assets_ranking_record_db()
-    await init_jianshu_user_db()
+    await AssetsRankingRecordDocument.ensure_indexes()
+    await JianshuUserDocument.ensure_indexes()
 
     target_date = datetime.now().date()
 
@@ -98,7 +93,7 @@ async def flow_func() -> State:
         if len(data) == 1000:
             break
 
-    await insert_many(data)
+    await AssetsRankingRecordDocument.insert_many(data)
 
     return Completed(message=f"target_date={target_date}, data_count={len(data)}")
 

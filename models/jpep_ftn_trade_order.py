@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Literal, Optional, Sequence
+from typing import ClassVar, List, Literal, Optional
 
 from jkit._constraints import (
     NonNegativeInt,
@@ -45,12 +45,8 @@ class JPEPFTNTradeOrderDocument(Documemt, **DOCUMENT_OBJECT_CONFIG):
     amount: AmountField
     publisher: PublisherField
 
-
-async def init_db() -> None:
-    await COLLECTION.create_indexes(
-        [IndexModel(["fetchTime", "id"], unique=True)],
-    )
-
-
-async def insert_many(data: Sequence[JPEPFTNTradeOrderDocument]) -> None:
-    await COLLECTION.insert_many(x.to_dict() for x in data)
+    class Settings:  # type: ignore
+        collection = COLLECTION
+        indexes: ClassVar[List[IndexModel]] = [
+            IndexModel(["fetchTime", "id"], unique=True),
+        ]
