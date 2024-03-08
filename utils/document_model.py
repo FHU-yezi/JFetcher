@@ -36,7 +36,7 @@ class Field(Struct, **FIELD_OBJECT_CONFIG):
 
 
 class Documemt(Struct, **DOCUMENT_OBJECT_CONFIG):
-    class Settings(Struct):
+    class Meta(Struct):
         collection: ClassVar[AgnosticCollection]
         indexes: ClassVar[List[IndexModel]]
 
@@ -63,15 +63,15 @@ class Documemt(Struct, **DOCUMENT_OBJECT_CONFIG):
 
     @classmethod
     async def ensure_indexes(cls) -> None:
-        if not cls.Settings.indexes:
+        if not cls.Meta.indexes:
             return
 
-        await cls.Settings.collection.create_indexes(cls.Settings.indexes)
+        await cls.Meta.collection.create_indexes(cls.Meta.indexes)
 
     @classmethod
     async def insert_one(cls, data: Self) -> None:
-        await cls.Settings.collection.insert_one(data.to_dict())
+        await cls.Meta.collection.insert_one(data.to_dict())
 
     @classmethod
     async def insert_many(cls, data: Sequence[Self]) -> None:
-        await cls.Settings.collection.insert_many(x.to_dict() for x in data)
+        await cls.Meta.collection.insert_many(x.to_dict() for x in data)

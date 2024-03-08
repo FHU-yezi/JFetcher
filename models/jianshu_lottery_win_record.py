@@ -14,8 +14,6 @@ from utils.document_model import (
     Documemt,
 )
 
-COLLECTION = DB.jianshu_lottery_win_records
-
 
 class JianshuLotteryWinRecordDocument(Documemt, **DOCUMENT_OBJECT_CONFIG):
     id: PositiveInt
@@ -24,8 +22,8 @@ class JianshuLotteryWinRecordDocument(Documemt, **DOCUMENT_OBJECT_CONFIG):
 
     user_slug: UserSlug
 
-    class Settings:  # type: ignore
-        collection = COLLECTION
+    class Meta:  # type: ignore
+        collection = DB.jianshu_lottery_win_records
         indexes: ClassVar[List[IndexModel]] = [
             IndexModel(["id"], unique=True),
         ]
@@ -34,7 +32,7 @@ class JianshuLotteryWinRecordDocument(Documemt, **DOCUMENT_OBJECT_CONFIG):
     async def get_latest_record_id(cls) -> int:
         try:
             latest_data = JianshuLotteryWinRecordDocument.from_dict(
-                await COLLECTION.find().sort("id", -1).__anext__()
+                await cls.Meta.collection.find().sort("id", -1).__anext__()
             )
         except StopAsyncIteration:
             return 0

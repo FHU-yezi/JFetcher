@@ -13,8 +13,6 @@ from utils.document_model import (
     Documemt,
 )
 
-COLLECTION = DB.daily_update_ranking_records
-
 
 class DailyUpdateRankingRecordDocument(Documemt, **DOCUMENT_OBJECT_CONFIG):
     date: date
@@ -23,8 +21,8 @@ class DailyUpdateRankingRecordDocument(Documemt, **DOCUMENT_OBJECT_CONFIG):
 
     user_slug: UserSlug
 
-    class Settings:  # type: ignore
-        collection = COLLECTION
+    class Meta:  # type: ignore
+        collection = DB.daily_update_ranking_records
         indexes: ClassVar[List[IndexModel]] = [
             IndexModel(["date", "userSlug"], unique=True),
         ]

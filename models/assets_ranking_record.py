@@ -17,8 +17,6 @@ from utils.document_model import (
     Field,
 )
 
-COLLECTION = DB.assets_ranking_records
-
 
 class AmountField(Field, **FIELD_OBJECT_CONFIG):
     fp: Optional[NonNegativeFloat]
@@ -33,8 +31,8 @@ class AssetsRankingRecordDocument(Documemt, **DOCUMENT_OBJECT_CONFIG):
     amount: AmountField
     user_slug: Optional[UserSlug]
 
-    class Settings:  # type: ignore
-        collection = COLLECTION
+    class Meta:  # type: ignore
+        collection = DB.assets_ranking_records
         indexes: ClassVar[List[IndexModel]] = [
             IndexModel(["date", "ranking"], unique=True),
         ]

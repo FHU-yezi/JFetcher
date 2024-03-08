@@ -7,8 +7,6 @@ from pymongo import IndexModel
 from utils.db import DB
 from utils.document_model import FIELD_OBJECT_CONFIG, Documemt, Field
 
-COLLECTION = DB.jpep_users
-
 
 class CreditHistoryFieldItem(Field, **FIELD_OBJECT_CONFIG):
     time: datetime
@@ -23,8 +21,8 @@ class JPEPUserDocument(Documemt):
     avatar_url: Optional[str]
     credit_history: List[CreditHistoryFieldItem]
 
-    class Settings:  # type: ignore
-        collection = COLLECTION
+    class Meta:  # type: ignore
+        collection = DB.jpep_users
         indexes: ClassVar[List[IndexModel]] = [
             IndexModel(["id"], unique=True),
             IndexModel(["updatedAt"]),
@@ -32,7 +30,7 @@ class JPEPUserDocument(Documemt):
 
     @classmethod
     async def is_record_exist(cls, id: int) -> bool:  # noqa: A002
-        return await COLLECTION.find_one({"id": id}) is not None
+        return await cls.Meta.collection.find_one({"id": id}) is not None
 
     @classmethod
     async def insert_or_update_one(
@@ -67,7 +65,7 @@ class JPEPUserDocument(Documemt):
 
         # 此处用户必定存在，因此 db_data 不为 None
         db_data = JPEPUserDocument.from_dict(
-            await COLLECTION.find_one({"id": id})  # type: ignore
+            await cls.Meta.collection.find_one({"id": id})  # type: ignore
         )
         # 如果数据库中数据的更新时间晚于本次更新时间，则本次数据已不是最新
         # 此时跳过更新
@@ -81,10 +79,7 @@ class JPEPUserDocument(Documemt):
             }
         }
         # 如果昵称不一致，更新之
-        if (
-            (name is not None and db_data.name is not None)
-            and name != db_data.name
-        ):
+        if (name is not None and db_data.name is not None) and name != db_data.name:
             update_data["$set"]["name"] = name
 
         # 如果头像链接有变动，更新之
@@ -98,4 +93,4 @@ class JPEPUserDocument(Documemt):
                 "value": credit,
             }
 
-        await COLLECTION.update_one({"id": id}, update_data)
+        await cls.Meta.collection.update_one({"id": id}, update_data)

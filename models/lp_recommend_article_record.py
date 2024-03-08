@@ -18,8 +18,6 @@ from utils.document_model import (
     Documemt,
 )
 
-COLLECTION = DB.lp_recommended_article_records
-
 
 class LPRecommendedArticleRecordDocument(Documemt, **DOCUMENT_OBJECT_CONFIG):
     date: date
@@ -40,12 +38,12 @@ class LPRecommendedArticleRecordDocument(Documemt, **DOCUMENT_OBJECT_CONFIG):
 
     author_slug: UserSlug
 
-    class Settings:  # type: ignore
-        collection = COLLECTION
+    class Meta:  # type: ignore
+        collection = DB.lp_recommended_article_records
         indexes: ClassVar[List[IndexModel]] = [
             IndexModel(["date", "slug"], unique=True),
         ]
 
     @classmethod
     async def is_record_exist(cls, slug: str) -> bool:
-        return await COLLECTION.find_one({"slug": slug}) is not None
+        return await cls.Meta.collection.find_one({"slug": slug}) is not None

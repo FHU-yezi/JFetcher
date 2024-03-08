@@ -16,8 +16,6 @@ from utils.document_model import (
     Field,
 )
 
-COLLECTION = DB.jpep_ftn_trade_orders
-
 
 class AmountField(Field, **FIELD_OBJECT_CONFIG):
     total: PositiveInt
@@ -37,8 +35,8 @@ class JPEPFTNTradeOrderDocument(Documemt, **DOCUMENT_OBJECT_CONFIG):
     amount: AmountField
     publisher_id: Optional[PositiveInt]
 
-    class Settings:  # type: ignore
-        collection = COLLECTION
+    class Meta:  # type: ignore
+        collection = DB.jpep_ftn_trade_orders
         indexes: ClassVar[List[IndexModel]] = [
             IndexModel(["fetchTime", "id"], unique=True),
         ]
