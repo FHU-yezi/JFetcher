@@ -11,11 +11,11 @@ from pymongo import IndexModel
 from utils.db import DB
 from utils.document_model import (
     DOCUMENT_OBJECT_CONFIG,
-    Documemt,
+    Document,
 )
 
 
-class JianshuLotteryWinRecordDocument(Documemt, **DOCUMENT_OBJECT_CONFIG):
+class JianshuLotteryWinRecordDocument(Document, **DOCUMENT_OBJECT_CONFIG):
     id: PositiveInt
     time: datetime
     award_name: NonEmptyStr

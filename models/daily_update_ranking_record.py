@@ -10,11 +10,11 @@ from pymongo import IndexModel
 from utils.db import DB
 from utils.document_model import (
     DOCUMENT_OBJECT_CONFIG,
-    Documemt,
+    Document,
 )
 
 
-class DailyUpdateRankingRecordDocument(Documemt, **DOCUMENT_OBJECT_CONFIG):
+class DailyUpdateRankingRecordDocument(Document, **DOCUMENT_OBJECT_CONFIG):
     date: date
     ranking: PositiveInt
     days: PositiveInt

@@ -6,7 +6,7 @@ from jkit._constraints import PositiveInt, UserName, UserSlug, UserUploadedUrl
 from pymongo import IndexModel
 
 from utils.db import DB
-from utils.document_model import Documemt
+from utils.document_model import Document
 
 
 class JianshuUserStatus(Enum):
@@ -14,7 +14,7 @@ class JianshuUserStatus(Enum):
     INACCESSABLE = "INACCESSIBLE"
 
 
-class JianshuUserDocument(Documemt):
+class JianshuUserDocument(Document):
     slug: UserSlug
     status: JianshuUserStatus
     updated_at: datetime

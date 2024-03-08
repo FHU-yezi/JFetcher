@@ -13,7 +13,7 @@ from utils.db import DB
 from utils.document_model import (
     DOCUMENT_OBJECT_CONFIG,
     FIELD_OBJECT_CONFIG,
-    Documemt,
+    Document,
     Field,
 )
 
@@ -24,7 +24,7 @@ class AmountField(Field, **FIELD_OBJECT_CONFIG):
     assets: PositiveFloat
 
 
-class AssetsRankingRecordDocument(Documemt, **DOCUMENT_OBJECT_CONFIG):
+class AssetsRankingRecordDocument(Document, **DOCUMENT_OBJECT_CONFIG):
     date: date
     ranking: PositiveInt
 
