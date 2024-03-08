@@ -8,8 +8,6 @@ from pymongo import IndexModel
 from utils.db import DB
 from utils.document_model import Documemt
 
-COLLECTION = DB.jianshu_users
-
 
 class JianshuUserStatus(Enum):
     NORMAL = "NORMAL"
@@ -25,8 +23,8 @@ class JianshuUserDocument(Documemt):
     history_names: List[UserName]
     avatar_url: Optional[UserUploadedUrl]
 
-    class Settings:  # type: ignore
-        collection = COLLECTION
+    class Meta:  # type: ignore
+        collection = DB.jianshu_users
         indexes: ClassVar[List[IndexModel]] = [
             IndexModel(["slug"], unique=True),
             IndexModel(["updatedAt"]),
@@ -34,7 +32,7 @@ class JianshuUserDocument(Documemt):
 
     @classmethod
     async def is_record_exist(cls, slug: str) -> bool:
-        return await COLLECTION.find_one({"slug": slug}) is not None
+        return await cls.Meta.collection.find_one({"slug": slug}) is not None
 
     @classmethod
     async def insert_or_update_one(
@@ -64,7 +62,7 @@ class JianshuUserDocument(Documemt):
 
         # 此处用户必定存在，因此 db_data 不为 None
         db_data = JianshuUserDocument.from_dict(
-            await COLLECTION.find_one({"slug": slug})  # type: ignore
+            await cls.Meta.collection.find_one({"slug": slug})  # type: ignore
         )
         # 如果数据库中数据的更新时间晚于本次更新时间，则本次数据已不是最新
         # 此时跳过更新
@@ -100,4 +98,4 @@ class JianshuUserDocument(Documemt):
         ):
             update_data["$set"]["avatarUrl"] = avatar_url
 
-        await COLLECTION.update_one({"slug": slug}, update_data)
+        await cls.Meta.collection.update_one({"slug": slug}, update_data)

@@ -18,8 +18,6 @@ from utils.document_model import (
     Field,
 )
 
-COLLECTION = DB.article_earning_ranking_records
-
 
 class ArticleField(Field, **FIELD_OBJECT_CONFIG):
     slug: Optional[ArticleSlug]
@@ -39,8 +37,8 @@ class ArticleEarningRankingRecordDocument(Documemt, **DOCUMENT_OBJECT_CONFIG):
     author_slug: Optional[UserSlug]
     earning: EarningField
 
-    class Settings:  # type: ignore
-        collection = COLLECTION
+    class Meta:  # type: ignore
+        collection = DB.article_earning_ranking_records
         indexes: ClassVar[List[IndexModel]] = [
             IndexModel(["date", "ranking"], unique=True),
         ]
