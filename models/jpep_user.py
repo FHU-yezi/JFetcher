@@ -69,28 +69,29 @@ class JPEPUserDocument(Documemt):
         db_data = JPEPUserDocument.from_dict(
             await COLLECTION.find_one({"id": id})  # type: ignore
         )
+        # 如果数据库中数据的更新时间晚于本次更新时间，则本次数据已不是最新
+        # 此时跳过更新
+        if updated_at < db_data.updated_at:
+            return
 
         update_data: Dict[str, Any] = {
             "$set": {
-                # 即使没有要更新的数据，也视为对数据更新时间的刷新
+                # 即使没有要更新的数据，也要刷新更新时间
                 "updatedAt": updated_at,
             }
         }
-        # 如果新数据中的昵称与数据库不一致，说明昵称更改过
-        # 此时需要比较数据的更新时间，如果数据库中的数据相对较旧
-        # 则更新数据库中的昵称
+        # 如果昵称不一致，更新之
         if (
             (name is not None and db_data.name is not None)
             and name != db_data.name
-            and updated_at > db_data.updated_at
         ):
             update_data["$set"]["name"] = name
 
-        # 如果头像链接与之前不一致，更新之
+        # 如果头像链接有变动，更新之
         if avatar_url is not None and avatar_url != db_data.avatar_url:
             update_data["$set"]["avatarUrl"] = avatar_url
 
-        # 如果信用值有变动，更新之
+        # 如果信用值有变动，将变动信息添加至信用值历史
         if credit != db_data.credit_history[-1].value:
             update_data["$push"]["creditHistory"] = {
                 "time": updated_at,
