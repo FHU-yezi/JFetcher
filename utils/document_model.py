@@ -35,7 +35,7 @@ class Field(Struct, **FIELD_OBJECT_CONFIG):
     pass
 
 
-class Documemt(Struct, **DOCUMENT_OBJECT_CONFIG):
+class Document(Struct, **DOCUMENT_OBJECT_CONFIG):
     class Meta(Struct):
         collection: ClassVar[AgnosticCollection]
         indexes: ClassVar[List[IndexModel]]

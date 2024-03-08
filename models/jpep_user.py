@@ -5,7 +5,7 @@ from jkit._constraints import NonNegativeInt, PositiveInt
 from pymongo import IndexModel
 
 from utils.db import DB
-from utils.document_model import FIELD_OBJECT_CONFIG, Documemt, Field
+from utils.document_model import FIELD_OBJECT_CONFIG, Document, Field
 
 
 class CreditHistoryFieldItem(Field, **FIELD_OBJECT_CONFIG):
@@ -13,7 +13,7 @@ class CreditHistoryFieldItem(Field, **FIELD_OBJECT_CONFIG):
     value: NonNegativeInt
 
 
-class JPEPUserDocument(Documemt):
+class JPEPUserDocument(Document):
     updated_at: datetime
     id: PositiveInt
     name: str

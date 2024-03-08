@@ -15,11 +15,11 @@ from pymongo import IndexModel
 from utils.db import DB
 from utils.document_model import (
     DOCUMENT_OBJECT_CONFIG,
-    Documemt,
+    Document,
 )
 
 
-class LPRecommendedArticleRecordDocument(Documemt, **DOCUMENT_OBJECT_CONFIG):
+class LPRecommendedArticleRecordDocument(Document, **DOCUMENT_OBJECT_CONFIG):
     date: date
     id: PositiveInt
     slug: ArticleSlug

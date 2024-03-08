@@ -12,7 +12,7 @@ from utils.db import DB
 from utils.document_model import (
     DOCUMENT_OBJECT_CONFIG,
     FIELD_OBJECT_CONFIG,
-    Documemt,
+    Document,
     Field,
 )
 
@@ -24,7 +24,7 @@ class AmountField(Field, **FIELD_OBJECT_CONFIG):
     minimum_trade: PositiveInt
 
 
-class JPEPFTNTradeOrderDocument(Documemt, **DOCUMENT_OBJECT_CONFIG):
+class JPEPFTNTradeOrderDocument(Document, **DOCUMENT_OBJECT_CONFIG):
     fetch_time: datetime
     id: PositiveInt
     published_at: datetime
