@@ -66,10 +66,14 @@ class JianshuUserDocument(Documemt):
         db_data = JianshuUserDocument.from_dict(
             await COLLECTION.find_one({"slug": slug})  # type: ignore
         )
+        # 如果数据库中数据的更新时间晚于本次更新时间，则本次数据已不是最新
+        # 此时跳过更新
+        if updated_at < db_data.updated_at:
+            return
 
         update_data: Dict[str, Any] = {
             "$set": {
-                # 即使没有要更新的数据，也视为对数据更新时间的刷新
+                # 即使没有要更新的数据，也要刷新更新时间
                 "updatedAt": updated_at,
             }
         }
@@ -85,18 +89,12 @@ class JianshuUserDocument(Documemt):
         if name is not None and db_data.name is None:
             update_data["$set"]["name"] = name
 
-        # 如果新数据中的昵称与数据库不一致，说明昵称更改过
-        # 此时需要比较数据的更新时间，如果数据库中的数据相对较旧
-        # 则更新数据库中的昵称，并将之前的昵称加入历史昵称列表
-        if (
-            (name is not None and db_data.name is not None)
-            and name != db_data.name
-            and updated_at > db_data.updated_at
-        ):
+        # 如果昵称有变动，更新之，并将之前的昵称加入历史昵称列表
+        if (name is not None and db_data.name is not None) and name != db_data.name:
             update_data["$set"]["name"] = name
             update_data["$push"] = {"historyNames": db_data.name}
 
-        # 如果获取到了之前未知的头像链接，或头像链接与之前不一致，添加 / 更新之
+        # 如果获取到了之前未知的头像链接，或头像链接有变动，添加 / 更新之
         if avatar_url is not None and (
             db_data.avatar_url is None or avatar_url != db_data.avatar_url
         ):
