@@ -26,14 +26,6 @@ class AmountField(Field, **FIELD_OBJECT_CONFIG):
     minimum_trade: PositiveInt
 
 
-class PublisherField(Field, **FIELD_OBJECT_CONFIG):
-    is_anonymous: bool
-    id: Optional[PositiveInt]
-    name: Optional[str]
-    hashed_name: Optional[str]
-    credit: Optional[NonNegativeInt]
-
-
 class JPEPFTNTradeOrderDocument(Documemt, **DOCUMENT_OBJECT_CONFIG):
     fetch_time: datetime
     id: PositiveInt
@@ -43,7 +35,7 @@ class JPEPFTNTradeOrderDocument(Documemt, **DOCUMENT_OBJECT_CONFIG):
     traded_count: NonNegativeInt
 
     amount: AmountField
-    publisher: PublisherField
+    publisher_id: Optional[PositiveInt]
 
     class Settings:  # type: ignore
         collection = COLLECTION

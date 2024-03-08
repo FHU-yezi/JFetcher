@@ -50,7 +50,7 @@ class JianshuUserDocument(Documemt):
             updated_at = datetime.now()
 
         if not await cls.is_record_exist(slug):
-            await COLLECTION.insert_one(
+            await cls.insert_one(
                 JianshuUserDocument(
                     slug=slug,
                     status=JianshuUserStatus.NORMAL,
@@ -59,7 +59,7 @@ class JianshuUserDocument(Documemt):
                     name=name,
                     history_names=[],
                     avatar_url=avatar_url,
-                ).to_dict()
+                )
             )
 
         # 此处用户必定存在，因此 db_data 不为 None

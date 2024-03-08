@@ -8,8 +8,8 @@ from prefect.states import Completed, State
 from models.jpep_ftn_trade_order import (
     AmountField,
     JPEPFTNTradeOrderDocument,
-    PublisherField,
 )
+from models.jpep_user import JPEPUserDocument
 from utils.config_generators import (
     generate_deployment_config,
     generate_flow_config,
@@ -31,13 +31,23 @@ def get_fetch_time() -> datetime:
     return dt
 
 
-def process_item(
+async def process_item(
     item: FTNMacketOrderRecord,
     /,
     *,
     fetch_time: datetime,
     type: Literal["buy", "sell"],  # noqa: A002
 ) -> JPEPFTNTradeOrderDocument:
+    if item.publisher_info.id:
+        await JPEPUserDocument.insert_or_update_one(
+            updated_at=fetch_time,
+            id=item.publisher_info.id,
+            name=item.publisher_info.name,  # type: ignore
+            hashed_name=item.publisher_info.hashed_name,  # type: ignore
+            avatar_url=item.publisher_info.avatar_url,  # type: ignore
+            credit=item.publisher_info.credit,  # type: ignore
+        )
+
     return JPEPFTNTradeOrderDocument(
         fetch_time=fetch_time,
         id=item.id,
@@ -51,13 +61,7 @@ def process_item(
             tradable=item.tradable_amount,
             minimum_trade=item.minimum_trade_amount,
         ),
-        publisher=PublisherField(
-            is_anonymous=item.publisher_info.is_anonymous,
-            id=item.publisher_info.id,
-            name=item.publisher_info.name,
-            hashed_name=item.publisher_info.hashed_name,
-            credit=item.publisher_info.credit,
-        ),
+        publisher_id=item.publisher_info.id,
     ).validate()
 
 
@@ -73,7 +77,7 @@ async def flow_func(type: Literal["buy", "sell"]) -> State:  # noqa: A002
 
     data: List[JPEPFTNTradeOrderDocument] = []
     async for item in FTNMacket().iter_orders(type=type):
-        processed_item = process_item(item, fetch_time=fetch_time, type=type)
+        processed_item = await process_item(item, fetch_time=fetch_time, type=type)
         data.append(processed_item)
 
     await JPEPFTNTradeOrderDocument.insert_many(data)
