@@ -88,9 +88,11 @@ class JPEPUserDocument(Document):
 
         # 如果信用值有变动，将变动信息添加至信用值历史
         if credit != db_data.credit_history[-1].value:
-            update_data["$push"]["creditHistory"] = {
-                "time": updated_at,
-                "value": credit,
+            update_data["$push"] = {
+                "creditHistory": {
+                    "time": updated_at,
+                    "value": credit,
+                }
             }
 
         await cls.Meta.collection.update_one({"id": id}, update_data)
