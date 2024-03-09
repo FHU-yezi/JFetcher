@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import ClassVar, List, Literal, Optional
+from typing import ClassVar, List, Literal
 
 from jkit._constraints import (
     NonNegativeInt,
@@ -33,7 +33,7 @@ class JPEPFTNTradeOrderDocument(Document, **DOCUMENT_OBJECT_CONFIG):
     traded_count: NonNegativeInt
 
     amount: AmountField
-    publisher_id: Optional[PositiveInt]
+    publisher_id: PositiveInt
 
     class Meta:  # type: ignore
         collection = DB.jpep_ftn_trade_orders
