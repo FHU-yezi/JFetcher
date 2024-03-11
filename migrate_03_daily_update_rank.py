@@ -2,16 +2,12 @@ import asyncio
 from datetime import datetime
 from typing import List
 
-from jkit.identifier_convert import article_url_to_slug, user_url_to_slug
+from jkit.identifier_convert import user_url_to_slug
 from sspeedup.logging.run_logger import RunLogger
 
-from models.article_earning_ranking_record import (
-    ArticleEarningRankingRecordDocument,
-    ArticleField,
-    EarningField,
-)
+from models.daily_update_ranking_record import DailyUpdateRankingRecordDocument
 from models.jianshu_user import JianshuUserDocument
-from old_models.article_fp_rank import OldArticleFPRank
+from old_models.daily_update_rank import OldDailyUpdateRank
 from utils.migrate_helper import (
     get_collection_data_count,
     get_collection_data_time_range,
@@ -21,36 +17,29 @@ logger = RunLogger()
 
 
 async def ensure_all_old_collection_indexes() -> None:
-    await OldArticleFPRank.ensure_indexes()
+    await OldDailyUpdateRank.ensure_indexes()
 
 
 async def ensure_all_new_collection_indexes() -> None:
     await JianshuUserDocument.ensure_indexes()
-    await ArticleEarningRankingRecordDocument.ensure_indexes()
+    await DailyUpdateRankingRecordDocument.ensure_indexes()
 
 
-async def insert_or_update_user(item: OldArticleFPRank) -> None:
-    if item.author.url:
+async def insert_or_update_user(item: OldDailyUpdateRank) -> None:
+    if item.user.url:
         await JianshuUserDocument.insert_or_update_one(
-            slug=user_url_to_slug(item.author.url),
+            slug=user_url_to_slug(item.user.url),
             updated_at=datetime.fromisoformat(item.date.isoformat()),
-            id=item.author.id,
-            name=item.author.name,
+            name=item.user.name,
         )
 
 
-async def convert_item(item: OldArticleFPRank) -> ArticleEarningRankingRecordDocument:
-    return ArticleEarningRankingRecordDocument(
+async def convert_item(item: OldDailyUpdateRank) -> DailyUpdateRankingRecordDocument:
+    return DailyUpdateRankingRecordDocument(
         date=item.date,
         ranking=item.ranking,
-        article=ArticleField(
-            slug=article_url_to_slug(item.article.url) if item.article.url else None,
-            title=item.article.title,
-        ),
-        author_slug=user_url_to_slug(item.author.url) if item.author.url else None,
-        earning=EarningField(
-            to_author=item.reward.to_author, to_voter=item.reward.to_voter
-        ),
+        days=item.days,
+        user_slug=user_url_to_slug(item.user.url),
     )
 
 
@@ -60,25 +49,25 @@ async def main() -> None:
     await ensure_all_new_collection_indexes()
     logger.info("已为新版数据构建索引")
 
-    old_data_count = await get_collection_data_count(OldArticleFPRank)
+    old_data_count = await get_collection_data_count(OldDailyUpdateRank)
     old_start_time, old_end_time = await get_collection_data_time_range(
-        OldArticleFPRank, "date"
+        OldDailyUpdateRank, "date"
     )
     logger.info(
         f"旧集合数据量：{old_data_count}，"
         f"数据时间范围：{old_start_time} - {old_end_time}"
     )
 
-    data_to_save: List[ArticleEarningRankingRecordDocument] = []
-    async for item in OldArticleFPRank.Meta.collection.find().sort(
+    data_to_save: List[DailyUpdateRankingRecordDocument] = []
+    async for item in OldDailyUpdateRank.Meta.collection.find().sort(
         {"date": 1, "ranking": 1}
     ):
-        item = OldArticleFPRank.from_dict(item)
+        item = OldDailyUpdateRank.from_dict(item)
         await insert_or_update_user(item)
         data_to_save.append(await convert_item(item))
 
         if len(data_to_save) == 1000:
-            await ArticleEarningRankingRecordDocument.insert_many(data_to_save)
+            await DailyUpdateRankingRecordDocument.insert_many(data_to_save)
             logger.debug(
                 f"已转换 {len(data_to_save)} 条数据，"
                 f"最新数据的日期为 {data_to_save[-1].date}"
@@ -86,7 +75,7 @@ async def main() -> None:
             data_to_save.clear()
 
     if len(data_to_save):
-        await ArticleEarningRankingRecordDocument.insert_many(data_to_save)
+        await DailyUpdateRankingRecordDocument.insert_many(data_to_save)
         logger.debug(
             f"已转换 {len(data_to_save)} 条数据，"
             f"最新数据的日期为 {data_to_save[-1].date}"
@@ -94,16 +83,14 @@ async def main() -> None:
         data_to_save.clear()
 
     logger.info("数据转换完成，开始校验")
-    new_data_count = await get_collection_data_count(
-        ArticleEarningRankingRecordDocument
-    )
+    new_data_count = await get_collection_data_count(DailyUpdateRankingRecordDocument)
     if old_data_count != new_data_count:
         logger.critical(
             f"数据量不匹配（迁移前 {old_data_count}，" f"迁移后 {new_data_count}）"
         )
         exit()
     new_start_time, new_end_time = await get_collection_data_time_range(
-        ArticleEarningRankingRecordDocument, "date"
+        DailyUpdateRankingRecordDocument, "date"
     )
     if old_start_time != new_start_time or old_end_time != new_end_time:
         logger.critical(
