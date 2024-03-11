@@ -21,7 +21,7 @@ from utils.document_model import (
 class AmountField(Field, **FIELD_OBJECT_CONFIG):
     fp: Optional[NonNegativeFloat]
     ftn: Optional[NonNegativeFloat]
-    assets: PositiveFloat
+    assets: Optional[PositiveFloat]
 
 
 class AssetsRankingRecordDocument(Document, **DOCUMENT_OBJECT_CONFIG):
