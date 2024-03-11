@@ -14,13 +14,13 @@ def import_deployment(path: str) -> DeploymentType:
 
 
 DEPLOYMENT_PATHS: Set[str] = {
-    "jobs.article_earning_ranking:deployment",
-    "jobs.assets_ranking:deployment",
-    "jobs.daily_update_ranking:deployment",
-    "jobs.jianshu_lottery:deployment",
-    "jobs.jpep_ftn_trade:buy_deployment",
-    "jobs.jpep_ftn_trade:sell_deployment",
-    "jobs.lp_recommended_articles:deployment",
+    "jobs.jianshu.article_earning_ranking:deployment",
+    "jobs.jianshu.assets_ranking:deployment",
+    "jobs.jianshu.daily_update_ranking:deployment",
+    "jobs.jianshu.lottery:deployment",
+    "jobs.jianshu.lp_recommend:deployment",
+    "jobs.jpep.ftn_trade:buy_deployment",
+    "jobs.jpep.ftn_trade:sell_deployment",
 }
 
 

@@ -5,11 +5,11 @@ from jkit.jpep.ftn_macket import FTNMacket, FTNMacketOrderRecord
 from prefect import flow
 from prefect.states import Completed, State
 
-from models.jpep_ftn_trade_order import (
+from models.jpep.ftn_trade_order import (
     AmountField,
-    JPEPFTNTradeOrderDocument,
+    FTNTradeOrderDocument,
 )
-from models.jpep_user import JPEPUserDocument
+from models.jpep.user import UserDocument
 from utils.config_generators import (
     generate_deployment_config,
     generate_flow_config,
@@ -37,9 +37,9 @@ async def process_item(
     *,
     fetch_time: datetime,
     type: Literal["buy", "sell"],  # noqa: A002
-) -> JPEPFTNTradeOrderDocument:
+) -> FTNTradeOrderDocument:
     if item.publisher_info.id:
-        await JPEPUserDocument.insert_or_update_one(
+        await UserDocument.insert_or_update_one(
             updated_at=fetch_time,
             id=item.publisher_info.id,
             name=item.publisher_info.name,  # type: ignore
@@ -48,7 +48,7 @@ async def process_item(
             credit=item.publisher_info.credit,  # type: ignore
         )
 
-    return JPEPFTNTradeOrderDocument(
+    return FTNTradeOrderDocument(
         fetch_time=fetch_time,
         id=item.id,
         published_at=item.publish_time,
@@ -71,16 +71,16 @@ async def process_item(
     ),
 )
 async def flow_func(type: Literal["buy", "sell"]) -> State:  # noqa: A002
-    await JPEPFTNTradeOrderDocument.ensure_indexes()
+    await FTNTradeOrderDocument.ensure_indexes()
 
     fetch_time = get_fetch_time()
 
-    data: List[JPEPFTNTradeOrderDocument] = []
+    data: List[FTNTradeOrderDocument] = []
     async for item in FTNMacket().iter_orders(type=type):
         processed_item = await process_item(item, fetch_time=fetch_time, type=type)
         data.append(processed_item)
 
-    await JPEPFTNTradeOrderDocument.insert_many(data)
+    await FTNTradeOrderDocument.insert_many(data)
 
     return Completed(message=f"fetch_time={fetch_time}, data_count={len(data)}")
 

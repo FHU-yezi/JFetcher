@@ -4,7 +4,7 @@ from typing import Any, ClassVar, Dict, List, Optional
 from jkit._constraints import NonNegativeInt, PositiveInt
 from pymongo import IndexModel
 
-from utils.db import DB
+from utils.db import JPEP_DB
 from utils.document_model import FIELD_OBJECT_CONFIG, Document, Field
 
 
@@ -13,7 +13,7 @@ class CreditHistoryFieldItem(Field, **FIELD_OBJECT_CONFIG):
     value: NonNegativeInt
 
 
-class JPEPUserDocument(Document):
+class UserDocument(Document):
     updated_at: datetime
     id: PositiveInt
     name: str
@@ -22,7 +22,7 @@ class JPEPUserDocument(Document):
     credit_history: List[CreditHistoryFieldItem]
 
     class Meta:  # type: ignore
-        collection = DB.jpep_users
+        collection = JPEP_DB.users
         indexes: ClassVar[List[IndexModel]] = [
             IndexModel(["id"], unique=True),
             IndexModel(["updatedAt"]),
@@ -48,7 +48,7 @@ class JPEPUserDocument(Document):
 
         if not await cls.is_record_exist(id):
             await cls.insert_one(
-                JPEPUserDocument(
+                UserDocument(
                     updated_at=updated_at,
                     id=id,
                     name=name,
@@ -64,7 +64,7 @@ class JPEPUserDocument(Document):
             )
 
         # 此处用户必定存在，因此 db_data 不为 None
-        db_data = JPEPUserDocument.from_dict(
+        db_data = UserDocument.from_dict(
             await cls.Meta.collection.find_one({"id": id})  # type: ignore
         )
         # 如果数据库中数据的更新时间晚于本次更新时间，则本次数据已不是最新

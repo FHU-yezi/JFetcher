@@ -8,11 +8,11 @@ from jkit.user import User
 from prefect import flow, get_run_logger
 from prefect.states import Completed, State
 
-from models.assets_ranking_record import (
+from models.jianshu.assets_ranking_record import (
     AmountField,
     AssetsRankingRecordDocument,
 )
-from models.jianshu_user import JianshuUserDocument
+from models.jianshu.user import JianshuUserDocument
 from utils.async_retry import async_retry
 from utils.config_generators import (
     generate_deployment_config,

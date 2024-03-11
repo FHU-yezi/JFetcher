@@ -8,10 +8,10 @@ from jkit.ranking.daily_update import (
 from prefect import flow
 from prefect.states import Completed, State
 
-from models.daily_update_ranking_record import (
+from models.jianshu.daily_update_ranking_record import (
     DailyUpdateRankingRecordDocument,
 )
-from models.jianshu_user import JianshuUserDocument
+from models.jianshu.user import JianshuUserDocument
 from utils.config_generators import (
     generate_deployment_config,
     generate_flow_config,

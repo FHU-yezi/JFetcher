@@ -5,10 +5,10 @@ from jkit.collection import Collection, CollectionArticleInfo
 from prefect import flow, get_run_logger
 from prefect.states import Completed, State
 
-from models.jianshu_user import JianshuUserDocument
-from models.lp_recommend_article_record import (
+from models.jianshu.lp_recommend_article_record import (
     LPRecommendedArticleRecordDocument,
 )
+from models.jianshu.user import JianshuUserDocument
 from utils.config_generators import (
     generate_deployment_config,
     generate_flow_config,

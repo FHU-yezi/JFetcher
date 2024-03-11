@@ -5,12 +5,12 @@ from typing import List
 from jkit.identifier_convert import article_url_to_slug, user_url_to_slug
 from sspeedup.logging.run_logger import RunLogger
 
-from models.article_earning_ranking_record import (
+from models.jianshu.article_earning_ranking_record import (
     ArticleEarningRankingRecordDocument,
     ArticleField,
     EarningField,
 )
-from models.jianshu_user import JianshuUserDocument
+from models.jianshu.user import JianshuUserDocument
 from old_models.article_fp_rank import OldArticleFPRank
 from utils.migrate_helper import (
     get_collection_data_count,

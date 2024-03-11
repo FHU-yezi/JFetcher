@@ -12,7 +12,7 @@ from jkit._constraints import (
 from msgspec import field
 from pymongo import IndexModel
 
-from utils.db import DB
+from utils.db import JIANSHU_DB
 from utils.document_model import (
     DOCUMENT_OBJECT_CONFIG,
     Document,
@@ -39,7 +39,7 @@ class LPRecommendedArticleRecordDocument(Document, **DOCUMENT_OBJECT_CONFIG):
     author_slug: UserSlug
 
     class Meta:  # type: ignore
-        collection = DB.lp_recommended_article_records
+        collection = JIANSHU_DB.lp_recommended_article_records
         indexes: ClassVar[List[IndexModel]] = [
             IndexModel(["date", "slug"], unique=True),
         ]
