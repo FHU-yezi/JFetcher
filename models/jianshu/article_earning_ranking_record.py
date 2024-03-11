@@ -10,7 +10,7 @@ from jkit._constraints import (
 )
 from pymongo import IndexModel
 
-from utils.db import DB
+from utils.db import JIANSHU_DB
 from utils.document_model import (
     DOCUMENT_OBJECT_CONFIG,
     FIELD_OBJECT_CONFIG,
@@ -38,7 +38,7 @@ class ArticleEarningRankingRecordDocument(Document, **DOCUMENT_OBJECT_CONFIG):
     earning: EarningField
 
     class Meta:  # type: ignore
-        collection = DB.article_earning_ranking_records
+        collection = JIANSHU_DB.article_earning_ranking_records
         indexes: ClassVar[List[IndexModel]] = [
             IndexModel(["date", "ranking"], unique=True),
         ]

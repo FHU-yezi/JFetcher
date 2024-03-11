@@ -5,7 +5,7 @@ from typing import Any, ClassVar, Dict, List, Optional
 from jkit._constraints import PositiveInt, UserName, UserSlug, UserUploadedUrl
 from pymongo import IndexModel
 
-from utils.db import DB
+from utils.db import JIANSHU_DB
 from utils.document_model import Document
 
 
@@ -24,7 +24,7 @@ class JianshuUserDocument(Document):
     avatar_url: Optional[UserUploadedUrl]
 
     class Meta:  # type: ignore
-        collection = DB.jianshu_users
+        collection = JIANSHU_DB.users
         indexes: ClassVar[List[IndexModel]] = [
             IndexModel(["slug"], unique=True),
             IndexModel(["updatedAt"]),

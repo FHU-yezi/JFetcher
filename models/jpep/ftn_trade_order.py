@@ -8,7 +8,7 @@ from jkit._constraints import (
 )
 from pymongo import IndexModel
 
-from utils.db import DB
+from utils.db import JPEP_DB
 from utils.document_model import (
     DOCUMENT_OBJECT_CONFIG,
     FIELD_OBJECT_CONFIG,
@@ -24,7 +24,7 @@ class AmountField(Field, **FIELD_OBJECT_CONFIG):
     minimum_trade: PositiveInt
 
 
-class JPEPFTNTradeOrderDocument(Document, **DOCUMENT_OBJECT_CONFIG):
+class FTNTradeOrderDocument(Document, **DOCUMENT_OBJECT_CONFIG):
     fetch_time: datetime
     id: PositiveInt
     published_at: datetime
@@ -36,7 +36,7 @@ class JPEPFTNTradeOrderDocument(Document, **DOCUMENT_OBJECT_CONFIG):
     publisher_id: PositiveInt
 
     class Meta:  # type: ignore
-        collection = DB.jpep_ftn_trade_orders
+        collection = JPEP_DB.ftn_trade_orders
         indexes: ClassVar[List[IndexModel]] = [
             IndexModel(["fetchTime", "id"], unique=True),
         ]

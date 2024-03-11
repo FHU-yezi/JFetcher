@@ -5,8 +5,11 @@ from typing import List
 from jkit.identifier_convert import user_url_to_slug
 from sspeedup.logging.run_logger import RunLogger
 
-from models.assets_ranking_record import AmountField, AssetsRankingRecordDocument
-from models.jianshu_user import JianshuUserDocument
+from models.jianshu.assets_ranking_record import (
+    AmountField,
+    AssetsRankingRecordDocument,
+)
+from models.jianshu.user import JianshuUserDocument
 from old_models.assets_rank import OldAssetsRank
 from utils.migrate_helper import (
     get_collection_data_count,

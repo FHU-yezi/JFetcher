@@ -8,14 +8,14 @@ from jkit._constraints import (
 )
 from pymongo import IndexModel
 
-from utils.db import DB
+from utils.db import JIANSHU_DB
 from utils.document_model import (
     DOCUMENT_OBJECT_CONFIG,
     Document,
 )
 
 
-class JianshuLotteryWinRecordDocument(Document, **DOCUMENT_OBJECT_CONFIG):
+class LotteryWinRecordDocument(Document, **DOCUMENT_OBJECT_CONFIG):
     id: PositiveInt
     time: datetime
     award_name: NonEmptyStr
@@ -23,7 +23,7 @@ class JianshuLotteryWinRecordDocument(Document, **DOCUMENT_OBJECT_CONFIG):
     user_slug: UserSlug
 
     class Meta:  # type: ignore
-        collection = DB.jianshu_lottery_win_records
+        collection = JIANSHU_DB.lottery_win_records
         indexes: ClassVar[List[IndexModel]] = [
             IndexModel(["id"], unique=True),
         ]
@@ -31,7 +31,7 @@ class JianshuLotteryWinRecordDocument(Document, **DOCUMENT_OBJECT_CONFIG):
     @classmethod
     async def get_latest_record_id(cls) -> int:
         try:
-            latest_data = JianshuLotteryWinRecordDocument.from_dict(
+            latest_data = LotteryWinRecordDocument.from_dict(
                 await cls.Meta.collection.find().sort("id", -1).__anext__()
             )
         except StopAsyncIteration:

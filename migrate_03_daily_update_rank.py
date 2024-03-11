@@ -5,8 +5,8 @@ from typing import List
 from jkit.identifier_convert import user_url_to_slug
 from sspeedup.logging.run_logger import RunLogger
 
-from models.daily_update_ranking_record import DailyUpdateRankingRecordDocument
-from models.jianshu_user import JianshuUserDocument
+from models.jianshu.daily_update_ranking_record import DailyUpdateRankingRecordDocument
+from models.jianshu.user import JianshuUserDocument
 from old_models.daily_update_rank import OldDailyUpdateRank
 from utils.migrate_helper import (
     get_collection_data_count,
