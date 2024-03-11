@@ -87,10 +87,21 @@ class JianshuUserDocument(Document):
         if name is not None and db_data.name is None:
             update_data["$set"]["name"] = name
 
-        # 如果昵称有变动，更新之，并将之前的昵称加入历史昵称列表
+        # 如果昵称有变动，更新之
         if (name is not None and db_data.name is not None) and name != db_data.name:
             update_data["$set"]["name"] = name
-            update_data["$push"] = {"historyNames": db_data.name}
+
+            new_history_names = db_data.history_names.copy()
+
+            # 将旧昵称添加到历史昵称列表
+            new_history_names.append(db_data.name)
+            # 如果新昵称在历史昵称列表中，移除之
+            if name in new_history_names:
+                new_history_names.remove(name)
+
+            # 如果有变动，将历史昵称列表更新提交至数据库
+            if new_history_names != db_data.history_names:
+                update_data["$set"]["historyNames"] = new_history_names
 
         # 如果获取到了之前未知的头像链接，或头像链接有变动，添加 / 更新之
         if avatar_url is not None and (
