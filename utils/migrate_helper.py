@@ -13,9 +13,9 @@ async def get_collection_data_time_range(
 ) -> Tuple[datetime, datetime]:
     start_time = (
         await document.Meta.collection.find().sort({key: 1}).limit(1).__anext__()
-    )
+    )[key]
     end_time = (
         await document.Meta.collection.find().sort({key: -1}).limit(1).__anext__()
-    )
+    )[key]
 
     return (start_time, end_time)
