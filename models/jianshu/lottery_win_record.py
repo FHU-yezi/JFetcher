@@ -30,11 +30,8 @@ class LotteryWinRecordDocument(Document, **DOCUMENT_OBJECT_CONFIG):
 
     @classmethod
     async def get_latest_record_id(cls) -> int:
-        try:
-            latest_data = LotteryWinRecordDocument.from_dict(
-                await cls.Meta.collection.find().sort("id", -1).__anext__()
-            )
-        except StopAsyncIteration:
+        latest_data = await LotteryWinRecordDocument.find_one(sort={"id": "DESC"})
+        if not latest_data:
             return 0
 
         return latest_data.id

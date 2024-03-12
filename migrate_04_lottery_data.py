@@ -52,10 +52,7 @@ async def main() -> None:
     logger.info(f"旧集合数据量：{old_data_count}")
 
     data_to_save: List[LotteryWinRecordDocument] = []
-    async for item in OldLotteryData.Meta.collection.find().sort(
-        {"date": 1, "ranking": 1}
-    ):
-        item = OldLotteryData.from_dict(item)
+    async for item in OldLotteryData.find_many(sort={"date": "ASC", "ranking": "ASC"}):
         await insert_or_update_user(item)
         data_to_save.append(await convert_item(item))
 

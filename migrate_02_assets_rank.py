@@ -67,10 +67,7 @@ async def main() -> None:
     )
 
     data_to_save: List[AssetsRankingRecordDocument] = []
-    async for item in OldAssetsRank.Meta.collection.find().sort(
-        {"date": 1, "ranking": 1}
-    ):
-        item = OldAssetsRank.from_dict(item)
+    async for item in OldAssetsRank.find_many(sort={"date": "ASC", "ranking": "ASC"}):
         await insert_or_update_user(item)
         data_to_save.append(await convert_item(item))
 

@@ -61,7 +61,7 @@ async def process_item(
             tradable=item.tradable_amount,
             minimum_trade=item.minimum_trade_amount,
         ),
-        publisher_id=item.publisher_info.id, # type: ignore
+        publisher_id=item.publisher_info.id,  # type: ignore
     ).validate()
 
 
