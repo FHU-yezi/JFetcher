@@ -16,9 +16,11 @@ from utils.document_model import (
 class OldUserField(Field, **FIELD_OBJECT_CONFIG):
     id: int
     url: str
+    name: str
 
 
 class OldLotteryData(Document, **DOCUMENT_OBJECT_CONFIG):
+    _id: int
     time: datetime
     reward_name: str = field(name="reward_name")
 
