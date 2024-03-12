@@ -30,7 +30,7 @@ class LPRecommendedArticleRecordDocument(Document, **DOCUMENT_OBJECT_CONFIG):
     likes_count: NonNegativeInt
     comments_count: NonNegativeInt
     tips_count: NonNegativeFloat
-    earned_fp_amount: NonNegativeFloat = field(name="EarnedFPAmount")
+    earned_fp_amount: NonNegativeFloat = field(name="earnedFPAmount")
 
     is_paid: bool
     can_comment: bool
@@ -46,4 +46,4 @@ class LPRecommendedArticleRecordDocument(Document, **DOCUMENT_OBJECT_CONFIG):
 
     @classmethod
     async def is_record_exist(cls, slug: str) -> bool:
-        return await cls.Meta.collection.find_one({"slug": slug}) is not None
+        return await cls.find_one({"slug": slug}) is not None

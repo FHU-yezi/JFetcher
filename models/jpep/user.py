@@ -30,7 +30,7 @@ class UserDocument(Document):
 
     @classmethod
     async def is_record_exist(cls, id: int) -> bool:  # noqa: A002
-        return await cls.Meta.collection.find_one({"id": id}) is not None
+        return await cls.find_one({"id": id}) is not None
 
     @classmethod
     async def insert_or_update_one(
@@ -63,10 +63,9 @@ class UserDocument(Document):
                 )
             )
 
-        # 此处用户必定存在，因此 db_data 不为 None
-        db_data = UserDocument.from_dict(
-            await cls.Meta.collection.find_one({"id": id})  # type: ignore
-        )
+        db_data = await cls.find_one({"id": id})
+        if not db_data:
+            raise AssertionError("意外的空值")
         # 如果数据库中数据的更新时间晚于本次更新时间，则本次数据已不是最新
         # 此时跳过更新
         if updated_at < db_data.updated_at:
@@ -95,4 +94,4 @@ class UserDocument(Document):
                 }
             }
 
-        await cls.Meta.collection.update_one({"id": id}, update_data)
+        await cls.get_collection().update_one({"id": id}, update_data)

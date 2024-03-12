@@ -1,4 +1,5 @@
 import asyncio
+from datetime import datetime
 from typing import List
 
 from jkit.identifier_convert import article_url_to_slug, user_url_to_slug
@@ -29,7 +30,7 @@ async def ensure_all_new_collection_indexes() -> None:
 async def insert_or_update_user(item: OldLPCollections) -> None:
     await JianshuUserDocument.insert_or_update_one(
         slug=user_url_to_slug(item.author.url),
-        updated_at=item.fetch_date,
+        updated_at=datetime.fromisoformat(item.fetch_date.isoformat()),
         id=item.author.id,
         name=item.author.name,
     )
@@ -62,7 +63,7 @@ async def main() -> None:
 
     old_data_count = await get_collection_data_count(OldLPCollections)
     old_start_time, old_end_time = await get_collection_data_time_range(
-        OldLPCollections, "date"
+        OldLPCollections, "fetch_date"
     )
     logger.info(
         f"旧集合数据量：{old_data_count}，"
@@ -70,10 +71,9 @@ async def main() -> None:
     )
 
     data_to_save: List[LPRecommendedArticleRecordDocument] = []
-    async for item in OldLPCollections.Meta.collection.find().sort(
-        {"date": 1, "ranking": 1}
+    async for item in OldLPCollections.find_many(
+        sort={"date": "ASC", "ranking": "ASC"}
     ):
-        item = OldLPCollections.from_dict(item)
         await insert_or_update_user(item)
         data_to_save.append(await convert_item(item))
 
@@ -101,7 +101,7 @@ async def main() -> None:
         )
         exit()
     new_start_time, new_end_time = await get_collection_data_time_range(
-        LPRecommendedArticleRecordDocument, "date"
+        LPRecommendedArticleRecordDocument, "fetch_date"
     )
     if old_start_time != new_start_time or old_end_time != new_end_time:
         logger.critical(

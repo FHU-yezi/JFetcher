@@ -37,4 +37,3 @@ class OldAssetsRank(Document, **DOCUMENT_OBJECT_CONFIG):
         indexes: ClassVar[List[IndexModel]] = [
             IndexModel(["date", "ranking"], unique=True),
         ]
-

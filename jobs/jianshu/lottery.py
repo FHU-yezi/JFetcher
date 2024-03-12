@@ -14,9 +14,7 @@ from utils.config_generators import (
 )
 
 
-async def process_item(
-    item: JianshuLotteryWinRecord, /
-) -> LotteryWinRecordDocument:
+async def process_item(item: JianshuLotteryWinRecord, /) -> LotteryWinRecordDocument:
     await JianshuUserDocument.insert_or_update_one(
         slug=item.user_info.slug,
         updated_at=item.time,
