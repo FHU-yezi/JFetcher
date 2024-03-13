@@ -59,6 +59,7 @@ class JianshuUserDocument(Document):
                     avatar_url=avatar_url,
                 )
             )
+            return
 
         db_data = await cls.find_one({"slug": slug})
         if not db_data:
@@ -68,27 +69,26 @@ class JianshuUserDocument(Document):
         if updated_at < db_data.updated_at:
             return
 
-        update_data: Dict[str, Any] = {
-            "$set": {
-                # 即使没有要更新的数据，也要刷新更新时间
-                "updatedAt": updated_at,
-            }
+        data_to_set: Dict[str, Any] = {
+            # 刷新数据更新时间
+            "updatedAt": updated_at
         }
+
         # 如果新数据中的 ID 与数据库不一致，报错
         if (id is not None and db_data.id is not None) and id != db_data.id:
             raise ValueError(f"ID 不一致（{id} 和 {db_data.id}）")
 
         # 如果获取到了之前未知的 ID，添加之
         if id is not None and db_data.id is None:
-            update_data["$set"]["id"] = id
+            data_to_set["id"] = id
 
         # 如果获取到了之前未知的昵称，添加之
         if name is not None and db_data.name is None:
-            update_data["$set"]["name"] = name
+            data_to_set["name"] = name
 
         # 如果昵称有变动，更新之
         if (name is not None and db_data.name is not None) and name != db_data.name:
-            update_data["$set"]["name"] = name
+            data_to_set["name"] = name
 
             new_history_names = db_data.history_names.copy()
 
@@ -100,12 +100,12 @@ class JianshuUserDocument(Document):
 
             # 如果有变动，将历史昵称列表更新提交至数据库
             if new_history_names != db_data.history_names:
-                update_data["$set"]["historyNames"] = new_history_names
+                data_to_set["historyNames"] = new_history_names
 
         # 如果获取到了之前未知的头像链接，或头像链接有变动，添加 / 更新之
         if avatar_url is not None and (
             db_data.avatar_url is None or avatar_url != db_data.avatar_url
         ):
-            update_data["$set"]["avatarUrl"] = avatar_url
+            data_to_set["avatarUrl"] = avatar_url
 
-        await cls.get_collection().update_one({"slug": slug}, update_data)
+        await cls.get_collection().update_one({"slug": slug}, {"$set": data_to_set})
