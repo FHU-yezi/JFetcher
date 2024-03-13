@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import datetime
 from typing import ClassVar, List
 
 from jkit._constraints import (
@@ -15,7 +15,7 @@ from utils.document_model import (
 
 
 class DailyUpdateRankingRecordDocument(Document, **DOCUMENT_OBJECT_CONFIG):
-    date: date
+    date: datetime
     ranking: PositiveInt
     days: PositiveInt
 

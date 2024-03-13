@@ -1,4 +1,4 @@
-from datetime import date, datetime
+from datetime import datetime
 from typing import ClassVar, List
 
 from msgspec import field
@@ -37,7 +37,7 @@ class OldAuthorField(Field, **FIELD_OBJECT_CONFIG):
 
 
 class OldLPCollections(Document, **DOCUMENT_OBJECT_CONFIG):
-    fetch_date: date = field(name="fetch_date")
+    fetch_date: datetime = field(name="fetch_date")
     from_collection: str = field(name="from_collection")
 
     article: OldArticleField

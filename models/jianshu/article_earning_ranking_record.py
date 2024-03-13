@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import datetime
 from typing import ClassVar, List, Optional
 
 from jkit._constraints import (
@@ -30,7 +30,7 @@ class EarningField(Field, **FIELD_OBJECT_CONFIG):
 
 
 class ArticleEarningRankingRecordDocument(Document, **DOCUMENT_OBJECT_CONFIG):
-    date: date
+    date: datetime
     ranking: PositiveInt
 
     article: ArticleField

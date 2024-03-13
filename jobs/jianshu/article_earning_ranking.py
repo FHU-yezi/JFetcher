@@ -1,4 +1,4 @@
-from datetime import date, datetime, timedelta
+from datetime import datetime, timedelta
 from typing import List, Optional, Tuple
 
 from jkit.config import CONFIG
@@ -7,6 +7,7 @@ from jkit.ranking.article_earning import ArticleEarningRanking, RecordField
 from jkit.user import UserInfo
 from prefect import flow, get_run_logger
 from prefect.states import Completed, State
+from sspeedup.time_helper import get_today_in_datetime_obj
 
 from models.jianshu.article_earning_ranking_record import (
     ArticleEarningRankingRecordDocument,
@@ -47,7 +48,7 @@ async def get_author_slug_and_info(
 
 
 async def process_item(
-    item: RecordField, /, *, target_date: date
+    item: RecordField, /, *, target_date: datetime
 ) -> ArticleEarningRankingRecordDocument:
     author_slug, author_info = await get_author_slug_and_info(item)
 
@@ -83,7 +84,7 @@ async def flow_func() -> State:
     await ArticleEarningRankingRecordDocument.ensure_indexes()
     await JianshuUserDocument.ensure_indexes()
 
-    target_date = datetime.now().date() - timedelta(days=1)
+    target_date = get_today_in_datetime_obj() - timedelta(days=1)
 
     data: List[ArticleEarningRankingRecordDocument] = []
     async for item in ArticleEarningRanking(target_date):

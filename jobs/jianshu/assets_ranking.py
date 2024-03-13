@@ -1,4 +1,4 @@
-from datetime import date, datetime
+from datetime import datetime
 from typing import List, Optional, Tuple
 
 from jkit.config import CONFIG
@@ -7,6 +7,7 @@ from jkit.ranking.assets import AssetsRanking, AssetsRankingRecord
 from jkit.user import User
 from prefect import flow, get_run_logger
 from prefect.states import Completed, State
+from sspeedup.time_helper import get_today_in_datetime_obj
 
 from models.jianshu.assets_ranking_record import (
     AmountField,
@@ -50,7 +51,7 @@ async def get_fp_ftn_amount(
 
 
 async def process_item(
-    item: AssetsRankingRecord, /, *, target_date: date
+    item: AssetsRankingRecord, /, *, target_date: datetime
 ) -> AssetsRankingRecordDocument:
     fp_amount, ftn_amount = await get_fp_ftn_amount(item)
 
@@ -83,7 +84,7 @@ async def flow_func() -> State:
     await AssetsRankingRecordDocument.ensure_indexes()
     await JianshuUserDocument.ensure_indexes()
 
-    target_date = datetime.now().date()
+    target_date = get_today_in_datetime_obj()
 
     data: List[AssetsRankingRecordDocument] = []
     async for item in AssetsRanking():
