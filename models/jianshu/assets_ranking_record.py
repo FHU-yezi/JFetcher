@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import datetime
 from typing import ClassVar, List, Optional
 
 from jkit._constraints import (
@@ -25,7 +25,7 @@ class AmountField(Field, **FIELD_OBJECT_CONFIG):
 
 
 class AssetsRankingRecordDocument(Document, **DOCUMENT_OBJECT_CONFIG):
-    date: date
+    date: datetime
     ranking: PositiveInt
 
     amount: AmountField

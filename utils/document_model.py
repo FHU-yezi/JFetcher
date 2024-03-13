@@ -1,4 +1,4 @@
-from datetime import date, datetime
+from datetime import datetime
 from typing import (
     Any,
     AsyncGenerator,
@@ -27,18 +27,7 @@ DOCUMENT_OBJECT_CONFIG = {
     "rename": "camel",
 }
 
-_BUILDIN_TYPES: Tuple[object, ...] = (ObjectId, datetime, date)
-
-
-def convert_date_to_datetime(data: Dict[str, Any]) -> Dict[str, Any]:
-    for key, value in data.items():
-        if isinstance(value, date):
-            data[key] = datetime.fromisoformat(value.isoformat())
-
-        if isinstance(value, dict):
-            data[key] = convert_date_to_datetime(value)
-
-    return data
+_BUILDIN_TYPES: Tuple[object, ...] = (ObjectId, datetime)
 
 
 class Field(Struct, **FIELD_OBJECT_CONFIG):
@@ -68,11 +57,9 @@ class Document(Struct, **DOCUMENT_OBJECT_CONFIG):
         return convert(data, type=cls)
 
     def to_dict(self) -> Dict[str, Any]:
-        return convert_date_to_datetime(
-            to_builtins(
-                self,
-                builtin_types=_BUILDIN_TYPES,
-            )
+        return to_builtins(
+            self,
+            builtin_types=_BUILDIN_TYPES,
         )
 
     @classmethod

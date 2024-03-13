@@ -1,4 +1,4 @@
-from datetime import date, datetime
+from datetime import datetime
 from typing import ClassVar, List
 
 from jkit._constraints import (
@@ -20,7 +20,7 @@ from utils.document_model import (
 
 
 class LPRecommendedArticleRecordDocument(Document, **DOCUMENT_OBJECT_CONFIG):
-    date: date
+    date: datetime
     id: PositiveInt
     slug: ArticleSlug
     title: NonEmptyStr
