@@ -19,7 +19,6 @@ class UserDocument(Document):
     name: str
     hashed_name: str
     avatar_url: Optional[str]
-    credit_history: List[CreditHistoryFieldItem]
 
     class Meta:  # type: ignore
         collection = JPEP_DB.users
@@ -41,7 +40,6 @@ class UserDocument(Document):
         name: str,
         hashed_name: str,
         avatar_url: Optional[str],
-        credit: int,
     ) -> None:
         if not updated_at:
             updated_at = datetime.now()
@@ -54,12 +52,6 @@ class UserDocument(Document):
                     name=name,
                     hashed_name=hashed_name,
                     avatar_url=avatar_url,
-                    credit_history=[
-                        CreditHistoryFieldItem(
-                            time=updated_at,
-                            value=credit,
-                        ),
-                    ],
                 )
             )
 
@@ -84,14 +76,5 @@ class UserDocument(Document):
         # 如果头像链接有变动，更新之
         if avatar_url is not None and avatar_url != db_data.avatar_url:
             update_data["$set"]["avatarUrl"] = avatar_url
-
-        # 如果信用值有变动，将变动信息添加至信用值历史
-        if credit != db_data.credit_history[-1].value:
-            update_data["$push"] = {
-                "creditHistory": {
-                    "time": updated_at,
-                    "value": credit,
-                }
-            }
 
         await cls.get_collection().update_one({"id": id}, update_data)
