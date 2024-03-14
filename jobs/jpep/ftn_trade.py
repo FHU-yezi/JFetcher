@@ -5,6 +5,7 @@ from jkit.jpep.ftn_macket import FTNMacket, FTNMacketOrderRecord
 from prefect import flow
 from prefect.states import Completed, State
 
+from models.jpep.credit_history import CreditHistoryDocument
 from models.jpep.ftn_trade_order import (
     AmountField,
     FTNTradeOrderDocument,
@@ -45,8 +46,19 @@ async def process_item(
             name=item.publisher_info.name,  # type: ignore
             hashed_name=item.publisher_info.hashed_name,  # type: ignore
             avatar_url=item.publisher_info.avatar_url,  # type: ignore
-            credit=item.publisher_info.credit,  # type: ignore
         )
+
+        latest_credit_value = await CreditHistoryDocument.get_latest_value(
+            item.publisher_info.id
+        )
+        if not latest_credit_value or latest_credit_value != item.publisher_info.credit:
+            await CreditHistoryDocument.insert_one(
+                CreditHistoryDocument(
+                    time=fetch_time,
+                    user_id=item.publisher_info.id,
+                    value=item.publisher_info.credit, # type: ignore
+                )
+            )
 
     return FTNTradeOrderDocument(
         fetch_time=fetch_time,
