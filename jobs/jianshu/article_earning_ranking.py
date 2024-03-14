@@ -87,7 +87,7 @@ async def flow_func() -> State:
     target_date = get_today_in_datetime_obj() - timedelta(days=1)
 
     data: List[ArticleEarningRankingRecordDocument] = []
-    async for item in ArticleEarningRanking(target_date):
+    async for item in ArticleEarningRanking(target_date.date()):
         processed_item = await process_item(item, target_date=target_date)
         data.append(processed_item)
 
