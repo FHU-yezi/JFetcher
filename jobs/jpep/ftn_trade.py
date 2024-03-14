@@ -43,9 +43,9 @@ async def process_item(
         await UserDocument.insert_or_update_one(
             updated_at=fetch_time,
             id=item.publisher_info.id,
-            name=item.publisher_info.name,  # type: ignore
-            hashed_name=item.publisher_info.hashed_name,  # type: ignore
-            avatar_url=item.publisher_info.avatar_url,  # type: ignore
+            name=item.publisher_info.name,
+            hashed_name=item.publisher_info.hashed_name,
+            avatar_url=item.publisher_info.avatar_url,
         )
 
         latest_credit_value = await CreditHistoryDocument.get_latest_value(
@@ -56,7 +56,7 @@ async def process_item(
                 CreditHistoryDocument(
                     time=fetch_time,
                     user_id=item.publisher_info.id,
-                    value=item.publisher_info.credit, # type: ignore
+                    value=item.publisher_info.credit,
                 )
             )
 
@@ -73,7 +73,7 @@ async def process_item(
             tradable=item.tradable_amount,
             minimum_trade=item.minimum_trade_amount,
         ),
-        publisher_id=item.publisher_info.id,  # type: ignore
+        publisher_id=item.publisher_info.id,
     ).validate()
 
 

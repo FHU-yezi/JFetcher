@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Any, ClassVar, Dict, List, Optional
 
-from jkit._constraints import NonNegativeInt, PositiveInt
+from jkit.msgspec_constraints import NonNegativeInt, PositiveInt
 from pymongo import IndexModel
 
 from utils.db import JPEP_DB
