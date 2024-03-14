@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import ClassVar, List, Literal
 
-from jkit._constraints import (
+from jkit.msgspec_constraints import (
     NonNegativeInt,
     PositiveFloat,
     PositiveInt,

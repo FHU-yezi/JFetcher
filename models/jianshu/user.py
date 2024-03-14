@@ -2,7 +2,7 @@ from datetime import datetime
 from enum import Enum
 from typing import Any, ClassVar, Dict, List, Optional
 
-from jkit._constraints import PositiveInt, UserName, UserSlug, UserUploadedUrl
+from jkit.msgspec_constraints import PositiveInt, UserName, UserSlug, UserUploadedUrl
 from pymongo import IndexModel
 
 from utils.db import JIANSHU_DB

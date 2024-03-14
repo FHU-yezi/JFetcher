@@ -1,6 +1,6 @@
 from typing import List
 
-from jkit.jianshu_lottery import JianshuLottery, JianshuLotteryWinRecord
+from jkit.lottery import Lottery, LotteryWinRecord
 from prefect import flow, get_run_logger
 from prefect.states import Completed, State
 
@@ -14,7 +14,7 @@ from utils.config_generators import (
 )
 
 
-async def process_item(item: JianshuLotteryWinRecord, /) -> LotteryWinRecordDocument:
+async def process_item(item: LotteryWinRecord, /) -> LotteryWinRecordDocument:
     await JianshuUserDocument.insert_or_update_one(
         slug=item.user_info.slug,
         updated_at=item.time,
@@ -48,7 +48,7 @@ async def flow_func() -> State:
         logger.warning("数据库中没有记录")
 
     data: List[LotteryWinRecordDocument] = []
-    async for item in JianshuLottery().iter_win_records():
+    async for item in Lottery().iter_win_records():
         if item.id == stop_id:
             break
 

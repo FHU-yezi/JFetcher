@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import ClassVar, List, Optional
 
-from jkit._constraints import (
+from jkit.msgspec_constraints import (
     ArticleSlug,
     NonEmptyStr,
     PositiveFloat,
