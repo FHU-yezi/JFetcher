@@ -101,7 +101,7 @@ async def main() -> None:
         )
         exit()
     new_start_time, new_end_time = await get_collection_data_time_range(
-        LPRecommendedArticleRecordDocument, "fetch_date"
+        LPRecommendedArticleRecordDocument, "date"
     )
     if old_start_time != new_start_time or old_end_time != new_end_time:
         logger.critical(
