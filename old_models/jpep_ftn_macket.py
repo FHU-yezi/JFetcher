@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import ClassVar, List, Literal
+from typing import ClassVar, List, Literal, Optional
 
 from msgspec import field
 from pymongo import IndexModel
@@ -23,7 +23,7 @@ class OldAmountField(Field, **FIELD_OBJECT_CONFIG):
 class OldUserField(Field, **FIELD_OBJECT_CONFIG):
     id: int
     name: str
-    name_md5: str = field(name="name_md5")
+    name_md5: Optional[str] = field(name="name_md5")
 
 
 class OldJPEPFTNMacket(Document, **DOCUMENT_OBJECT_CONFIG):
