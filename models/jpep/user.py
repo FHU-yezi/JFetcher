@@ -17,7 +17,7 @@ class UserDocument(Document):
     updated_at: datetime
     id: PositiveInt
     name: str
-    hashed_name: str
+    hashed_name: Optional[str]
     avatar_url: Optional[str]
 
     class Meta:  # type: ignore
@@ -78,3 +78,23 @@ class UserDocument(Document):
             update_data["$set"]["avatarUrl"] = avatar_url
 
         await cls.get_collection().update_one({"id": id}, update_data)
+
+    @classmethod
+    async def insert_one_if_not_exist(
+        cls,
+        *,
+        updated_at: datetime,
+        id: int,  # noqa: A002
+        name: str,
+        hashed_name: Optional[str],
+    ) -> None:
+        if not await cls.is_record_exist(id):
+            await cls.insert_one(
+                UserDocument(
+                    updated_at=updated_at,
+                    id=id,
+                    name=name,
+                    hashed_name=hashed_name,
+                    avatar_url=None,
+                )
+            )
