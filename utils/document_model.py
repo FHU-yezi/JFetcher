@@ -14,6 +14,7 @@ from typing import (
 from bson import ObjectId
 from motor.core import AgnosticCollection
 from msgspec import Struct, convert, to_builtins
+from msgspec.inspect import type_info
 from pymongo import IndexModel
 from typing_extensions import Self
 
@@ -38,6 +39,17 @@ class Document(Struct, **DOCUMENT_OBJECT_CONFIG):
     class Meta(Struct):
         collection: ClassVar[AgnosticCollection]
         indexes: ClassVar[List[IndexModel]]
+
+    @classmethod
+    def _get_field_name(cls, field: object) -> str:
+        attr_name = field.__qualname__.split(".")[-1]
+        for field_obj in type_info(cls).fields:  # type: ignore
+            if field_obj.name != attr_name:
+                continue
+
+            return field_obj.encode_name
+
+        raise ValueError("未找到属性对应的字段名称")
 
     @classmethod
     def get_collection(cls) -> AgnosticCollection:
