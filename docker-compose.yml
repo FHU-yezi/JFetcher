@@ -1,5 +1,3 @@
-version: "3"
-
 networks:
   mongodb:
     external: true
@@ -21,7 +19,6 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "1.00"
           memory: 512M
       restart_policy:
         condition: on-failure
