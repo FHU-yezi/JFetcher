@@ -10,8 +10,8 @@ package-mode = false
 [tool.poetry.dependencies]
 python = "^3.8"
 prefect = "^2.16.0"
-jkit = "^3.0.0a15"
-sspeedup = "^0.25.1"
+jkit = "^3.0.0a16"
+sspeedup = "^0.25.0"
 sshared = "^0.2.0"
 
 [tool.poetry.group.dev.dependencies]
