@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Tuple, Type
 
-from utils.document_model import Document
+from sshared.mongo import Document
 
 
 async def get_collection_data_count(document: Type[Document]) -> int:

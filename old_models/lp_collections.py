@@ -1,19 +1,12 @@
 from datetime import datetime
-from typing import ClassVar, List
 
 from msgspec import field
-from pymongo import IndexModel
+from sshared.mongo import MODEL_META, Document, Field, Index
 
 from old_models import OLD_DB
-from utils.document_model import (
-    DOCUMENT_OBJECT_CONFIG,
-    FIELD_OBJECT_CONFIG,
-    Document,
-    Field,
-)
 
 
-class OldArticleField(Field, **FIELD_OBJECT_CONFIG):
+class OldArticleField(Field, **MODEL_META):
     id: int
     url: str
     title: str
@@ -30,13 +23,13 @@ class OldArticleField(Field, **FIELD_OBJECT_CONFIG):
     summary: str
 
 
-class OldAuthorField(Field, **FIELD_OBJECT_CONFIG):
+class OldAuthorField(Field, **MODEL_META):
     id: int
     url: str
     name: str
 
 
-class OldLPCollections(Document, **DOCUMENT_OBJECT_CONFIG):
+class OldLPCollections(Document, **MODEL_META):
     fetch_date: datetime = field(name="fetch_date")
     from_collection: str = field(name="from_collection")
 
@@ -45,6 +38,4 @@ class OldLPCollections(Document, **DOCUMENT_OBJECT_CONFIG):
 
     class Meta:  # type: ignore
         collection = OLD_DB.LP_collections
-        indexes: ClassVar[List[IndexModel]] = [
-            IndexModel(["fetch_date"]),
-        ]
+        indexes = (Index(keys=("fetch_date",)),)

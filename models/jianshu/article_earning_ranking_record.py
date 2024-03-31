@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import ClassVar, List, Optional
+from typing import Optional
 
 from jkit.msgspec_constraints import (
     ArticleSlug,
@@ -8,28 +8,22 @@ from jkit.msgspec_constraints import (
     PositiveInt,
     UserSlug,
 )
-from pymongo import IndexModel
+from sshared.mongo import MODEL_META, Document, Field, Index
 
 from utils.db import JIANSHU_DB
-from utils.document_model import (
-    DOCUMENT_OBJECT_CONFIG,
-    FIELD_OBJECT_CONFIG,
-    Document,
-    Field,
-)
 
 
-class ArticleField(Field, **FIELD_OBJECT_CONFIG):
+class ArticleField(Field, **MODEL_META):
     slug: Optional[ArticleSlug]
     title: Optional[NonEmptyStr]
 
 
-class EarningField(Field, **FIELD_OBJECT_CONFIG):
+class EarningField(Field, **MODEL_META):
     to_author: PositiveFloat
     to_voter: PositiveFloat
 
 
-class ArticleEarningRankingRecordDocument(Document, **DOCUMENT_OBJECT_CONFIG):
+class ArticleEarningRankingRecordDocument(Document, **MODEL_META):
     date: datetime
     ranking: PositiveInt
 
@@ -39,6 +33,4 @@ class ArticleEarningRankingRecordDocument(Document, **DOCUMENT_OBJECT_CONFIG):
 
     class Meta:  # type: ignore
         collection = JIANSHU_DB.article_earning_ranking_records
-        indexes: ClassVar[List[IndexModel]] = [
-            IndexModel(["date", "ranking"], unique=True),
-        ]
+        indexes = (Index(keys=("date", "ranking"), unique=True),)

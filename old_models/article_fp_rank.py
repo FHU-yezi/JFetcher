@@ -1,36 +1,30 @@
 from datetime import datetime
-from typing import ClassVar, List, Optional
+from typing import Optional
 
 from msgspec import field
-from pymongo import IndexModel
+from sshared.mongo import MODEL_META, Document, Field, Index
 
 from old_models import OLD_DB
-from utils.document_model import (
-    DOCUMENT_OBJECT_CONFIG,
-    FIELD_OBJECT_CONFIG,
-    Document,
-    Field,
-)
 
 
-class OldArticleField(Field, **FIELD_OBJECT_CONFIG):
+class OldArticleField(Field, **MODEL_META):
     title: Optional[str]
     url: Optional[str]
 
 
-class OldAuthorField(Field, **FIELD_OBJECT_CONFIG):
+class OldAuthorField(Field, **MODEL_META):
     name: Optional[str] = None
     id: Optional[int] = None
     url: Optional[str] = None
 
 
-class OldRewardField(Field, **FIELD_OBJECT_CONFIG):
+class OldRewardField(Field, **MODEL_META):
     to_author: float = field(name="to_author")
     to_voter: float = field(name="to_voter")
     total: float
 
 
-class OldArticleFPRank(Document, **DOCUMENT_OBJECT_CONFIG):
+class OldArticleFPRank(Document, **MODEL_META):
     date: datetime
     ranking: int
 
@@ -40,6 +34,4 @@ class OldArticleFPRank(Document, **DOCUMENT_OBJECT_CONFIG):
 
     class Meta:  # type: ignore
         collection = OLD_DB.article_FP_rank
-        indexes: ClassVar[List[IndexModel]] = [
-            IndexModel(["date", "ranking"], unique=True),
-        ]
+        indexes = (Index(keys=("date", "ranking"), unique=True),)

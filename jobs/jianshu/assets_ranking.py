@@ -7,7 +7,7 @@ from jkit.ranking.assets import AssetsRanking, AssetsRankingRecord
 from jkit.user import User
 from prefect import flow, get_run_logger
 from prefect.states import Completed, State
-from sspeedup.time_helper import get_today_in_datetime_obj
+from sshared.time import get_today_as_datetime
 
 from models.jianshu.assets_ranking_record import (
     AmountField,
@@ -84,7 +84,7 @@ async def flow_func() -> State:
     await AssetsRankingRecordDocument.ensure_indexes()
     await JianshuUserDocument.ensure_indexes()
 
-    target_date = get_today_in_datetime_obj()
+    target_date = get_today_as_datetime()
 
     data: List[AssetsRankingRecordDocument] = []
     async for item in AssetsRanking():

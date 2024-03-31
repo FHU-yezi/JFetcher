@@ -1,21 +1,16 @@
 from datetime import datetime
-from typing import ClassVar, List
 
 from jkit.msgspec_constraints import (
     NonEmptyStr,
     PositiveInt,
     UserSlug,
 )
-from pymongo import IndexModel
+from sshared.mongo import MODEL_META, Document, Index
 
 from utils.db import JIANSHU_DB
-from utils.document_model import (
-    DOCUMENT_OBJECT_CONFIG,
-    Document,
-)
 
 
-class LotteryWinRecordDocument(Document, **DOCUMENT_OBJECT_CONFIG):
+class LotteryWinRecordDocument(Document, **MODEL_META):
     id: PositiveInt
     time: datetime
     award_name: NonEmptyStr
@@ -24,9 +19,7 @@ class LotteryWinRecordDocument(Document, **DOCUMENT_OBJECT_CONFIG):
 
     class Meta:  # type: ignore
         collection = JIANSHU_DB.lottery_win_records
-        indexes: ClassVar[List[IndexModel]] = [
-            IndexModel(["id"], unique=True),
-        ]
+        indexes = (Index(keys=("id",), unique=True),)
 
     @classmethod
     async def get_latest_record_id(cls) -> int:
