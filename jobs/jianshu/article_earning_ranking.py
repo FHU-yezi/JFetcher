@@ -7,7 +7,7 @@ from jkit.ranking.article_earning import ArticleEarningRanking, RecordField
 from jkit.user import UserInfo
 from prefect import flow, get_run_logger
 from prefect.states import Completed, State
-from sspeedup.time_helper import get_today_in_datetime_obj
+from sshared.time import get_today_as_datetime
 
 from models.jianshu.article_earning_ranking_record import (
     ArticleEarningRankingRecordDocument,
@@ -84,7 +84,7 @@ async def flow_func() -> State:
     await ArticleEarningRankingRecordDocument.ensure_indexes()
     await JianshuUserDocument.ensure_indexes()
 
-    target_date = get_today_in_datetime_obj() - timedelta(days=1)
+    target_date = get_today_as_datetime() - timedelta(days=1)
 
     data: List[ArticleEarningRankingRecordDocument] = []
     async for item in ArticleEarningRanking(target_date.date()):

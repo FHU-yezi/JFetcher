@@ -4,7 +4,7 @@ from typing import List, Optional
 from jkit.collection import Collection, CollectionArticleInfo
 from prefect import flow, get_run_logger
 from prefect.states import Completed, State
-from sspeedup.time_helper import get_today_in_datetime_obj
+from sshared.time import get_today_as_datetime
 
 from models.jianshu.lp_recommend_article_record import (
     LPRecommendedArticleRecordDocument,
@@ -64,7 +64,7 @@ async def flow_func() -> State:
 
     logger = get_run_logger()
 
-    current_date = get_today_in_datetime_obj()
+    current_date = get_today_as_datetime()
 
     data: List[LPRecommendedArticleRecordDocument] = []
     itered_items_count = 0

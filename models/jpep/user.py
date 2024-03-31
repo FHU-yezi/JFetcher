@@ -1,14 +1,13 @@
 from datetime import datetime
-from typing import Any, ClassVar, Dict, List, Optional
+from typing import Any, Dict, Optional
 
 from jkit.msgspec_constraints import NonNegativeInt, PositiveInt
-from pymongo import IndexModel
+from sshared.mongo import MODEL_META, Document, Field, Index
 
 from utils.db import JPEP_DB
-from utils.document_model import FIELD_OBJECT_CONFIG, Document, Field
 
 
-class CreditHistoryFieldItem(Field, **FIELD_OBJECT_CONFIG):
+class CreditHistoryFieldItem(Field, **MODEL_META):
     time: datetime
     value: NonNegativeInt
 
@@ -22,10 +21,10 @@ class UserDocument(Document):
 
     class Meta:  # type: ignore
         collection = JPEP_DB.users
-        indexes: ClassVar[List[IndexModel]] = [
-            IndexModel(["id"], unique=True),
-            IndexModel(["updatedAt"]),
-        ]
+        indexes = (
+            Index(keys=("id",), unique=True),
+            Index(keys=("updatedAt",)),
+        )
 
     @classmethod
     async def is_record_exist(cls, id: int) -> bool:  # noqa: A002

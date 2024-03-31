@@ -1,23 +1,16 @@
 from datetime import datetime
-from typing import ClassVar, List
 
-from pymongo import IndexModel
+from sshared.mongo import MODEL_META, Document, Field, Index
 
 from old_models import OLD_DB
-from utils.document_model import (
-    DOCUMENT_OBJECT_CONFIG,
-    FIELD_OBJECT_CONFIG,
-    Document,
-    Field,
-)
 
 
-class OldUserField(Field, **FIELD_OBJECT_CONFIG):
+class OldUserField(Field, **MODEL_META):
     url: str
     name: str
 
 
-class OldDailyUpdateRank(Document, **DOCUMENT_OBJECT_CONFIG):
+class OldDailyUpdateRank(Document, **MODEL_META):
     date: datetime
     ranking: int
 
@@ -26,6 +19,4 @@ class OldDailyUpdateRank(Document, **DOCUMENT_OBJECT_CONFIG):
 
     class Meta:  # type: ignore
         collection = OLD_DB.daily_update_rank
-        indexes: ClassVar[List[IndexModel]] = [
-            IndexModel(["date", "ranking"]),
-        ]
+        indexes = (Index(keys=("date", "ranking")),)

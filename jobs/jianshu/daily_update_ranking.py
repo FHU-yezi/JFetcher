@@ -7,7 +7,7 @@ from jkit.ranking.daily_update import (
 )
 from prefect import flow
 from prefect.states import Completed, State
-from sspeedup.time_helper import get_today_in_datetime_obj
+from sshared.time import get_today_as_datetime
 
 from models.jianshu.daily_update_ranking_record import (
     DailyUpdateRankingRecordDocument,
@@ -45,7 +45,7 @@ async def flow_func() -> State:
     await DailyUpdateRankingRecordDocument.ensure_indexes()
     await JianshuUserDocument.ensure_indexes()
 
-    current_date = get_today_in_datetime_obj()
+    current_date = get_today_as_datetime()
 
     data: List[DailyUpdateRankingRecordDocument] = []
     async for item in DailyUpdateRanking():

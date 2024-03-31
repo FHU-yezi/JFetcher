@@ -1,26 +1,20 @@
 from datetime import datetime
-from typing import ClassVar, List, Optional
+from typing import Optional
 
 from jkit.msgspec_constraints import NonNegativeInt, PositiveInt
-from pymongo import IndexModel
+from sshared.mongo import MODEL_META, Document, Index
 
 from utils.db import JPEP_DB
-from utils.document_model import (
-    DOCUMENT_OBJECT_CONFIG,
-    Document,
-)
 
 
-class CreditHistoryDocument(Document, **DOCUMENT_OBJECT_CONFIG):
+class CreditHistoryDocument(Document, **MODEL_META):
     time: datetime
     user_id: PositiveInt
     value: NonNegativeInt
 
     class Meta:  # type: ignore
         collection = JPEP_DB.credit_history
-        indexes: ClassVar[List[IndexModel]] = [
-            IndexModel(["time", "userId"], unique=True),
-        ]
+        indexes = (Index(keys=("time", "userId"), unique=True),)
 
     @classmethod
     async def get_latest_value(cls, user_id: int) -> Optional[int]:

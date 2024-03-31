@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import ClassVar, List, Optional
+from typing import Optional
 
 from jkit.msgspec_constraints import (
     NonNegativeFloat,
@@ -7,24 +7,18 @@ from jkit.msgspec_constraints import (
     PositiveInt,
     UserSlug,
 )
-from pymongo import IndexModel
+from sshared.mongo import MODEL_META, Document, Field, Index
 
 from utils.db import JIANSHU_DB
-from utils.document_model import (
-    DOCUMENT_OBJECT_CONFIG,
-    FIELD_OBJECT_CONFIG,
-    Document,
-    Field,
-)
 
 
-class AmountField(Field, **FIELD_OBJECT_CONFIG):
+class AmountField(Field, **MODEL_META):
     fp: Optional[NonNegativeFloat]
     ftn: Optional[NonNegativeFloat]
     assets: Optional[PositiveFloat]
 
 
-class AssetsRankingRecordDocument(Document, **DOCUMENT_OBJECT_CONFIG):
+class AssetsRankingRecordDocument(Document, **MODEL_META):
     date: datetime
     ranking: PositiveInt
 
@@ -33,6 +27,4 @@ class AssetsRankingRecordDocument(Document, **DOCUMENT_OBJECT_CONFIG):
 
     class Meta:  # type: ignore
         collection = JIANSHU_DB.assets_ranking_records
-        indexes: ClassVar[List[IndexModel]] = [
-            IndexModel(["date", "ranking"], unique=True),
-        ]
+        indexes = (Index(keys=("date", "ranking"), unique=True),)

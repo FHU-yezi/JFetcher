@@ -1,32 +1,26 @@
 from datetime import datetime
-from typing import ClassVar, List, Literal, Optional
+from typing import Literal, Optional
 
 from msgspec import field
-from pymongo import IndexModel
+from sshared.mongo import MODEL_META, Document, Field, Index
 
 from old_models import OLD_DB
-from utils.document_model import (
-    DOCUMENT_OBJECT_CONFIG,
-    FIELD_OBJECT_CONFIG,
-    Document,
-    Field,
-)
 
 
-class OldAmountField(Field, **FIELD_OBJECT_CONFIG):
+class OldAmountField(Field, **MODEL_META):
     total: int
     traded: int
     remaining: int
     tradable: int
 
 
-class OldUserField(Field, **FIELD_OBJECT_CONFIG):
+class OldUserField(Field, **MODEL_META):
     id: int
     name: str
     name_md5: Optional[str] = field(name="name_md5")
 
 
-class OldJPEPFTNMacket(Document, **DOCUMENT_OBJECT_CONFIG):
+class OldJPEPFTNMacket(Document, **MODEL_META):
     fetch_time: datetime = field(name="fetch_time")
     order_id: int = field(name="order_id")
     trade_type: Literal["buy", "sell"] = field(name="trade_type")
@@ -42,6 +36,4 @@ class OldJPEPFTNMacket(Document, **DOCUMENT_OBJECT_CONFIG):
 
     class Meta:  # type: ignore
         collection = OLD_DB.JPEP_FTN_macket
-        indexes: ClassVar[List[IndexModel]] = [
-            IndexModel(["fetch_time"]),
-        ]
+        indexes = (Index(keys=("fetch_time",)),)

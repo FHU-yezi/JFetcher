@@ -1,5 +1,4 @@
 from datetime import datetime
-from typing import ClassVar, List
 
 from jkit.msgspec_constraints import (
     ArticleSlug,
@@ -10,16 +9,12 @@ from jkit.msgspec_constraints import (
     UserSlug,
 )
 from msgspec import field
-from pymongo import IndexModel
+from sshared.mongo import MODEL_META, Document, Index
 
 from utils.db import JIANSHU_DB
-from utils.document_model import (
-    DOCUMENT_OBJECT_CONFIG,
-    Document,
-)
 
 
-class LPRecommendedArticleRecordDocument(Document, **DOCUMENT_OBJECT_CONFIG):
+class LPRecommendedArticleRecordDocument(Document, **MODEL_META):
     date: datetime
     id: PositiveInt
     slug: ArticleSlug
@@ -40,9 +35,7 @@ class LPRecommendedArticleRecordDocument(Document, **DOCUMENT_OBJECT_CONFIG):
 
     class Meta:  # type: ignore
         collection = JIANSHU_DB.lp_recommended_article_records
-        indexes: ClassVar[List[IndexModel]] = [
-            IndexModel(["date", "slug"], unique=True),
-        ]
+        indexes = (Index(keys=("date", "slug"), unique=True),)
 
     @classmethod
     async def is_record_exist(cls, slug: str) -> bool:
