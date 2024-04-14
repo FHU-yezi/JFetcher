@@ -12,7 +12,7 @@ from sshared.time import get_today_as_datetime
 from models.jianshu.daily_update_ranking_record import (
     DailyUpdateRankingRecordDocument,
 )
-from models.jianshu.user import JianshuUserDocument
+from models.jianshu.user import UserDocument
 from utils.config_generators import (
     generate_deployment_config,
     generate_flow_config,
@@ -22,7 +22,7 @@ from utils.config_generators import (
 async def process_item(
     item: DailyUpdateRankingRecord, /, *, current_date: datetime
 ) -> DailyUpdateRankingRecordDocument:
-    await JianshuUserDocument.insert_or_update_one(
+    await UserDocument.insert_or_update_one(
         slug=item.user_info.slug,
         name=item.user_info.name,
         avatar_url=item.user_info.avatar_url,
@@ -42,9 +42,6 @@ async def process_item(
     )
 )
 async def flow_func() -> State:
-    await DailyUpdateRankingRecordDocument.ensure_indexes()
-    await JianshuUserDocument.ensure_indexes()
-
     current_date = get_today_as_datetime()
 
     data: List[DailyUpdateRankingRecordDocument] = []

@@ -7,21 +7,21 @@ from jkit.ranking.assets import AssetsRanking, AssetsRankingRecord
 from jkit.user import User
 from prefect import flow, get_run_logger
 from prefect.states import Completed, State
+from sshared.retry.asyncio import retry
 from sshared.time import get_today_as_datetime
 
 from models.jianshu.assets_ranking_record import (
     AmountField,
     AssetsRankingRecordDocument,
 )
-from models.jianshu.user import JianshuUserDocument
-from utils.async_retry import async_retry
+from models.jianshu.user import UserDocument
 from utils.config_generators import (
     generate_deployment_config,
     generate_flow_config,
 )
 
 
-@async_retry()
+@retry(delay=5)
 async def get_fp_ftn_amount(
     item: AssetsRankingRecord, /
 ) -> Tuple[Optional[float], Optional[float]]:
@@ -56,7 +56,7 @@ async def process_item(
     fp_amount, ftn_amount = await get_fp_ftn_amount(item)
 
     if item.user_info.slug:
-        await JianshuUserDocument.insert_or_update_one(
+        await UserDocument.insert_or_update_one(
             slug=item.user_info.slug,
             id=item.user_info.id,
             name=item.user_info.name,
@@ -81,9 +81,6 @@ async def process_item(
     )
 )
 async def flow_func() -> State:
-    await AssetsRankingRecordDocument.ensure_indexes()
-    await JianshuUserDocument.ensure_indexes()
-
     target_date = get_today_as_datetime()
 
     data: List[AssetsRankingRecordDocument] = []

@@ -2604,13 +2604,13 @@ sqlcipher = ["sqlcipher3_binary"]
 
 [[package]]
 name = "sshared"
-version = "0.2.0"
+version = "0.3.0"
 description = "后端共享组件"
 optional = false
 python-versions = "<4.0,>=3.8"
 files = [
-    {file = "sshared-0.2.0-py3-none-any.whl", hash = "sha256:d2abb6889464081292caaf2d7604db5f288f5d5d625b2995af09e4765c1219e9"},
-    {file = "sshared-0.2.0.tar.gz", hash = "sha256:a63b5515fca4eac890b6f7b74b23aab2f807bfb78c2cfacec4e06b995490c00e"},
+    {file = "sshared-0.3.0-py3-none-any.whl", hash = "sha256:f04b0e4319155ed9bcfb35607966b78956725b5b8a85fbe93d83497060cc1cbe"},
+    {file = "sshared-0.3.0.tar.gz", hash = "sha256:cc1892ce57886c5c926f91a1d126a5eadd06dff36facb69d63bb220ccc23f869"},
 ]
 
 [package.dependencies]
@@ -2997,4 +2997,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.8"
-content-hash = "fc3b60b593210233e2733901b279e422c67b6d3052e07bcdabdd60576ecc51d4"
+content-hash = "34a5819cef02b33b6ffe4ecf0a410e3649606c78aec298dd8ae75249fbc8ed41"

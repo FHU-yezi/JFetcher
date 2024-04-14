@@ -7,7 +7,7 @@ from prefect.states import Completed, State
 from models.jianshu.lottery_win_record import (
     LotteryWinRecordDocument,
 )
-from models.jianshu.user import JianshuUserDocument
+from models.jianshu.user import UserDocument
 from utils.config_generators import (
     generate_deployment_config,
     generate_flow_config,
@@ -15,7 +15,7 @@ from utils.config_generators import (
 
 
 async def process_item(item: LotteryWinRecord, /) -> LotteryWinRecordDocument:
-    await JianshuUserDocument.insert_or_update_one(
+    await UserDocument.insert_or_update_one(
         slug=item.user_info.slug,
         updated_at=item.time,
         id=item.user_info.id,
@@ -37,9 +37,6 @@ async def process_item(item: LotteryWinRecord, /) -> LotteryWinRecordDocument:
     )
 )
 async def flow_func() -> State:
-    await LotteryWinRecordDocument.ensure_indexes()
-    await JianshuUserDocument.ensure_indexes()
-
     logger = get_run_logger()
 
     stop_id = await LotteryWinRecordDocument.get_latest_record_id()

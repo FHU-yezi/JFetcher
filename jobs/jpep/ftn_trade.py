@@ -83,8 +83,6 @@ async def process_item(
     ),
 )
 async def flow_func(type: Literal["buy", "sell"]) -> State:  # noqa: A002
-    await FTNTradeOrderDocument.ensure_indexes()
-
     fetch_time = get_fetch_time()
 
     data: List[FTNTradeOrderDocument] = []
