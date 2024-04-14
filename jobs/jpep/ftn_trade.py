@@ -52,13 +52,11 @@ async def process_item(
             item.publisher_info.id
         )
         if not latest_credit_value or latest_credit_value != item.publisher_info.credit:
-            await CreditHistoryDocument.insert_one(
-                CreditHistoryDocument(
-                    time=fetch_time,
-                    user_id=item.publisher_info.id,
-                    value=item.publisher_info.credit,
-                )
-            )
+            await CreditHistoryDocument(
+                time=fetch_time,
+                user_id=item.publisher_info.id,
+                value=item.publisher_info.credit,
+            ).save()
 
     return FTNTradeOrderDocument(
         fetch_time=fetch_time,

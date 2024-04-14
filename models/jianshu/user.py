@@ -47,17 +47,15 @@ class UserDocument(Document, **MODEL_META):
             updated_at = datetime.now()
 
         if not await cls.is_record_exist(slug):
-            await cls.insert_one(
-                UserDocument(
-                    slug=slug,
-                    status=JianshuUserStatus.NORMAL,
-                    updated_at=updated_at,
-                    id=id,
-                    name=name,
-                    history_names=[],
-                    avatar_url=avatar_url,
-                )
-            )
+            await UserDocument(
+                slug=slug,
+                status=JianshuUserStatus.NORMAL,
+                updated_at=updated_at,
+                id=id,
+                name=name,
+                history_names=[],
+                avatar_url=avatar_url,
+            ).save()
             return
 
         db_data = await cls.find_one({"slug": slug})
