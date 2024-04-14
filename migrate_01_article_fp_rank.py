@@ -10,7 +10,7 @@ from models.jianshu.article_earning_ranking_record import (
     ArticleField,
     EarningField,
 )
-from models.jianshu.user import JianshuUserDocument
+from models.jianshu.user import UserDocument
 from old_models.article_fp_rank import OldArticleFPRank
 from utils.migrate_helper import (
     get_collection_data_count,
@@ -25,13 +25,13 @@ async def ensure_all_old_collection_indexes() -> None:
 
 
 async def ensure_all_new_collection_indexes() -> None:
-    await JianshuUserDocument.ensure_indexes()
+    await UserDocument.ensure_indexes()
     await ArticleEarningRankingRecordDocument.ensure_indexes()
 
 
 async def insert_or_update_user(item: OldArticleFPRank) -> None:
     if item.author.url:
-        await JianshuUserDocument.insert_or_update_one(
+        await UserDocument.insert_or_update_one(
             slug=user_url_to_slug(item.author.url),
             updated_at=datetime.fromisoformat(item.date.isoformat()),
             id=item.author.id,

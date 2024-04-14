@@ -7,6 +7,7 @@ from jkit.ranking.article_earning import ArticleEarningRanking, RecordField
 from jkit.user import UserInfo
 from prefect import flow, get_run_logger
 from prefect.states import Completed, State
+from sshared.retry.asyncio import retry
 from sshared.time import get_today_as_datetime
 
 from models.jianshu.article_earning_ranking_record import (
@@ -14,15 +15,14 @@ from models.jianshu.article_earning_ranking_record import (
     ArticleField,
     EarningField,
 )
-from models.jianshu.user import JianshuUserDocument
-from utils.async_retry import async_retry
+from models.jianshu.user import UserDocument
 from utils.config_generators import (
     generate_deployment_config,
     generate_flow_config,
 )
 
 
-@async_retry()
+@retry(delay=5)
 async def get_author_slug_and_info(
     item: RecordField, /
 ) -> Tuple[Optional[str], Optional[UserInfo]]:
@@ -53,7 +53,7 @@ async def process_item(
     author_slug, author_info = await get_author_slug_and_info(item)
 
     if author_slug is not None and author_info is not None:
-        await JianshuUserDocument.insert_or_update_one(
+        await UserDocument.insert_or_update_one(
             slug=author_slug,
             id=author_info.id,
             name=author_info.name,
@@ -81,9 +81,6 @@ async def process_item(
     )
 )
 async def flow_func() -> State:
-    await ArticleEarningRankingRecordDocument.ensure_indexes()
-    await JianshuUserDocument.ensure_indexes()
-
     target_date = get_today_as_datetime() - timedelta(days=1)
 
     data: List[ArticleEarningRankingRecordDocument] = []

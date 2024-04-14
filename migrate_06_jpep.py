@@ -3,7 +3,6 @@ from typing import List
 
 from sspeedup.logging.run_logger import RunLogger
 
-from models.jpep.credit_history import CreditHistoryDocument
 from models.jpep.ftn_trade_order import AmountField, FTNTradeOrderDocument
 from models.jpep.user import UserDocument
 from old_models.jpep_ftn_macket import OldJPEPFTNMacket
@@ -21,7 +20,6 @@ async def ensure_all_old_collection_indexes() -> None:
 async def ensure_all_new_collection_indexes() -> None:
     await FTNTradeOrderDocument.ensure_indexes()
     await UserDocument.ensure_indexes()
-    await CreditHistoryDocument.ensure_indexes()
 
 
 async def insert_or_update_user(item: OldJPEPFTNMacket) -> None:

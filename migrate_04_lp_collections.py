@@ -8,7 +8,7 @@ from sspeedup.logging.run_logger import RunLogger
 from models.jianshu.lp_recommend_article_record import (
     LPRecommendedArticleRecordDocument,
 )
-from models.jianshu.user import JianshuUserDocument
+from models.jianshu.user import UserDocument
 from old_models.lp_collections import OldLPCollections
 from utils.migrate_helper import (
     get_collection_data_count,
@@ -23,12 +23,12 @@ async def ensure_all_old_collection_indexes() -> None:
 
 
 async def ensure_all_new_collection_indexes() -> None:
-    await JianshuUserDocument.ensure_indexes()
+    await UserDocument.ensure_indexes()
     await LPRecommendedArticleRecordDocument.ensure_indexes()
 
 
 async def insert_or_update_user(item: OldLPCollections) -> None:
-    await JianshuUserDocument.insert_or_update_one(
+    await UserDocument.insert_or_update_one(
         slug=user_url_to_slug(item.author.url),
         updated_at=datetime.fromisoformat(item.fetch_date.isoformat()),
         id=item.author.id,

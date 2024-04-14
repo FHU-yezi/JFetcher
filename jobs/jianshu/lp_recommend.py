@@ -9,7 +9,7 @@ from sshared.time import get_today_as_datetime
 from models.jianshu.lp_recommend_article_record import (
     LPRecommendedArticleRecordDocument,
 )
-from models.jianshu.user import JianshuUserDocument
+from models.jianshu.user import UserDocument
 from utils.config_generators import (
     generate_deployment_config,
     generate_flow_config,
@@ -28,7 +28,7 @@ async def process_item(
         logger.warning(f"已保存过该文章记录，跳过 slug={item.slug}")
         return None
 
-    await JianshuUserDocument.insert_or_update_one(
+    await UserDocument.insert_or_update_one(
         slug=item.author_info.slug,
         id=item.author_info.id,
         name=item.author_info.name,
@@ -59,9 +59,6 @@ async def process_item(
     )
 )
 async def flow_func() -> State:
-    await LPRecommendedArticleRecordDocument.ensure_indexes()
-    await JianshuUserDocument.ensure_indexes()
-
     logger = get_run_logger()
 
     current_date = get_today_as_datetime()

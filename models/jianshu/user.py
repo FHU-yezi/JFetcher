@@ -13,7 +13,7 @@ class JianshuUserStatus(Enum):
     INACCESSABLE = "INACCESSIBLE"
 
 
-class JianshuUserDocument(Document, **MODEL_META):
+class UserDocument(Document, **MODEL_META):
     slug: UserSlug
     status: JianshuUserStatus
     updated_at: datetime
@@ -48,7 +48,7 @@ class JianshuUserDocument(Document, **MODEL_META):
 
         if not await cls.is_record_exist(slug):
             await cls.insert_one(
-                JianshuUserDocument(
+                UserDocument(
                     slug=slug,
                     status=JianshuUserStatus.NORMAL,
                     updated_at=updated_at,

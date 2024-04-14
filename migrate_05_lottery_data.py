@@ -5,7 +5,7 @@ from jkit.identifier_convert import user_url_to_slug
 from sspeedup.logging.run_logger import RunLogger
 
 from models.jianshu.lottery_win_record import LotteryWinRecordDocument
-from models.jianshu.user import JianshuUserDocument
+from models.jianshu.user import UserDocument
 from old_models.lottery_data import OldLotteryData
 from utils.migrate_helper import (
     get_collection_data_count,
@@ -19,13 +19,13 @@ async def ensure_all_old_collection_indexes() -> None:
 
 
 async def ensure_all_new_collection_indexes() -> None:
-    await JianshuUserDocument.ensure_indexes()
+    await UserDocument.ensure_indexes()
     await LotteryWinRecordDocument.ensure_indexes()
 
 
 async def insert_or_update_user(item: OldLotteryData) -> None:
     if item.user.url:
-        await JianshuUserDocument.insert_or_update_one(
+        await UserDocument.insert_or_update_one(
             slug=user_url_to_slug(item.user.url),
             updated_at=item.time,
             id=item.user.id,
