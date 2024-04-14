@@ -44,15 +44,14 @@ class UserDocument(Document):
             updated_at = datetime.now()
 
         if not await cls.is_record_exist(id):
-            await cls.insert_one(
-                UserDocument(
-                    updated_at=updated_at,
-                    id=id,
-                    name=name,
-                    hashed_name=hashed_name,
-                    avatar_url=avatar_url,
-                )
-            )
+            await UserDocument(
+                updated_at=updated_at,
+                id=id,
+                name=name,
+                hashed_name=hashed_name,
+                avatar_url=avatar_url,
+            ).save()
+            return
 
         db_data = await cls.find_one({"id": id})
         if not db_data:
@@ -88,12 +87,10 @@ class UserDocument(Document):
         hashed_name: Optional[str],
     ) -> None:
         if not await cls.is_record_exist(id):
-            await cls.insert_one(
-                UserDocument(
-                    updated_at=updated_at,
-                    id=id,
-                    name=name,
-                    hashed_name=hashed_name,
-                    avatar_url=None,
-                )
-            )
+            await UserDocument(
+                updated_at=updated_at,
+                id=id,
+                name=name,
+                hashed_name=hashed_name,
+                avatar_url=None,
+            ).save()
