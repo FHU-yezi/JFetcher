@@ -21,7 +21,7 @@ from utils.config_generators import (
 )
 
 
-@retry(delay=5)
+@retry(attempts=5, delay=10)
 async def get_fp_ftn_amount(
     item: AssetsRankingRecord, /
 ) -> Tuple[Optional[float], Optional[float]]:

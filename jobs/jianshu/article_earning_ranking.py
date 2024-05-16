@@ -22,7 +22,7 @@ from utils.config_generators import (
 )
 
 
-@retry(delay=5)
+@retry(attempts=5, delay=10)
 async def get_author_slug_and_info(
     item: RecordField, /
 ) -> Tuple[Optional[str], Optional[UserInfo]]:
