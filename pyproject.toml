@@ -1,10 +1,4 @@
 [tool.poetry]
-name = "jfetcher"
-version = "3.0.0"
-description = "简书数据采集服务"
-authors = ["yezi <yehaowei20060411@qq.com>"]
-license = "MIT"
-readme = "README.md"
 package-mode = false
 
 [tool.poetry.dependencies]
@@ -29,9 +23,8 @@ target-version = "py38"
 lint.select = [
     "A", "ANN", "ARG", "ASYNC", "B",
     "BLE", "C4", "E", "F", "I",
-    "ICN", "ISC", "N", "PERF", "PIE",
-    "PT", "Q", "RET", "RSE", "RUF",
-    "S", "SIM", "SLOT", "TCH", "UP",
-    "W"
+    "ICN", "ISC", "N", "PIE", "PT",
+    "Q", "RET", "RSE", "RUF", "S",
+    "SIM", "SLOT", "TCH", "UP", "W"
 ]
 lint.ignore = ["ANN101", "ANN102", "ISC001", "RUF001", "RUF002", "RUF003"]
