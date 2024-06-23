@@ -1,23 +1,18 @@
-from msgspec import Struct
-from sspeedup.config import load_or_save_default_config
-from sspeedup.config.blocks import (
-    CONFIG_STRUCT_CONFIG,
-    LoggingConfig,
-    MongoDBConfig,
-)
+from sshared.config import ConfigBase
+from sshared.config.blocks import ConfigBlock, LoggingBlock, MongoDBBlock
+from sshared.validatable_struct import NonEmptyStr
 
 
-class _FeishuNotification(Struct, **CONFIG_STRUCT_CONFIG):
-    enabled: bool = False
-    webhook_url: str = "<webhook-url>"
-    failure_card_id: str = "<card-id>"
+class FeishuNotificationBlock(ConfigBlock, frozen=True):
+    enabled: bool
+    webhook_url: NonEmptyStr
+    failure_card_id: NonEmptyStr
 
 
-class _Config(Struct, **CONFIG_STRUCT_CONFIG):
-    version: str = "v3.0.0"
-    mongodb: MongoDBConfig = MongoDBConfig()
-    log: LoggingConfig = LoggingConfig()
-    feishu_notification: _FeishuNotification = _FeishuNotification()
+class _Config(ConfigBase, frozen=True):
+    mongodb: MongoDBBlock
+    logging: LoggingBlock
+    feishu_notification: FeishuNotificationBlock
 
 
-CONFIG = load_or_save_default_config(_Config)
+CONFIG = _Config.load_from_file("config.toml")
