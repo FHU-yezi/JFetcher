@@ -5,8 +5,7 @@ package-mode = false
 python = "^3.8"
 prefect = "^2.19.0"
 jkit = "^3.0.0a16"
-sspeedup = "^0.25.0"
-sshared = "^0.8.0"
+sshared = { version = "^0.8.0", extras = ["mongo"] }
 
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.4.0"
