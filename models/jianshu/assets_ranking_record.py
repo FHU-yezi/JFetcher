@@ -7,18 +7,18 @@ from jkit.msgspec_constraints import (
     PositiveInt,
     UserSlug,
 )
-from sshared.mongo import MODEL_META, Document, Field, Index
+from sshared.mongo import Document, Field, Index
 
 from utils.db import JIANSHU_DB
 
 
-class AmountField(Field, **MODEL_META):
+class AmountField(Field, frozen=True):
     fp: Optional[NonNegativeFloat]
     ftn: Optional[NonNegativeFloat]
     assets: Optional[PositiveFloat]
 
 
-class AssetsRankingRecordDocument(Document, **MODEL_META):
+class AssetsRankingRecordDocument(Document, frozen=True):
     date: datetime
     ranking: PositiveInt
 
