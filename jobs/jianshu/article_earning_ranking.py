@@ -5,7 +5,7 @@ from jkit.config import CONFIG
 from jkit.exceptions import ResourceUnavailableError
 from jkit.ranking.article_earning import ArticleEarningRanking, RecordField
 from jkit.user import UserInfo
-from prefect import flow, get_run_logger
+from prefect import flow
 from prefect.states import Completed, State
 from sshared.retry.asyncio import retry
 from sshared.time import get_today_as_datetime
@@ -20,16 +20,15 @@ from utils.config_generators import (
     generate_deployment_config,
     generate_flow_config,
 )
+from utils.log import logger
 
 
 @retry(attempts=5, delay=10)
 async def get_author_slug_and_info(
     item: RecordField, /
 ) -> Tuple[Optional[str], Optional[UserInfo]]:
-    logger = get_run_logger()
-
     if not item.slug:
-        logger.warning(f"文章走丢了，跳过采集作者信息 ranking={item.ranking}")
+        logger.warn(f"文章走丢了，跳过采集作者信息 ranking={item.ranking}")
         return None, None
 
     try:
@@ -43,7 +42,7 @@ async def get_author_slug_and_info(
 
         return (author.slug, author_info)
     except ResourceUnavailableError:
-        logger.warning(f"文章或作者状态异常，跳过采集作者信息 ranking={item.ranking}")
+        logger.warn(f"文章或作者状态异常，跳过采集作者信息 ranking={item.ranking}")
         return None, None
 
 

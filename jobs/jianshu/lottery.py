@@ -1,7 +1,7 @@
 from typing import List
 
 from jkit.lottery import Lottery, LotteryWinRecord
-from prefect import flow, get_run_logger
+from prefect import flow
 from prefect.states import Completed, State
 
 from models.jianshu.lottery_win_record import (
@@ -12,6 +12,7 @@ from utils.config_generators import (
     generate_deployment_config,
     generate_flow_config,
 )
+from utils.log import logger
 
 
 async def process_item(item: LotteryWinRecord, /) -> LotteryWinRecordDocument:
@@ -37,12 +38,10 @@ async def process_item(item: LotteryWinRecord, /) -> LotteryWinRecordDocument:
     )
 )
 async def flow_func() -> State:
-    logger = get_run_logger()
-
     stop_id = await LotteryWinRecordDocument.get_latest_record_id()
     logger.info(f"获取到最新的记录 ID：{stop_id}")
     if stop_id == 0:
-        logger.warning("数据库中没有记录")
+        logger.warn("数据库中没有记录")
 
     data: List[LotteryWinRecordDocument] = []
     async for item in Lottery().iter_win_records():
@@ -52,7 +51,7 @@ async def flow_func() -> State:
         processed_item = await process_item(item)
         data.append(processed_item)
     else:
-        logger.warning("采集数据量达到上限")
+        logger.warn("采集数据量达到上限")
 
     if data:
         await LotteryWinRecordDocument.insert_many(data)
