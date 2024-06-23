@@ -915,13 +915,13 @@ files = [
 
 [[package]]
 name = "importlib-metadata"
-version = "7.2.0"
+version = "7.2.1"
 description = "Read metadata from Python packages"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "importlib_metadata-7.2.0-py3-none-any.whl", hash = "sha256:04e4aad329b8b948a5711d394fa8759cb80f009225441b4f2a02bd4d8e5f426c"},
-    {file = "importlib_metadata-7.2.0.tar.gz", hash = "sha256:3ff4519071ed42740522d494d04819b666541b9752c43012f85afb2cc220fcc6"},
+    {file = "importlib_metadata-7.2.1-py3-none-any.whl", hash = "sha256:ffef94b0b66046dd8ea2d619b701fe978d9264d38f3998bc4c27ec3b146a87c8"},
+    {file = "importlib_metadata-7.2.1.tar.gz", hash = "sha256:509ecb2ab77071db5137c655e24ceb3eee66e7bbc6574165d0d114d9fc4bbe68"},
 ]
 
 [package.dependencies]
@@ -2603,38 +2603,13 @@ files = [
 ]
 
 [package.dependencies]
+motor = {version = ">=3.3.0,<4.0.0", optional = true, markers = "extra == \"mongo\""}
 msgspec = ">=0.18.0,<0.19.0"
 typing-extensions = ">=4.12.0,<5.0.0"
 
 [package.extras]
 api = ["litestar (>=2.9.0,<3.0.0)"]
 mongo = ["motor (>=3.3.0,<4.0.0)"]
-
-[[package]]
-name = "sspeedup"
-version = "0.25.1"
-description = "开发工具箱"
-optional = false
-python-versions = ">=3.8,<4.0"
-files = [
-    {file = "sspeedup-0.25.1-py3-none-any.whl", hash = "sha256:be94775b8c33518954ce334841c41dadbe48d822c0b06448c95d4cc4e8be8073"},
-    {file = "sspeedup-0.25.1.tar.gz", hash = "sha256:179bde7edf899205077dbf00929265df6acfb0362754d8bbfb66f5f5a6f6b1e8"},
-]
-
-[package.dependencies]
-motor = ">=3.3.0,<4.0.0"
-pymongo = ">=4.3.0,<5.0.0"
-
-[package.extras]
-ability-word-split = ["httpx (==0.*)"]
-api-litestar = ["litestar (>=2.3.0,<3.0.0)", "msgspec (==0.*)"]
-api-sanic = ["pydantic (>=2.0.0,<3.0.0)", "sanic (>=23.3.0,<24.0.0)", "ujson (>=5.8.0,<6.0.0)"]
-config = ["msgspec (==0.*)"]
-feishu-auth = ["httpx (==0.*)"]
-feishu-bitable = ["httpx (==0.*)", "msgspec (==0.*)"]
-pywebio = ["pywebio (>=1.8.0,<2.0.0)"]
-qrcode = ["qrcode (>=7.4.0,<8.0.0)"]
-word-split-jieba = ["jieba (>=0.42.0,<0.43.0)"]
 
 [[package]]
 name = "text-unidecode"
@@ -2967,4 +2942,4 @@ test = ["big-O", "importlib-resources", "jaraco.functools", "jaraco.itertools", 
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.8"
-content-hash = "d4f9e9bab5140a0cb27a58d21d873947b30436adcdb97dcf034a6acf4430dd3c"
+content-hash = "7611c6cd23d3900fc2fec3aa5decf467e435d9b1af38447c40aabc4d2a31a0f7"
