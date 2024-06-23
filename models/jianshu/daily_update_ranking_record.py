@@ -4,12 +4,12 @@ from jkit.msgspec_constraints import (
     PositiveInt,
     UserSlug,
 )
-from sshared.mongo import MODEL_META, Document, Index
+from sshared.mongo import Document, Index
 
 from utils.db import JIANSHU_DB
 
 
-class DailyUpdateRankingRecordDocument(Document, **MODEL_META):
+class DailyUpdateRankingRecordDocument(Document, frozen=True):
     date: datetime
     ranking: PositiveInt
     days: PositiveInt

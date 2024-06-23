@@ -2,12 +2,12 @@ from datetime import datetime
 from typing import Optional
 
 from jkit.msgspec_constraints import NonNegativeInt, PositiveInt
-from sshared.mongo import MODEL_META, Document, Index
+from sshared.mongo import Document, Index
 
 from utils.db import JPEP_DB
 
 
-class CreditHistoryDocument(Document, **MODEL_META):
+class CreditHistoryDocument(Document, frozen=True):
     time: datetime
     user_id: PositiveInt
     value: NonNegativeInt

@@ -9,12 +9,12 @@ from jkit.msgspec_constraints import (
     UserSlug,
 )
 from msgspec import field
-from sshared.mongo import MODEL_META, Document, Index
+from sshared.mongo import Document, Index
 
 from utils.db import JIANSHU_DB
 
 
-class LPRecommendedArticleRecordDocument(Document, **MODEL_META):
+class LPRecommendedArticleRecordDocument(Document, frozen=True):
     date: datetime
     id: PositiveInt
     slug: ArticleSlug
