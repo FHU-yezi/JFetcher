@@ -1,64 +1,23 @@
-from os import path as os_path
-from typing import Any, Dict
-
-from yaml import SafeLoader
-from yaml import dump as yaml_dump
-from yaml import load as yaml_load
-
-_DEFAULT_CONFIG = {
-    "db": {
-        "host": "localhost",
-        "port": 27017,
-        "main_database": "JFetcherData",
-    },
-    "log": {
-        "minimum_save_level": "DEBUG",
-        "minimum_print_level": "INFO",
-    },
-    "fetchers": {
-        "base_path": "./fetchers",
-    },
-    "message_sender": {
-        "app_id": "",
-        "app_secret": "",
-        "email": "",
-    },
-}
+from msgspec import Struct
+from sspeedup.config import load_or_save_default_config
+from sspeedup.config.blocks import (
+    CONFIG_STRUCT_CONFIG,
+    LoggingConfig,
+    MongoDBConfig,
+)
 
 
-class Config:
-    def __new__(cls) -> "Config":
-        # 单例模式
-        if not hasattr(cls, "_instance"):
-            cls._instance = object.__new__(cls)
-        return cls._instance
-
-    def __init__(self) -> None:
-        if not os_path.exists("config.yaml"):  # 没有配置文件
-            with open("config.yaml", "w", encoding="utf-8") as f:
-                yaml_dump(_DEFAULT_CONFIG, f, allow_unicode=True, indent=4)
-            self._data = _DEFAULT_CONFIG
-        else:  # 有配置文件
-            with open("config.yaml", encoding="utf-8") as f:
-                self._data = yaml_load(f, Loader=SafeLoader)
-
-    def __getattr__(self, name: str) -> Any:
-        result: Any = self._data[name]
-        if isinstance(result, dict):
-            return ConfigNode(result)
-
-        return result
-
-    def refresh(self) -> None:
-        self.__init__()
+class _FeishuNotification(Struct, **CONFIG_STRUCT_CONFIG):
+    enabled: bool = False
+    webhook_url: str = "<webhook-url>"
+    failure_card_id: str = "<card-id>"
 
 
-class ConfigNode:
-    def __init__(self, data: Dict[str, Any]) -> None:
-        self._data: Dict[str, Any] = data
+class _Config(Struct, **CONFIG_STRUCT_CONFIG):
+    version: str = "v3.0.0"
+    mongodb: MongoDBConfig = MongoDBConfig()
+    log: LoggingConfig = LoggingConfig()
+    feishu_notification: _FeishuNotification = _FeishuNotification()
 
-    def __getattr__(self, name: str) -> Any:
-        return self._data[name]
 
-
-config = Config()
+CONFIG = load_or_save_default_config(_Config)

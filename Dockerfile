@@ -1,17 +1,15 @@
-FROM python:3.10.8-slim
-
-WORKDIR /app
+FROM python:3.10-slim
 
 ENV TZ Asia/Shanghai
 
-COPY requirements.txt .
+WORKDIR /app
 
+COPY requirements.txt .
 RUN pip install \
     -r requirements.txt \
     --no-cache-dir \
     --no-compile \
-    --disable-pip-version-check \
-    --quiet
+    --disable-pip-version-check
 
 COPY . .
 

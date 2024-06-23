@@ -1,36 +1,39 @@
-from time import sleep
-from typing import List
+from asyncio import run as asyncio_run
 
-from apscheduler.events import EVENT_JOB_ERROR, EVENT_JOB_EXECUTED
-from apscheduler.schedulers.background import BackgroundScheduler
+from prefect import serve
 
-from event_callbacks import on_error_event, on_executed_event
-from fetchers._base import Fetcher
-from utils.config import config
-from utils.log import run_logger
-from utils.module_finder import get_all_fetchers
-
-scheduler = BackgroundScheduler()
-scheduler.add_listener(on_executed_event, EVENT_JOB_EXECUTED)
-scheduler.add_listener(on_error_event, EVENT_JOB_ERROR)
-run_logger.debug("已注册事件回调")
-
-fetchers: List[Fetcher] = [x() for x in get_all_fetchers(config.fetchers.base_path)]
-for fetcher in fetchers:
-    scheduler.add_job(
-        fetcher.run,
-        "cron",
-        id=fetcher.task_name,
-        **fetcher.fetch_time_cron_kwargs,
-    )
-run_logger.info(
-    "已添加获取任务",
-    fetchers_name=[fetcher.task_name for fetcher in fetchers],
-    fetchers_count=len(fetchers),
+from jobs import DEPLOYMENTS
+from models.jianshu.article_earning_ranking_record import (
+    ArticleEarningRankingRecordDocument,
 )
+from models.jianshu.assets_ranking_record import AssetsRankingRecordDocument
+from models.jianshu.daily_update_ranking_record import DailyUpdateRankingRecordDocument
+from models.jianshu.lottery_win_record import LotteryWinRecordDocument
+from models.jianshu.lp_recommend_article_record import (
+    LPRecommendedArticleRecordDocument,
+)
+from models.jianshu.user import UserDocument as JianshuUserDocument
+from models.jpep.credit_history import CreditHistoryDocument
+from models.jpep.ftn_trade_order import FTNTradeOrderDocument
+from models.jpep.user import UserDocument as JPEPUserDocument
 
-scheduler.start()
-run_logger.info("调度器启动成功")
 
-while True:
-    sleep(180)
+async def main() -> None:
+    print("正在为数据库创建索引...")
+    await ArticleEarningRankingRecordDocument.ensure_indexes()
+    await AssetsRankingRecordDocument.ensure_indexes()
+    await DailyUpdateRankingRecordDocument.ensure_indexes()
+    await LotteryWinRecordDocument.ensure_indexes()
+    await LPRecommendedArticleRecordDocument.ensure_indexes()
+    await JianshuUserDocument.ensure_indexes()
+    await CreditHistoryDocument.ensure_indexes()
+    await FTNTradeOrderDocument.ensure_indexes()
+    await JPEPUserDocument.ensure_indexes()
+    print("索引创建完成")
+
+    print("启动工作流...")
+    await serve(*DEPLOYMENTS, print_starting_message=False)  # type: ignore
+
+
+if __name__ == "__main__":
+    asyncio_run(main())
