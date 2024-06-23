@@ -16,10 +16,11 @@ from models.jianshu.user import UserDocument as JianshuUserDocument
 from models.jpep.credit_history import CreditHistoryDocument
 from models.jpep.ftn_trade_order import FTNTradeOrderDocument
 from models.jpep.user import UserDocument as JPEPUserDocument
+from utils.log import logger
 
 
 async def main() -> None:
-    print("正在为数据库创建索引...")
+    logger.info("正在为数据库创建索引...")
     await ArticleEarningRankingRecordDocument.ensure_indexes()
     await AssetsRankingRecordDocument.ensure_indexes()
     await DailyUpdateRankingRecordDocument.ensure_indexes()
@@ -29,9 +30,9 @@ async def main() -> None:
     await CreditHistoryDocument.ensure_indexes()
     await FTNTradeOrderDocument.ensure_indexes()
     await JPEPUserDocument.ensure_indexes()
-    print("索引创建完成")
+    logger.info("索引创建完成")
 
-    print("启动工作流...")
+    logger.info("启动工作流...")
     await serve(*DEPLOYMENTS, print_starting_message=False)  # type: ignore
 
 

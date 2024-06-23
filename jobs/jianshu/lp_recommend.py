@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import List, Optional
 
 from jkit.collection import Collection, CollectionArticleInfo
-from prefect import flow, get_run_logger
+from prefect import flow
 from prefect.states import Completed, State
 from sshared.time import get_today_as_datetime
 
@@ -14,6 +14,7 @@ from utils.config_generators import (
     generate_deployment_config,
     generate_flow_config,
 )
+from utils.log import logger
 
 # 理事会点赞汇总专题
 LP_RECOMMENDED_COLLECTION = Collection.from_slug("f61832508891")
@@ -22,10 +23,8 @@ LP_RECOMMENDED_COLLECTION = Collection.from_slug("f61832508891")
 async def process_item(
     item: CollectionArticleInfo, /, *, current_date: datetime
 ) -> Optional[LPRecommendedArticleRecordDocument]:
-    logger = get_run_logger()
-
     if await LPRecommendedArticleRecordDocument.is_record_exist(item.slug):
-        logger.warning(f"已保存过该文章记录，跳过 slug={item.slug}")
+        logger.warn(f"已保存过该文章记录，跳过 slug={item.slug}")
         return None
 
     await UserDocument.insert_or_update_one(
@@ -59,8 +58,6 @@ async def process_item(
     )
 )
 async def flow_func() -> State:
-    logger = get_run_logger()
-
     current_date = get_today_as_datetime()
 
     data: List[LPRecommendedArticleRecordDocument] = []

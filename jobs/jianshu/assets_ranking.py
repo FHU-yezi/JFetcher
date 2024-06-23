@@ -5,7 +5,7 @@ from jkit.config import CONFIG
 from jkit.exceptions import ResourceUnavailableError
 from jkit.ranking.assets import AssetsRanking, AssetsRankingRecord
 from jkit.user import User
-from prefect import flow, get_run_logger
+from prefect import flow
 from prefect.states import Completed, State
 from sshared.retry.asyncio import retry
 from sshared.time import get_today_as_datetime
@@ -19,16 +19,15 @@ from utils.config_generators import (
     generate_deployment_config,
     generate_flow_config,
 )
+from utils.log import logger
 
 
 @retry(attempts=5, delay=10)
 async def get_fp_ftn_amount(
     item: AssetsRankingRecord, /
 ) -> Tuple[Optional[float], Optional[float]]:
-    logger = get_run_logger()
-
     if not item.user_info.slug:
-        logger.warning(
+        logger.warn(
             f"用户已注销或被封禁，跳过采集简书钻与简书贝信息 ranking={item.ranking}"
         )
         return None, None
@@ -44,7 +43,7 @@ async def get_fp_ftn_amount(
 
         return fp_amount, ftn_amount
     except ResourceUnavailableError:
-        logger.warning(
+        logger.warn(
             f"用户已注销或被封禁，跳过采集简书钻与简书贝信息 ranking={item.ranking}"
         )
         return None, None
