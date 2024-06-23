@@ -1,0 +1,12 @@
+version: v3.0.0
+mongodb:
+  host: localhost
+  port: 27017
+  database: jfetcher
+log:
+  save_level: DEBUG
+  print_level: DEBUG
+feishu_notification:
+  enabled: false
+  webhook_url: <webhook-url>
+  failure_card_id: <card-id>
