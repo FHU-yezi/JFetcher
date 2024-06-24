@@ -1,0 +1,8 @@
+**/.git/
+**/.github/
+**/.ruff_cache/
+**/__pycache__/
+**/pyproject.toml
+**/poetry.lock
+**/requirements-dev.txt
+**/config.yaml
