@@ -56,7 +56,7 @@ async def process_item(
         name="采集 LP 推荐文章记录",
     )
 )
-async def flow_func() -> None:
+async def main() -> None:
     log_flow_run_start(logger)
 
     current_date = get_today_as_datetime()
@@ -80,7 +80,7 @@ async def flow_func() -> None:
     log_flow_run_success(logger, data_count=len(data))
 
 
-deployment = flow_func.to_deployment(
+deployment = main.to_deployment(
     **generate_deployment_config(
         name="采集 LP 推荐文章记录",
         cron="0 1 * * *",

@@ -80,7 +80,7 @@ async def process_item(
         name="采集简书积分兑换平台简书贝交易挂单",
     ),
 )
-async def flow_func(type: Literal["buy", "sell"]) -> None:  # noqa: A002
+async def main(type: Literal["buy", "sell"]) -> None:  # noqa: A002
     log_flow_run_start(logger)
 
     fetch_time = get_fetch_time()
@@ -95,7 +95,7 @@ async def flow_func(type: Literal["buy", "sell"]) -> None:  # noqa: A002
     log_flow_run_success(logger, data_count=len(data))
 
 
-buy_deployment = flow_func.to_deployment(
+buy_deployment = main.to_deployment(
     parameters={"type": "buy"},
     **generate_deployment_config(
         name="采集简书积分兑换平台简书贝交易买单",
@@ -103,7 +103,7 @@ buy_deployment = flow_func.to_deployment(
     ),
 )
 
-sell_deployment = flow_func.to_deployment(
+sell_deployment = main.to_deployment(
     parameters={"type": "sell"},
     **generate_deployment_config(
         name="采集简书积分兑换平台简书贝交易卖单",

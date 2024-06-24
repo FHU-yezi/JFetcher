@@ -36,7 +36,7 @@ async def process_item(item: LotteryWinRecord, /) -> LotteryWinRecordDocument:
         name="采集简书大转盘抽奖中奖记录",
     )
 )
-async def flow_func() -> None:
+async def main() -> None:
     flow_run_name = log_flow_run_start(logger)
 
     stop_id = await LotteryWinRecordDocument.get_latest_record_id()
@@ -62,7 +62,7 @@ async def flow_func() -> None:
     log_flow_run_success(logger, data_count=len(data))
 
 
-deployment = flow_func.to_deployment(
+deployment = main.to_deployment(
     **generate_deployment_config(
         name="采集简书大转盘抽奖中奖记录",
         cron="*/10 * * * *",
