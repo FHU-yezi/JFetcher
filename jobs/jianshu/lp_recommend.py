@@ -9,11 +9,11 @@ from models.jianshu.lp_recommend_article_record import (
     LPRecommendedArticleRecordDocument,
 )
 from models.jianshu.user import UserDocument
-from utils.config_generators import (
+from utils.log import log_flow_run_start, log_flow_run_success, logger
+from utils.prefect_helper import (
     generate_deployment_config,
     generate_flow_config,
 )
-from utils.log import log_flow_run_start, log_flow_run_success, logger
 
 # 理事会点赞汇总专题
 LP_RECOMMENDED_COLLECTION = Collection.from_slug("f61832508891")

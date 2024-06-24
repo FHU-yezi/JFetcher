@@ -15,11 +15,11 @@ from models.jianshu.article_earning_ranking_record import (
     EarningField,
 )
 from models.jianshu.user import UserDocument
-from utils.config_generators import (
+from utils.log import log_flow_run_start, log_flow_run_success, logger
+from utils.prefect_helper import (
     generate_deployment_config,
     generate_flow_config,
 )
-from utils.log import log_flow_run_start, log_flow_run_success, logger
 
 
 @retry(attempts=5, delay=10)

@@ -7,11 +7,11 @@ from models.jianshu.lottery_win_record import (
     LotteryWinRecordDocument,
 )
 from models.jianshu.user import UserDocument
-from utils.config_generators import (
+from utils.log import log_flow_run_start, log_flow_run_success, logger
+from utils.prefect_helper import (
     generate_deployment_config,
     generate_flow_config,
 )
-from utils.log import log_flow_run_start, log_flow_run_success, logger
 
 
 async def process_item(item: LotteryWinRecord, /) -> LotteryWinRecordDocument:
