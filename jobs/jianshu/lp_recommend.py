@@ -9,7 +9,12 @@ from models.jianshu.lp_recommend_article_record import (
     LPRecommendedArticleRecordDocument,
 )
 from models.jianshu.user import UserDocument
-from utils.log import log_flow_run_start, log_flow_run_success, logger
+from utils.log import (
+    get_flow_run_name,
+    log_flow_run_start,
+    log_flow_run_success,
+    logger,
+)
 from utils.prefect_helper import (
     generate_deployment_config,
     generate_flow_config,
@@ -20,10 +25,16 @@ LP_RECOMMENDED_COLLECTION = Collection.from_slug("f61832508891")
 
 
 async def process_item(
-    item: CollectionArticleInfo, /, *, current_date: datetime
+    item: CollectionArticleInfo, date: datetime
 ) -> Optional[LPRecommendedArticleRecordDocument]:
+    flow_run_name = get_flow_run_name()
+
     if await LPRecommendedArticleRecordDocument.is_record_exist(item.slug):
-        logger.warn(f"已保存过该文章记录，跳过 slug={item.slug}")
+        logger.warn(
+            "已保存过该文章记录，跳过",
+            flow_run_name=flow_run_name,
+            article_slug=item.slug,
+        )
         return None
 
     await UserDocument.insert_or_update_one(
@@ -34,7 +45,7 @@ async def process_item(
     )
 
     return LPRecommendedArticleRecordDocument(
-        date=current_date,
+        date=date,
         id=item.id,
         slug=item.slug,
         title=item.title,
@@ -57,14 +68,14 @@ async def process_item(
     )
 )
 async def main() -> None:
-    log_flow_run_start(logger)
+    flow_run_name = log_flow_run_start(logger)
 
-    current_date = get_today_as_datetime()
+    date = get_today_as_datetime()
 
     data: List[LPRecommendedArticleRecordDocument] = []
     itered_items_count = 0
     async for item in LP_RECOMMENDED_COLLECTION.iter_articles():
-        processed_item = await process_item(item, current_date=current_date)
+        processed_item = await process_item(item, date=date)
         if processed_item:
             data.append(processed_item)
 
@@ -75,7 +86,7 @@ async def main() -> None:
     if data:
         await LPRecommendedArticleRecordDocument.insert_many(data)
     else:
-        logger.info("无数据，不执行保存操作")
+        logger.info("无数据，不执行保存操作", flow_run_name=flow_run_name)
 
     log_flow_run_success(logger, data_count=len(data))
 

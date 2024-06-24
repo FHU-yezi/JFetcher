@@ -14,7 +14,12 @@ from models.jianshu.assets_ranking_record import (
     AssetsRankingRecordDocument,
 )
 from models.jianshu.user import UserDocument
-from utils.log import log_flow_run_start, log_flow_run_success, logger
+from utils.log import (
+    get_flow_run_name,
+    log_flow_run_start,
+    log_flow_run_success,
+    logger,
+)
 from utils.prefect_helper import (
     generate_deployment_config,
     generate_flow_config,
@@ -25,16 +30,20 @@ from utils.prefect_helper import (
 async def get_fp_ftn_amount(
     item: AssetsRankingRecord, /
 ) -> Tuple[Optional[float], Optional[float]]:
+    flow_run_name = get_flow_run_name()
+
     if not item.user_info.slug:
         logger.warn(
-            f"用户已注销或被封禁，跳过采集简书钻与简书贝信息 ranking={item.ranking}"
+            "用户状态异常，跳过采集简书钻与简书贝信息",
+            flow_run_name=flow_run_name,
+            ranking=item.ranking,
         )
         return None, None
 
     try:
         # TODO: 临时解决简书系统问题数据负数导致的报错
         CONFIG.data_validation.enabled = False
-        # 此处使用用户 Slug 初始化用户对象，以对其进行可用性检查
+        # 此处使用 Slug 初始化用户对象，以对其进行可用性检查
         user_obj = User.from_slug(item.user_info.slug)
         fp_amount = await user_obj.fp_amount
         ftn_amount = abs(round(item.assets_amount - fp_amount, 3))
@@ -43,13 +52,15 @@ async def get_fp_ftn_amount(
         return fp_amount, ftn_amount
     except ResourceUnavailableError:
         logger.warn(
-            f"用户已注销或被封禁，跳过采集简书钻与简书贝信息 ranking={item.ranking}"
+            "用户状态异常，跳过采集简书钻与简书贝信息",
+            flow_run_name=flow_run_name,
+            ranking=item.ranking,
         )
         return None, None
 
 
 async def process_item(
-    item: AssetsRankingRecord, /, *, target_date: datetime
+    item: AssetsRankingRecord, date: datetime
 ) -> AssetsRankingRecordDocument:
     fp_amount, ftn_amount = await get_fp_ftn_amount(item)
 
@@ -62,7 +73,7 @@ async def process_item(
         )
 
     return AssetsRankingRecordDocument(
-        date=target_date,
+        date=date,
         ranking=item.ranking,
         amount=AmountField(
             fp=fp_amount,
@@ -81,11 +92,11 @@ async def process_item(
 async def main() -> None:
     log_flow_run_start(logger)
 
-    target_date = get_today_as_datetime()
+    date = get_today_as_datetime()
 
     data: List[AssetsRankingRecordDocument] = []
     async for item in AssetsRanking():
-        processed_item = await process_item(item, target_date=target_date)
+        processed_item = await process_item(item, date=date)
         data.append(processed_item)
 
         if len(data) == 1000:

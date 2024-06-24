@@ -20,7 +20,7 @@ from utils.prefect_helper import (
 
 
 async def process_item(
-    item: DailyUpdateRankingRecord, /, *, current_date: datetime
+    item: DailyUpdateRankingRecord, date: datetime
 ) -> DailyUpdateRankingRecordDocument:
     await UserDocument.insert_or_update_one(
         slug=item.user_info.slug,
@@ -29,7 +29,7 @@ async def process_item(
     )
 
     return DailyUpdateRankingRecordDocument(
-        date=current_date,
+        date=date,
         ranking=item.ranking,
         days=item.days,
         user_slug=item.user_info.slug,
@@ -44,11 +44,11 @@ async def process_item(
 async def main() -> None:
     log_flow_run_start(logger)
 
-    current_date = get_today_as_datetime()
+    date = get_today_as_datetime()
 
     data: List[DailyUpdateRankingRecordDocument] = []
     async for item in DailyUpdateRanking():
-        processed_item = await process_item(item, current_date=current_date)
+        processed_item = await process_item(item, date=date)
         data.append(processed_item)
 
     await DailyUpdateRankingRecordDocument.insert_many(data)
