@@ -6,7 +6,6 @@ from jkit.exceptions import ResourceUnavailableError
 from jkit.ranking.article_earning import ArticleEarningRanking, RecordField
 from jkit.user import UserInfo
 from prefect import flow
-from prefect.states import Completed, State
 from sshared.retry.asyncio import retry
 from sshared.time import get_today_as_datetime
 
@@ -20,7 +19,7 @@ from utils.config_generators import (
     generate_deployment_config,
     generate_flow_config,
 )
-from utils.log import logger
+from utils.log import log_flow_run_start, log_flow_run_success, logger
 
 
 @retry(attempts=5, delay=10)
@@ -79,7 +78,9 @@ async def process_item(
         name="采集文章收益排行榜记录",
     )
 )
-async def flow_func() -> State:
+async def flow_func() -> None:
+    log_flow_run_start(logger)
+
     target_date = get_today_as_datetime() - timedelta(days=1)
 
     data: List[ArticleEarningRankingRecordDocument] = []
@@ -89,7 +90,7 @@ async def flow_func() -> State:
 
     await ArticleEarningRankingRecordDocument.insert_many(data)
 
-    return Completed(message=f"target_date={target_date}, data_count={len(data)}")
+    log_flow_run_success(logger, data_count=len(data))
 
 
 deployment = flow_func.to_deployment(
