@@ -10,11 +10,11 @@ from models.jpep.ftn_trade_order import (
     FTNTradeOrderDocument,
 )
 from models.jpep.user import UserDocument
-from utils.config_generators import (
+from utils.log import log_flow_run_start, log_flow_run_success, logger
+from utils.prefect_helper import (
     generate_deployment_config,
     generate_flow_config,
 )
-from utils.log import log_flow_run_start, log_flow_run_success, logger
 
 
 def get_fetch_time() -> datetime:
