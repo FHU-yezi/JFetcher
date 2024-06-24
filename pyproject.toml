@@ -6,6 +6,7 @@ python = "^3.8"
 prefect = "^2.19.0"
 jkit = "^3.0.0a16"
 sshared = { version = "^0.8.0", extras = ["mongo"] }
+tomli = "^2.0.1"
 
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.4.0"
