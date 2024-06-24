@@ -1,31 +1,29 @@
 [tool.poetry]
-name = "JFetcher"
-version = "2.7.5"
-description = "简书数据采集工具"
-authors = ["FHU-yezi <yehaowei20060411@qq.com>"]
-license = "MIT"
+package-mode = false
 
 [tool.poetry.dependencies]
 python = "^3.8"
-APScheduler = "^3.9.1"
-PyYAML = "^6.0"
-pymongo = "^4.1.1"
-JianshuResearchTools = "2.11.0"
-sspeedup = { version = "^0.8.0", extras = ["logging"] }
+prefect = "^2.19.0"
+jkit = "^3.0.0a16"
+sshared = { version = "^0.8.0", extras = ["mongo"] }
 
 [tool.poetry.group.dev.dependencies]
-black = "^23.1.0"
-ruff = "^0.0.262"
-pyright = "^1.1.292"
+ruff = "^0.4.0"
+pyright = "^1.1.0"
 
 [build-system]
-requires = ["poetry-core>=1.0.0"]
+requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.ruff]
 
-select = ["A", "ANN", "B", "C", "E", "F", "I", "N", "RET", "S", "SIM", "UP", "W"]
-
-ignore = ["ANN101", "ANN102", "ANN401", "C901", "E501", "S104"]
-
 target-version = "py38"
+
+lint.select = [
+    "A", "ANN", "ARG", "ASYNC", "B",
+    "BLE", "C4", "E", "F", "I",
+    "ICN", "ISC", "N", "PIE", "PT",
+    "Q", "RET", "RSE", "RUF", "S",
+    "SIM", "SLOT", "TCH", "UP", "W"
+]
+lint.ignore = ["ANN101", "ANN102", "ISC001", "RUF001", "RUF002", "RUF003"]

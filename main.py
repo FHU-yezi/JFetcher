@@ -1,36 +1,21 @@
-from time import sleep
-from typing import List
+from asyncio import run as asyncio_run
 
-from apscheduler.events import EVENT_JOB_ERROR, EVENT_JOB_EXECUTED
-from apscheduler.schedulers.background import BackgroundScheduler
+from prefect import serve
 
-from event_callbacks import on_error_event, on_executed_event
-from fetchers._base import Fetcher
-from utils.config import config
-from utils.log import run_logger
-from utils.module_finder import get_all_fetchers
+from jobs import DEPLOYMENTS
+from models import MODELS
+from utils.log import logger
 
-scheduler = BackgroundScheduler()
-scheduler.add_listener(on_executed_event, EVENT_JOB_EXECUTED)
-scheduler.add_listener(on_error_event, EVENT_JOB_ERROR)
-run_logger.debug("已注册事件回调")
 
-fetchers: List[Fetcher] = [x() for x in get_all_fetchers(config.fetchers.base_path)]
-for fetcher in fetchers:
-    scheduler.add_job(
-        fetcher.run,
-        "cron",
-        id=fetcher.task_name,
-        **fetcher.fetch_time_cron_kwargs,
-    )
-run_logger.info(
-    "已添加获取任务",
-    fetchers_name=[fetcher.task_name for fetcher in fetchers],
-    fetchers_count=len(fetchers),
-)
+async def main() -> None:
+    logger.info("正在为数据库创建索引")
+    for model in MODELS:
+        await model.ensure_indexes()
+    logger.info("索引创建完成")
 
-scheduler.start()
-run_logger.info("调度器启动成功")
+    logger.info("启动工作流")
+    await serve(*DEPLOYMENTS, print_starting_message=False)  # type: ignore
 
-while True:
-    sleep(180)
+
+if __name__ == "__main__":
+    asyncio_run(main())

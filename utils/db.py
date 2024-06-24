@@ -1,17 +1,8 @@
-from pymongo import MongoClient
-from pymongo.collection import Collection
+from motor.motor_asyncio import AsyncIOMotorClient
 
-from utils.config import config
+from utils.config import CONFIG
 
+_CLIENT = AsyncIOMotorClient(CONFIG.mongodb.host, CONFIG.mongodb.port)
 
-def init_DB(db_name: str):  # noqa
-    connection: MongoClient = MongoClient(config.db.host, config.db.port)
-    return connection[db_name]
-
-
-def get_collection(collection_name: str) -> Collection:
-    return db[collection_name]
-
-
-db = init_DB(config.db.main_database)
-run_log_db = db.log
+JIANSHU_DB = _CLIENT.jianshu
+JPEP_DB = _CLIENT.jpep
