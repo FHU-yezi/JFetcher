@@ -34,14 +34,12 @@ def get_fetch_time() -> datetime:
 
 async def process_item(
     item: FTNMacketOrderRecord,
-    /,
-    *,
-    fetch_time: datetime,
+    time: datetime,
     type: Literal["buy", "sell"],  # noqa: A002
 ) -> FTNTradeOrderDocument:
     if item.publisher_info.id:
         await UserDocument.insert_or_update_one(
-            updated_at=fetch_time,
+            updated_at=time,
             id=item.publisher_info.id,
             name=item.publisher_info.name,
             hashed_name=item.publisher_info.hashed_name,
@@ -53,13 +51,13 @@ async def process_item(
         )
         if not latest_credit_value or latest_credit_value != item.publisher_info.credit:
             await CreditHistoryDocument(
-                time=fetch_time,
+                time=time,
                 user_id=item.publisher_info.id,
                 value=item.publisher_info.credit,
             ).save()
 
     return FTNTradeOrderDocument(
-        fetch_time=fetch_time,
+        fetch_time=time,
         id=item.id,
         published_at=item.publish_time,
         type=type,
@@ -87,7 +85,7 @@ async def main(type: Literal["buy", "sell"]) -> None:  # noqa: A002
 
     data: List[FTNTradeOrderDocument] = []
     async for item in FTNMacket().iter_orders(type=type):
-        processed_item = await process_item(item, fetch_time=fetch_time, type=type)
+        processed_item = await process_item(item, time=fetch_time, type=type)
         data.append(processed_item)
 
     await FTNTradeOrderDocument.insert_many(data)

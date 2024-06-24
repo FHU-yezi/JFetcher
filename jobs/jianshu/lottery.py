@@ -14,7 +14,7 @@ from utils.prefect_helper import (
 )
 
 
-async def process_item(item: LotteryWinRecord, /) -> LotteryWinRecordDocument:
+async def process_item(item: LotteryWinRecord) -> LotteryWinRecordDocument:
     await UserDocument.insert_or_update_one(
         slug=item.user_info.slug,
         updated_at=item.time,
@@ -40,7 +40,7 @@ async def main() -> None:
     flow_run_name = log_flow_run_start(logger)
 
     stop_id = await LotteryWinRecordDocument.get_latest_record_id()
-    logger.info(f"获取到最新的记录 ID：{stop_id}", flow_run_name=flow_run_name)
+    logger.info("已获取到最新的记录 ID", flow_run_name=flow_run_name, stop_id=stop_id)
     if stop_id == 0:
         logger.warn("数据库中没有记录", flow_run_name=flow_run_name)
 
@@ -51,13 +51,15 @@ async def main() -> None:
 
         processed_item = await process_item(item)
         data.append(processed_item)
-    else:
-        logger.warn("采集数据量达到上限", flow_run_name=flow_run_name)
+
+        if len(data) == 500:
+            logger.warn("采集数据量达到上限", flow_run_name=flow_run_name)
+            break
 
     if data:
         await LotteryWinRecordDocument.insert_many(data)
     else:
-        logger.info("无数据，不执行保存操作")
+        logger.info("无数据，不执行保存操作", flow_run_name=flow_run_name)
 
     log_flow_run_success(logger, data_count=len(data))
 

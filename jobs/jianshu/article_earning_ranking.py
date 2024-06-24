@@ -15,7 +15,12 @@ from models.jianshu.article_earning_ranking_record import (
     EarningField,
 )
 from models.jianshu.user import UserDocument
-from utils.log import log_flow_run_start, log_flow_run_success, logger
+from utils.log import (
+    get_flow_run_name,
+    log_flow_run_start,
+    log_flow_run_success,
+    logger,
+)
 from utils.prefect_helper import (
     generate_deployment_config,
     generate_flow_config,
@@ -24,10 +29,16 @@ from utils.prefect_helper import (
 
 @retry(attempts=5, delay=10)
 async def get_author_slug_and_info(
-    item: RecordField, /
+    item: RecordField,
 ) -> Tuple[Optional[str], Optional[UserInfo]]:
+    flow_run_name = get_flow_run_name()
+
     if not item.slug:
-        logger.warn(f"文章走丢了，跳过采集作者信息 ranking={item.ranking}")
+        logger.warn(
+            "文章状态异常，跳过作者信息采集",
+            flow_run_name=flow_run_name,
+            ranking=item.ranking,
+        )
         return None, None
 
     try:
@@ -41,12 +52,16 @@ async def get_author_slug_and_info(
 
         return (author.slug, author_info)
     except ResourceUnavailableError:
-        logger.warn(f"文章或作者状态异常，跳过采集作者信息 ranking={item.ranking}")
+        logger.warn(
+            "文章或作者状态异常，跳过作者信息采集",
+            flow_run_name=flow_run_name,
+            ranking=item.ranking,
+        )
         return None, None
 
 
 async def process_item(
-    item: RecordField, /, *, target_date: datetime
+    item: RecordField, date: datetime
 ) -> ArticleEarningRankingRecordDocument:
     author_slug, author_info = await get_author_slug_and_info(item)
 
@@ -59,7 +74,7 @@ async def process_item(
         )
 
     return ArticleEarningRankingRecordDocument(
-        date=target_date,
+        date=date,
         ranking=item.ranking,
         article=ArticleField(
             title=item.title,
@@ -81,11 +96,11 @@ async def process_item(
 async def main() -> None:
     log_flow_run_start(logger)
 
-    target_date = get_today_as_datetime() - timedelta(days=1)
+    date = get_today_as_datetime() - timedelta(days=1)
 
     data: List[ArticleEarningRankingRecordDocument] = []
-    async for item in ArticleEarningRanking(target_date.date()):
-        processed_item = await process_item(item, target_date=target_date)
+    async for item in ArticleEarningRanking(date.date()):
+        processed_item = await process_item(item, date=date)
         data.append(processed_item)
 
     await ArticleEarningRankingRecordDocument.insert_many(data)

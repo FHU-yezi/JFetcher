@@ -13,6 +13,9 @@ logger = Logger(
     else None,
 )
 
+def get_flow_run_name() -> str:
+    return runtime.flow_run.name  # type: ignore
+
 
 def log_flow_run_start(logger: Logger) -> str:
     logger.info(
@@ -23,7 +26,7 @@ def log_flow_run_start(logger: Logger) -> str:
     )
 
     # 返回流程运行名称，供后续日志使用
-    return runtime.flow_run.name  # type: ignore
+    return get_flow_run_name()  # type: ignore
 
 
 def log_flow_run_success(logger: Logger, **kwargs: _ExtraType) -> None:
