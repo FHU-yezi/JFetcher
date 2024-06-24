@@ -3,7 +3,6 @@ from typing import List, Literal
 
 from jkit.jpep.ftn_macket import FTNMacket, FTNMacketOrderRecord
 from prefect import flow
-from prefect.states import Completed, State
 
 from models.jpep.credit_history import CreditHistoryDocument
 from models.jpep.ftn_trade_order import (
@@ -15,6 +14,7 @@ from utils.config_generators import (
     generate_deployment_config,
     generate_flow_config,
 )
+from utils.log import log_flow_run_start, log_flow_run_success, logger
 
 
 def get_fetch_time() -> datetime:
@@ -80,7 +80,9 @@ async def process_item(
         name="采集简书积分兑换平台简书贝交易挂单",
     ),
 )
-async def flow_func(type: Literal["buy", "sell"]) -> State:  # noqa: A002
+async def flow_func(type: Literal["buy", "sell"]) -> None:  # noqa: A002
+    log_flow_run_start(logger)
+
     fetch_time = get_fetch_time()
 
     data: List[FTNTradeOrderDocument] = []
@@ -90,7 +92,7 @@ async def flow_func(type: Literal["buy", "sell"]) -> State:  # noqa: A002
 
     await FTNTradeOrderDocument.insert_many(data)
 
-    return Completed(message=f"fetch_time={fetch_time}, data_count={len(data)}")
+    log_flow_run_success(logger, data_count=len(data))
 
 
 buy_deployment = flow_func.to_deployment(

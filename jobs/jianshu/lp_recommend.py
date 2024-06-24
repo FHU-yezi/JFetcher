@@ -3,7 +3,6 @@ from typing import List, Optional
 
 from jkit.collection import Collection, CollectionArticleInfo
 from prefect import flow
-from prefect.states import Completed, State
 from sshared.time import get_today_as_datetime
 
 from models.jianshu.lp_recommend_article_record import (
@@ -14,7 +13,7 @@ from utils.config_generators import (
     generate_deployment_config,
     generate_flow_config,
 )
-from utils.log import logger
+from utils.log import log_flow_run_start, log_flow_run_success, logger
 
 # 理事会点赞汇总专题
 LP_RECOMMENDED_COLLECTION = Collection.from_slug("f61832508891")
@@ -57,7 +56,9 @@ async def process_item(
         name="采集 LP 推荐文章记录",
     )
 )
-async def flow_func() -> State:
+async def flow_func() -> None:
+    log_flow_run_start(logger)
+
     current_date = get_today_as_datetime()
 
     data: List[LPRecommendedArticleRecordDocument] = []
@@ -76,7 +77,7 @@ async def flow_func() -> State:
     else:
         logger.info("无数据，不执行保存操作")
 
-    return Completed(message=f"data_count={len(data)}")
+    log_flow_run_success(logger, data_count=len(data))
 
 
 deployment = flow_func.to_deployment(

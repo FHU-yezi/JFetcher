@@ -6,7 +6,6 @@ from jkit.ranking.daily_update import (
     DailyUpdateRankingRecord,
 )
 from prefect import flow
-from prefect.states import Completed, State
 from sshared.time import get_today_as_datetime
 
 from models.jianshu.daily_update_ranking_record import (
@@ -17,6 +16,7 @@ from utils.config_generators import (
     generate_deployment_config,
     generate_flow_config,
 )
+from utils.log import log_flow_run_start, log_flow_run_success, logger
 
 
 async def process_item(
@@ -41,7 +41,9 @@ async def process_item(
         name="采集日更排行榜记录",
     )
 )
-async def flow_func() -> State:
+async def flow_func() -> None:
+    log_flow_run_start(logger)
+
     current_date = get_today_as_datetime()
 
     data: List[DailyUpdateRankingRecordDocument] = []
@@ -51,7 +53,7 @@ async def flow_func() -> State:
 
     await DailyUpdateRankingRecordDocument.insert_many(data)
 
-    return Completed(message=f"data_count={len(data)}")
+    log_flow_run_success(logger, data_count=len(data))
 
 
 deployment = flow_func.to_deployment(
