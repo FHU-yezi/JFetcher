@@ -13,6 +13,7 @@ logger = Logger(
     else None,
 )
 
+
 def get_flow_run_name() -> str:
     return runtime.flow_run.name  # type: ignore
 
