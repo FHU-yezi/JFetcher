@@ -6,8 +6,8 @@ networks:
 
 services:
   main:
-    image: jfetcher:3.1.1
-    container_name: jfetcher-v3
+    image: jfetcher:3.2.0
+    container_name: jfetcher
     build: .
     volumes:
       - ./config.yaml:/app/config.yaml:ro
