@@ -28,7 +28,7 @@ async def process_item(item: LotteryWinRecord) -> LotteryWinRecordDocument:
         time=item.time,
         award_name=item.award_name,
         user_slug=item.user_info.slug,
-    ).validate()
+    )
 
 
 @flow(

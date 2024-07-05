@@ -70,7 +70,7 @@ async def process_item(
             minimum_trade=item.minimum_trade_amount,
         ),
         publisher_id=item.publisher_info.id,
-    ).validate()
+    )
 
 
 @flow(

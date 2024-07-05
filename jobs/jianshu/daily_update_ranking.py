@@ -33,7 +33,7 @@ async def process_item(
         ranking=item.ranking,
         days=item.days,
         user_slug=item.user_info.slug,
-    ).validate()
+    )
 
 
 @flow(
