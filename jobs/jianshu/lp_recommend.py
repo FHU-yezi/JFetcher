@@ -59,7 +59,7 @@ async def process_item(
         can_comment=item.can_comment,
         description=item.description,
         author_slug=item.author_info.slug,
-    ).validate()
+    )
 
 
 @flow(
