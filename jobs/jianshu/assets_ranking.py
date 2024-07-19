@@ -81,7 +81,7 @@ async def process_item(
             assets=item.assets_amount,
         ),
         user_slug=item.user_info.slug,
-    ).validate()
+    )
 
 
 @flow(
