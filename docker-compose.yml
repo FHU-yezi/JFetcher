@@ -10,7 +10,7 @@ services:
     container_name: jfetcher
     build: .
     volumes:
-      - ./config.yaml:/app/config.yaml:ro
+      - ./config.toml:/app/config.toml:ro
     networks:
       - mongodb
       - prefect
