@@ -10,7 +10,7 @@ authors = [
 requires-python = ">=3.9"
 dependencies = [
     "jkit>=3.0.0a16",
-    "prefect>=2.20.0",
+    "prefect<3.0.0",
     "sshared[config,mongo,postgres]>=0.11.0",
 ]
 
