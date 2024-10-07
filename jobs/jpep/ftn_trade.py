@@ -88,7 +88,10 @@ async def main(type: Literal["buy", "sell"]) -> None:  # noqa: A002
         processed_item = await process_item(item, time=fetch_time, type=type)
         data.append(processed_item)
 
-    await FTNTradeOrderDocument.insert_many(data)
+    if data:
+        await FTNTradeOrderDocument.insert_many(data)
+    else:
+        logger.warn("没有可采集的挂单信息，跳过数据写入")
 
     log_flow_run_success(logger, data_count=len(data))
 
