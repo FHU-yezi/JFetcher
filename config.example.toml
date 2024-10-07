@@ -1,4 +1,4 @@
-[mongodb]
+[mongo]
     host = "localhost"
     port = 27017
     database = "jfetcher"
@@ -15,7 +15,7 @@
     save_level = "DEBUG"
 
 [notify]
-    enabled: true
+    enabled = true
     host = "localhost"
     port = 8701
     token = ""
