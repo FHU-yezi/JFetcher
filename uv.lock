@@ -1888,14 +1888,14 @@ asyncio = [
 
 [[package]]
 name = "sshared"
-version = "0.11.1"
+version = "0.13.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "msgspec" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/b9/41/dedfb035fd7000d8c97928aebd8f95ec45895cac3c30486f8b52f7a793ae/sshared-0.11.1.tar.gz", hash = "sha256:efa27accab5bcaed899f7baaa7ce89986134adfbc75d9554fec2f1dfbae11472", size = 13185 }
+sdist = { url = "https://files.pythonhosted.org/packages/88/29/fd41ec18d69dd861a4f2d8afcdf68a82638c2f0e8fd96e22306fe9c911ee/sshared-0.13.0.tar.gz", hash = "sha256:04c5d7e13fd80109f6f1cef2bba82c53c44377ecefb0a40c6f64d593812277a3", size = 13753 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/67/89/e5a28b90b3ca657c30a6841e410d59e885a42252ea2b3a5b89caa5a94338/sshared-0.11.1-py3-none-any.whl", hash = "sha256:a2d94e374c469da92a6b609592077c8988c3a0596338189f3782c9dee62fe3b9", size = 20519 },
+    { url = "https://files.pythonhosted.org/packages/01/e3/9ba0282f72c6aee53188e5ea453d0effd94bf5a37351588953919fe712c6/sshared-0.13.0-py3-none-any.whl", hash = "sha256:5e48775b5bbd862ebd3a93c76a9bf1c05950955a134d7d9c7e2356dfb633d0a8", size = 21215 },
 ]
 
 [package.optional-dependencies]
