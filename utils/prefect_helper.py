@@ -1,5 +1,5 @@
 from functools import partial
-from typing import Any, Dict, Literal, Union
+from typing import Any, Literal, Union
 
 from httpx import AsyncClient, HTTPStatusError
 from prefect.client.schemas.objects import Flow, FlowRun, State
@@ -52,7 +52,9 @@ async def failed_flow_run_handler(
     try:
         response.raise_for_status()
     except HTTPStatusError as e:
-        logger.error("发送失败飞书通知时发生异常", exc=e, flow_run_name=flow_run.name)
+        logger.error(
+            "发送失败飞书通知时发生异常", exception=e, flow_run_name=flow_run.name
+        )
     else:
         logger.info("发送失败飞书通知成功", flow_run_name=flow_run.name)
 
@@ -62,7 +64,7 @@ def generate_flow_config(
     retries: int = 1,
     retry_delay_seconds: Union[int, float] = 5,
     timeout: int = 3600,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     return {
         "name": name,
         "version": None,
@@ -74,7 +76,7 @@ def generate_flow_config(
     }
 
 
-def generate_deployment_config(name: str, cron: str) -> Dict[str, Any]:
+def generate_deployment_config(name: str, cron: str) -> dict[str, Any]:
     return {
         "name": f"JFetcher - {name}",
         "version": None,

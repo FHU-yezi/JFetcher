@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 from jkit.msgspec_constraints import NonNegativeInt, PositiveInt
 from sshared.mongo import Document, Field, Index
@@ -61,7 +61,7 @@ class UserDocument(Document, frozen=True):
         if updated_at < db_data.updated_at:
             return
 
-        update_data: Dict[str, Any] = {
+        update_data: dict[str, Any] = {
             "$set": {
                 # 即使没有要更新的数据，也要刷新更新时间
                 "updatedAt": updated_at,

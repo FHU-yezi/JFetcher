@@ -1,6 +1,6 @@
 from sshared.config import ConfigBase
-from sshared.config.blocks import ConfigBlock, LoggingBlock, MongoDBBlock
-from sshared.validatable_struct import NonEmptyStr
+from sshared.config.blocks import ConfigBlock, LoggingBlock, MongoBlock
+from sshared.strict_struct import NonEmptyStr
 
 
 class FeishuNotificationBlock(ConfigBlock, frozen=True):
@@ -10,7 +10,7 @@ class FeishuNotificationBlock(ConfigBlock, frozen=True):
 
 
 class _Config(ConfigBase, frozen=True):
-    mongodb: MongoDBBlock
+    mongodb: MongoBlock
     logging: LoggingBlock
     feishu_notification: FeishuNotificationBlock
 
