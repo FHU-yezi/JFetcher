@@ -1,18 +1,12 @@
 from sshared.config import ConfigBase
-from sshared.config.blocks import ConfigBlock, LoggingBlock, MongoBlock
-from sshared.strict_struct import NonEmptyStr
-
-
-class FeishuNotificationBlock(ConfigBlock, frozen=True):
-    enabled: bool
-    webhook_url: NonEmptyStr
-    failure_card_id: NonEmptyStr
+from sshared.config.blocks import GotifyBlock, LoggingBlock, MongoBlock, PostgresBlock
 
 
 class _Config(ConfigBase, frozen=True):
-    mongodb: MongoBlock
+    mongo: MongoBlock
+    postgres: PostgresBlock
     logging: LoggingBlock
-    feishu_notification: FeishuNotificationBlock
+    notify: GotifyBlock
 
 
 CONFIG = _Config.load_from_file("config.toml")

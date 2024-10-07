@@ -1,26 +1,21 @@
-# MongoDB 数据库
 [mongodb]
-    # 地址
     host = "localhost"
-    # 端口
     port = 27017
-    # 数据库名
     database = "jfetcher"
 
-# 日志
+[postgres]
+    host = "localhost"
+    port = 5432
+    user = "postgres"
+    password = "postgres"
+    database = "jfetcher"
+
 [logging]
-    # 是否保存日志
-    enable_save = true
-    # 日志展示等级
     display_level = "DEBUG"
-    # 日志保存等级
     save_level = "DEBUG"
 
-# 飞书消息推送
-[feishu_notification]
-    # 是否启用消息推送
-    enabled = true
-    # 消息推送 Webhook URL
-    webhook_url = ""
-    # 任务运行失败消息卡片 ID
-    failure_card_id = ""
+[notify]
+    enabled: true
+    host = "localhost"
+    port = 8701
+    token = ""
