@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import List, Optional, Tuple
+from typing import Optional
 
 from jkit.config import CONFIG
 from jkit.exceptions import ResourceUnavailableError
@@ -29,7 +29,7 @@ from utils.prefect_helper import (
 @retry(attempts=5, delay=10)
 async def get_fp_ftn_amount(
     item: AssetsRankingRecord, /
-) -> Tuple[Optional[float], Optional[float]]:
+) -> tuple[Optional[float], Optional[float]]:
     flow_run_name = get_flow_run_name()
 
     if not item.user_info.slug:
@@ -94,7 +94,7 @@ async def main() -> None:
 
     date = get_today_as_datetime()
 
-    data: List[AssetsRankingRecordDocument] = []
+    data: list[AssetsRankingRecordDocument] = []
     async for item in AssetsRanking():
         processed_item = await process_item(item, date=date)
         data.append(processed_item)
