@@ -1,16 +1,13 @@
 from prefect import runtime
-from pymongo import MongoClient
-from sshared.logging import Logger, _ExtraType
+from sshared.logging import Logger
+from sshared.logging.types import ExtraType
 
 from utils.config import CONFIG
 
 logger = Logger(
-    # TODO
-    save_level=CONFIG.logging.save_level,
     display_level=CONFIG.logging.display_level,
-    save_collection=MongoClient()[CONFIG.mongodb.database].log
-    if CONFIG.logging.enable_save
-    else None,
+    save_level=CONFIG.logging.save_level,
+    connection_string=CONFIG.postgres.connection_string
 )
 
 
@@ -30,7 +27,7 @@ def log_flow_run_start(logger: Logger) -> str:
     return get_flow_run_name()  # type: ignore
 
 
-def log_flow_run_success(logger: Logger, **kwargs: _ExtraType) -> None:
+def log_flow_run_success(logger: Logger, **kwargs: ExtraType) -> None:
     logger.info(
         "工作流执行成功",
         flow_run_name=runtime.flow_run.name,  # type: ignore

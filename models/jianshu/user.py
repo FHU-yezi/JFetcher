@@ -1,6 +1,6 @@
 from datetime import datetime
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from jkit.msgspec_constraints import PositiveInt, UserName, UserSlug, UserUploadedUrl
 from sshared.mongo import Document, Index
@@ -19,7 +19,7 @@ class UserDocument(Document, frozen=True):
     updated_at: datetime
     id: Optional[PositiveInt]
     name: Optional[UserName]
-    history_names: List[UserName]
+    history_names: list[UserName]
     avatar_url: Optional[UserUploadedUrl]
 
     class Meta:  # type: ignore
@@ -66,7 +66,7 @@ class UserDocument(Document, frozen=True):
         if updated_at < db_data.updated_at:
             return
 
-        data_to_set: Dict[str, Any] = {
+        data_to_set: dict[str, Any] = {
             # 刷新数据更新时间
             "updatedAt": updated_at
         }

@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta
-from typing import List, Optional, Tuple
+from typing import Optional
 
 from jkit.config import CONFIG
 from jkit.exceptions import ResourceUnavailableError
@@ -30,7 +30,7 @@ from utils.prefect_helper import (
 @retry(attempts=5, delay=10)
 async def get_author_slug_and_info(
     item: RecordField,
-) -> Tuple[Optional[str], Optional[UserInfo]]:
+) -> tuple[Optional[str], Optional[UserInfo]]:
     flow_run_name = get_flow_run_name()
 
     if not item.slug:
@@ -98,7 +98,7 @@ async def main() -> None:
 
     date = get_today_as_datetime() - timedelta(days=1)
 
-    data: List[ArticleEarningRankingRecordDocument] = []
+    data: list[ArticleEarningRankingRecordDocument] = []
     async for item in ArticleEarningRanking(date.date()):
         processed_item = await process_item(item, date=date)
         data.append(processed_item)

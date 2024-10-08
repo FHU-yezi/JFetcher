@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import List, Optional
+from typing import Optional
 
 from jkit.collection import Collection, CollectionArticleInfo
 from prefect import flow
@@ -72,7 +72,7 @@ async def main() -> None:
 
     date = get_today_as_datetime()
 
-    data: List[LPRecommendedArticleRecordDocument] = []
+    data: list[LPRecommendedArticleRecordDocument] = []
     itered_items_count = 0
     async for item in LP_RECOMMENDED_COLLECTION.iter_articles():
         processed_item = await process_item(item, date=date)

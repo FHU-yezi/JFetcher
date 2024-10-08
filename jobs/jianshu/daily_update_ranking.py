@@ -1,5 +1,4 @@
 from datetime import datetime
-from typing import List
 
 from jkit.ranking.daily_update import (
     DailyUpdateRanking,
@@ -46,7 +45,7 @@ async def main() -> None:
 
     date = get_today_as_datetime()
 
-    data: List[DailyUpdateRankingRecordDocument] = []
+    data: list[DailyUpdateRankingRecordDocument] = []
     async for item in DailyUpdateRanking():
         processed_item = await process_item(item, date=date)
         data.append(processed_item)
