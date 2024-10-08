@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta
-from typing import List, Literal
+from typing import Literal
 
 from jkit.jpep.ftn_macket import FTNMacket, FTNMacketOrderRecord
 from prefect import flow
@@ -83,12 +83,15 @@ async def main(type: Literal["buy", "sell"]) -> None:  # noqa: A002
 
     fetch_time = get_fetch_time()
 
-    data: List[FTNTradeOrderDocument] = []
+    data: list[FTNTradeOrderDocument] = []
     async for item in FTNMacket().iter_orders(type=type):
         processed_item = await process_item(item, time=fetch_time, type=type)
         data.append(processed_item)
 
-    await FTNTradeOrderDocument.insert_many(data)
+    if data:
+        await FTNTradeOrderDocument.insert_many(data)
+    else:
+        logger.warn("没有可采集的挂单信息，跳过数据写入")
 
     log_flow_run_success(logger, data_count=len(data))
 

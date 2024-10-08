@@ -1,5 +1,3 @@
-from typing import List
-
 from jkit.lottery import Lottery, LotteryWinRecord
 from prefect import flow
 
@@ -44,7 +42,7 @@ async def main() -> None:
     if stop_id == 0:
         logger.warn("数据库中没有记录", flow_run_name=flow_run_name)
 
-    data: List[LotteryWinRecordDocument] = []
+    data: list[LotteryWinRecordDocument] = []
     async for item in Lottery().iter_win_records():
         if item.id == stop_id:
             break

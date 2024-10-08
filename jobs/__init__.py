@@ -1,5 +1,6 @@
+from collections.abc import Coroutine
 from importlib import import_module
-from typing import Any, Coroutine, Set, Tuple
+from typing import Any
 
 from prefect.deployments.runner import RunnerDeployment
 
@@ -21,7 +22,7 @@ def import_deployment(path: str) -> DeploymentType:
     return getattr(module, deployment_obj_name)
 
 
-DEPLOYMENT_PATHS: Set[str] = {
+DEPLOYMENT_PATHS: set[str] = {
     "jobs.jianshu.article_earning_ranking:deployment",
     "jobs.jianshu.assets_ranking:deployment",
     "jobs.jianshu.daily_update_ranking:deployment",
@@ -31,6 +32,6 @@ DEPLOYMENT_PATHS: Set[str] = {
 }
 
 
-DEPLOYMENTS: Tuple[DeploymentType, ...] = tuple(
+DEPLOYMENTS: tuple[DeploymentType, ...] = tuple(
     import_deployment(x) for x in DEPLOYMENT_PATHS
 )

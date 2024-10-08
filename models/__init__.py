@@ -1,5 +1,3 @@
-from typing import Tuple, Type
-
 from sshared.mongo import Document
 
 from .jianshu.article_earning_ranking_record import ArticleEarningRankingRecordDocument
@@ -12,7 +10,7 @@ from .jpep.credit_history import CreditHistoryDocument
 from .jpep.ftn_trade_order import FTNTradeOrderDocument
 from .jpep.user import UserDocument as JPEPUserDocument
 
-MODELS: Tuple[Type[Document], ...] = (
+MODELS: tuple[type[Document], ...] = (
     ArticleEarningRankingRecordDocument,
     AssetsRankingRecordDocument,
     DailyUpdateRankingRecordDocument,

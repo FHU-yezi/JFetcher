@@ -1,18 +1,24 @@
 networks:
+  gotify:
+    external: true
   mongodb:
+    external: true
+  postgres:
     external: true
   prefect:
     external: true
 
 services:
   main:
-    image: jfetcher:3.3.0
+    image: jfetcher:3.4.0
     container_name: jfetcher
     build: .
     volumes:
-      - ./config.yaml:/app/config.yaml:ro
+      - ./config.toml:/app/config.toml:ro
     networks:
+      - gotify
       - mongodb
+      - postgres
       - prefect
     environment:
       - PYTHONUNBUFFERED=1
@@ -20,7 +26,7 @@ services:
     deploy:
       resources:
         limits:
-          memory: 512M
+          memory: 768M
       restart_policy:
         condition: on-failure
         delay: 5s

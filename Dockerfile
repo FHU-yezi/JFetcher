@@ -4,12 +4,13 @@ ENV TZ Asia/Shanghai
 
 WORKDIR /app
 
-COPY requirements.txt .
-RUN pip install uv --no-cache-dir --disable-pip-version-check && \
-    uv pip install --system --no-cache -r requirements.txt && \
-    cd /usr/local/bin && \
-    rm uv uvx
+COPY pyproject.toml uv.lock .
+
+RUN --mount=from=ghcr.io/astral-sh/uv:0.4.0,source=/uv,target=/bin/uv \
+    uv sync --frozen --no-dev --no-cache
 
 COPY . .
+
+ENV PATH="/app/.venv/bin:$PATH"
 
 CMD ["python", "main.py"]
