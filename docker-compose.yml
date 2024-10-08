@@ -1,5 +1,9 @@
 networks:
+  gotify:
+    external: true
   mongodb:
+    external: true
+  postgres:
     external: true
   prefect:
     external: true
@@ -12,7 +16,9 @@ services:
     volumes:
       - ./config.toml:/app/config.toml:ro
     networks:
+      - gotify
       - mongodb
+      - postgres
       - prefect
     environment:
       - PYTHONUNBUFFERED=1
