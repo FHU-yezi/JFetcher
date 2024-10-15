@@ -13,6 +13,7 @@
 [logging]
     display_level = "DEBUG"
     save_level = "DEBUG"
+    table = "jfetcher"
 
 [notify]
     enabled = true
