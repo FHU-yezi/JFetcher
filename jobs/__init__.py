@@ -24,9 +24,8 @@ def import_deployment(path: str) -> DeploymentType:
 
 DEPLOYMENT_PATHS: set[str] = {
     "jobs.jianshu.article_earning_ranking:deployment",
-    "jobs.jianshu.assets_ranking:deployment",
+    "jobs.jianshu.user_assets_ranking:deployment",
     "jobs.jianshu.daily_update_ranking:deployment",
-    "jobs.jianshu.lp_recommend:deployment",
     "jobs.jpep.ftn_trade:buy_deployment",
     "jobs.jpep.ftn_trade:sell_deployment",
 }

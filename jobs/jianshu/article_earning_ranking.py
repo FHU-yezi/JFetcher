@@ -15,6 +15,10 @@ from models.jianshu.article_earning_ranking_record import (
     EarningField,
 )
 from models.jianshu.user import UserDocument
+from models.new.jianshu.article_earning_ranking_record import (
+    ArticleEarningRankingRecord as NewDbArticleEarningRankingRecord,
+)
+from models.new.jianshu.user import User as NewDbUser
 from utils.log import (
     get_flow_run_name,
     log_flow_run_start,
@@ -72,6 +76,12 @@ async def process_item(
             name=author_info.name,
             avatar_url=author_info.avatar_url,
         )
+        await NewDbUser.upsert(
+            slug=author_slug,
+            id=author_info.id,
+            name=author_info.name,
+            avatar_url=author_info.avatar_url,
+        )
 
     return ArticleEarningRankingRecordDocument(
         date=date,
@@ -86,6 +96,26 @@ async def process_item(
             to_voter=item.fp_to_voter_amount,
         ),
     )
+
+
+def transform_to_new_db_model(
+    data: list[ArticleEarningRankingRecordDocument],
+) -> list[NewDbArticleEarningRankingRecord]:
+    result: list[NewDbArticleEarningRankingRecord] = []
+    for item in data:
+        result.append(  # noqa: PERF401
+            NewDbArticleEarningRankingRecord(
+                date=item.date.date(),
+                ranking=item.ranking,
+                slug=item.article.slug,
+                title=item.article.title,
+                author_slug=item.author_slug,
+                author_earning=item.earning.to_author,
+                voter_earning=item.earning.to_voter,
+            )
+        )
+
+    return result
 
 
 @flow(
@@ -104,6 +134,9 @@ async def main() -> None:
         data.append(processed_item)
 
     await ArticleEarningRankingRecordDocument.insert_many(data)
+
+    new_data = transform_to_new_db_model(data)
+    await NewDbArticleEarningRankingRecord.insert_many(new_data)
 
     log_flow_run_success(logger, data_count=len(data))
 

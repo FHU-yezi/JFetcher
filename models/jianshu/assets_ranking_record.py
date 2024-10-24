@@ -9,7 +9,7 @@ from jkit.msgspec_constraints import (
 )
 from sshared.mongo import Document, Field, Index
 
-from utils.db import JIANSHU_DB
+from utils.mongo import JIANSHU_DB
 
 
 class AmountField(Field, frozen=True):
