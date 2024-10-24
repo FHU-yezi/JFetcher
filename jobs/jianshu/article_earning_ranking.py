@@ -100,11 +100,11 @@ def transform_to_new_db_model(
             NewDbArticleEarningRankingRecord(
                 date=item.date.date(),
                 ranking=item.ranking,
-                article_slug=item.article.slug,
-                article_title=item.article.title,
+                slug=item.article.slug,
+                title=item.article.title,
                 author_slug=item.author_slug,
-                earning_to_author=item.earning.to_author,
-                earning_to_voter=item.earning.to_voter,
+                author_earning=item.earning.to_author,
+                voter_earning=item.earning.to_voter,
             )
         )
 

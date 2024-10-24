@@ -21,7 +21,7 @@ async def main() -> None:
             DailyUpdateRankingRecord(
                 date=item["date"].date(),
                 ranking=item["ranking"],
-                user_slug=item["userSlug"],
+                slug=item["userSlug"],
                 days=item["days"],
             )
         )

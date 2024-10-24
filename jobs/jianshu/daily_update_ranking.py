@@ -47,7 +47,7 @@ def transform_to_new_db_model(
             NewDbDailyUpateRankingRecord(
                 date=item.date.date(),
                 ranking=item.ranking,
-                user_slug=item.user_slug,
+                slug=item.user_slug,
                 days=item.days,
             )
         )

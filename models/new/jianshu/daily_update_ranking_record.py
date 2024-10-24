@@ -9,7 +9,7 @@ from utils.postgres import jianshu_conn
 class DailyUpdateRankingRecord(Table, frozen=True):
     date: date
     ranking: PositiveInt
-    user_slug: NonEmptyStr
+    slug: NonEmptyStr
     days: PositiveInt
 
     @classmethod
@@ -19,9 +19,9 @@ class DailyUpdateRankingRecord(Table, frozen=True):
             CREATE TABLE IF NOT EXISTS daily_update_ranking_records (
                 date DATE NOT NULL,
                 ranking SMALLINT NOT NULL,
-                user_slug VARCHAR(12),
+                slug VARCHAR(12),
                 days SMALLINT,
-                CONSTRAINT pk_daily_update_ranking_records_date_user_slug PRIMARY KEY (date, user_slug)
+                CONSTRAINT pk_daily_update_ranking_records_date_slug PRIMARY KEY (date, slug)
             );
             """  # noqa: E501
         )
@@ -33,12 +33,12 @@ class DailyUpdateRankingRecord(Table, frozen=True):
 
         await jianshu_conn.cursor().executemany(
             "INSERT INTO daily_update_ranking_records (date, ranking, "
-            "user_slug, days) VALUES (%s, %s, %s, %s);",
+            "slug, days) VALUES (%s, %s, %s, %s);",
             [
                 (
                     item.date,
                     item.ranking,
-                    item.user_slug,
+                    item.slug,
                     item.days,
                 )
                 for item in data

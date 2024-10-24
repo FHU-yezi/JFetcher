@@ -5,34 +5,34 @@ from sshared.logging import Logger
 from models.jianshu.assets_ranking_record import (
     AssetsRankingRecordDocument,
 )
-from models.new.jianshu.assets_ranking_record import (
-    AssetsRankingRecord,
+from models.new.jianshu.user_assets_ranking_record import (
+    UserAssetsRankingRecord,
 )
 
 logger = Logger()
 
 
 async def main() -> None:
-    await AssetsRankingRecord.init()
+    await UserAssetsRankingRecord.init()
     logger.debug("初始化数据库表完成")
 
-    batch: list[AssetsRankingRecord] = []
+    batch: list[UserAssetsRankingRecord] = []
 
     async for item in AssetsRankingRecordDocument.Meta.collection.find().sort(
         {"date": 1, "ranking": 1}
     ):
         batch.append(
-            AssetsRankingRecord(
+            UserAssetsRankingRecord(
                 date=item["date"].date(),
                 ranking=item["ranking"],
-                user_slug=item["userSlug"],
+                slug=item["userSlug"],
                 fp=item["amount"]["fp"],
                 ftn=item["amount"]["ftn"],
                 assets=item["amount"]["assets"],
             )
         )
         if len(batch) == 5000:
-            await AssetsRankingRecord.insert_many(batch)
+            await UserAssetsRankingRecord.insert_many(batch)
             logger.debug(
                 f"迁移 {batch[0].date}/{batch[0].ranking} - "
                 f"{batch[-1].date}/{batch[-1].ranking} 完成"
@@ -40,7 +40,7 @@ async def main() -> None:
             batch.clear()
 
     if batch:
-        await AssetsRankingRecord.insert_many(batch)
+        await UserAssetsRankingRecord.insert_many(batch)
         logger.debug(
             f"迁移 {batch[0].date}/{batch[0].ranking} - "
             f"{batch[-1].date}/{batch[-1].ranking} 完成"

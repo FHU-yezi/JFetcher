@@ -14,8 +14,8 @@ from models.jianshu.assets_ranking_record import (
     AssetsRankingRecordDocument,
 )
 from models.jianshu.user import UserDocument
-from models.new.jianshu.assets_ranking_record import (
-    AssetsRankingRecord as NewDbAssetsRankingRecord,
+from models.new.jianshu.user_assets_ranking_record import (
+    UserAssetsRankingRecord as NewDbAssetsRankingRecord,
 )
 from utils.log import (
     get_flow_run_name,
@@ -96,7 +96,7 @@ def transform_to_new_db_model(
             NewDbAssetsRankingRecord(
                 date=item.date.date(),
                 ranking=item.ranking,
-                user_slug=item.user_slug,
+                slug=item.user_slug,
                 fp=item.amount.fp,
                 ftn=item.amount.ftn,
                 assets=item.amount.assets,
@@ -108,7 +108,7 @@ def transform_to_new_db_model(
 
 @flow(
     **generate_flow_config(
-        name="采集资产排行榜记录",
+        name="采集用户资产排行榜记录",
     )
 )
 async def main() -> None:
@@ -134,7 +134,7 @@ async def main() -> None:
 
 deployment = main.to_deployment(
     **generate_deployment_config(
-        name="采集资产排行榜记录",
+        name="采集用户资产排行榜记录",
         cron="0 1 * * *",
     )
 )

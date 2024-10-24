@@ -25,11 +25,11 @@ async def main() -> None:
             ArticleEarningRankingRecord(
                 date=item["date"].date(),
                 ranking=item["ranking"],
-                article_slug=item["article"]["slug"],
-                article_title=item["article"]["title"],
+                slug=item["article"]["slug"],
+                title=item["article"]["title"],
                 author_slug=item["authorSlug"],
-                earning_to_author=item["earning"]["toAuthor"],
-                earning_to_voter=item["earning"]["toVoter"],
+                author_earning=item["earning"]["toAuthor"],
+                voter_earning=item["earning"]["toVoter"],
             )
         )
         if len(batch) == 5000:

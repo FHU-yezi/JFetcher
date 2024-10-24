@@ -10,12 +10,12 @@ from utils.postgres import jianshu_conn
 class ArticleEarningRankingRecord(Table, frozen=True):
     date: date
     ranking: PositiveInt
-    article_slug: Optional[NonEmptyStr]
-    article_title: Optional[NonEmptyStr]
+    slug: Optional[NonEmptyStr]
+    title: Optional[NonEmptyStr]
     author_slug: Optional[NonEmptyStr]
 
-    earning_to_author: PositiveFloat
-    earning_to_voter: PositiveFloat
+    author_earning: PositiveFloat
+    voter_earning: PositiveFloat
 
     @classmethod
     async def _create_table(cls) -> None:
@@ -24,11 +24,11 @@ class ArticleEarningRankingRecord(Table, frozen=True):
             CREATE TABLE IF NOT EXISTS article_earning_ranking_records (
                 date DATE NOT NULL,
                 ranking SMALLINT NOT NULL,
-                article_slug VARCHAR(12),
-                article_title TEXT,
+                slug VARCHAR(12),
+                title TEXT,
                 author_slug VARCHAR(12),
-                earning_to_author NUMERIC NOT NULL,
-                earning_to_voter NUMERIC NOT NULL,
+                author_earning NUMERIC NOT NULL,
+                voter_earning NUMERIC NOT NULL,
                 CONSTRAINT pk_article_earning_ranking_records_date_ranking PRIMARY KEY (date, ranking)
             );
             """  # noqa: E501
@@ -41,17 +41,17 @@ class ArticleEarningRankingRecord(Table, frozen=True):
 
         await jianshu_conn.cursor().executemany(
             "INSERT INTO article_earning_ranking_records (date, ranking, "
-            "article_slug, article_title, author_slug, earning_to_author, "
-            "earning_to_voter) VALUES (%s, %s, %s, %s, %s, %s, %s);",
+            "slug, title, author_slug, author_earning, voter_earning) "
+            "VALUES (%s, %s, %s, %s, %s, %s, %s);",
             [
                 (
                     item.date,
                     item.ranking,
-                    item.article_slug,
-                    item.article_title,
+                    item.slug,
+                    item.title,
                     item.author_slug,
-                    item.earning_to_author,
-                    item.earning_to_voter,
+                    item.author_earning,
+                    item.voter_earning,
                 )
                 for item in data
             ],
