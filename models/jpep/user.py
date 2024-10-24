@@ -4,7 +4,7 @@ from typing import Any, Optional
 from jkit.msgspec_constraints import NonNegativeInt, PositiveInt
 from sshared.mongo import Document, Field, Index
 
-from utils.db import JPEP_DB
+from utils.mongo import JPEP_DB
 
 
 class CreditHistoryFieldItem(Field, frozen=True):
