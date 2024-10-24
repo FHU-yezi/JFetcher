@@ -18,6 +18,7 @@ from models.jianshu.user import UserDocument
 from models.new.jianshu.article_earning_ranking_record import (
     ArticleEarningRankingRecord as NewDbArticleEarningRankingRecord,
 )
+from models.new.jianshu.user import User as NewDbUser
 from utils.log import (
     get_flow_run_name,
     log_flow_run_start,
@@ -70,6 +71,12 @@ async def process_item(
 
     if author_slug is not None and author_info is not None:
         await UserDocument.insert_or_update_one(
+            slug=author_slug,
+            id=author_info.id,
+            name=author_info.name,
+            avatar_url=author_info.avatar_url,
+        )
+        await NewDbUser.upsert(
             slug=author_slug,
             id=author_info.id,
             name=author_info.name,

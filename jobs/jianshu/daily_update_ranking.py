@@ -14,6 +14,7 @@ from models.jianshu.user import UserDocument
 from models.new.jianshu.daily_update_ranking_record import (
     DailyUpdateRankingRecord as NewDbDailyUpateRankingRecord,
 )
+from models.new.jianshu.user import User as NewDbUser
 from utils.log import log_flow_run_start, log_flow_run_success, logger
 from utils.prefect_helper import (
     generate_deployment_config,
@@ -25,6 +26,11 @@ async def process_item(
     item: DailyUpdateRankingRecord, date: datetime
 ) -> DailyUpdateRankingRecordDocument:
     await UserDocument.insert_or_update_one(
+        slug=item.user_info.slug,
+        name=item.user_info.name,
+        avatar_url=item.user_info.avatar_url,
+    )
+    await NewDbUser.upsert(
         slug=item.user_info.slug,
         name=item.user_info.name,
         avatar_url=item.user_info.avatar_url,

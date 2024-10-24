@@ -14,6 +14,7 @@ from models.jianshu.assets_ranking_record import (
     AssetsRankingRecordDocument,
 )
 from models.jianshu.user import UserDocument
+from models.new.jianshu.user import User as NewDbUser
 from models.new.jianshu.user_assets_ranking_record import (
     UserAssetsRankingRecord as NewDbAssetsRankingRecord,
 )
@@ -69,6 +70,12 @@ async def process_item(
 
     if item.user_info.slug:
         await UserDocument.insert_or_update_one(
+            slug=item.user_info.slug,
+            id=item.user_info.id,
+            name=item.user_info.name,
+            avatar_url=item.user_info.avatar_url,
+        )
+        await NewDbUser.upsert(
             slug=item.user_info.slug,
             id=item.user_info.id,
             name=item.user_info.name,
