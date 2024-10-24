@@ -4,7 +4,6 @@ from .jianshu.article_earning_ranking_record import ArticleEarningRankingRecordD
 from .jianshu.assets_ranking_record import AssetsRankingRecordDocument
 from .jianshu.daily_update_ranking_record import DailyUpdateRankingRecordDocument
 from .jianshu.lottery_win_record import LotteryWinRecordDocument
-from .jianshu.lp_recommend_article_record import LPRecommendedArticleRecordDocument
 from .jianshu.user import UserDocument as JianshuUserDocument
 from .jpep.credit_history import CreditHistoryDocument
 from .jpep.ftn_trade_order import FTNTradeOrderDocument
@@ -15,7 +14,6 @@ MODELS: tuple[type[Document], ...] = (
     AssetsRankingRecordDocument,
     DailyUpdateRankingRecordDocument,
     LotteryWinRecordDocument,
-    LPRecommendedArticleRecordDocument,
     JianshuUserDocument,
     CreditHistoryDocument,
     FTNTradeOrderDocument,
