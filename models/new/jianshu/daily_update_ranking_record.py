@@ -21,7 +21,7 @@ class DailyUpdateRankingRecord(Table, frozen=True):
                 ranking SMALLINT NOT NULL,
                 user_slug VARCHAR(12),
                 days SMALLINT,
-                CONSTRAINT pk_daily_update_ranking_records_date_ranking_user_slug PRIMARY KEY (date, ranking, user_slug)
+                CONSTRAINT pk_daily_update_ranking_records_date_user_slug PRIMARY KEY (date, user_slug)
             );
             """  # noqa: E501
         )

@@ -11,6 +11,9 @@ from models.jianshu.daily_update_ranking_record import (
     DailyUpdateRankingRecordDocument,
 )
 from models.jianshu.user import UserDocument
+from models.new.jianshu.daily_update_ranking_record import (
+    DailyUpdateRankingRecord as NewDbDailyUpateRankingRecord,
+)
 from utils.log import log_flow_run_start, log_flow_run_success, logger
 from utils.prefect_helper import (
     generate_deployment_config,
@@ -35,6 +38,23 @@ async def process_item(
     )
 
 
+def transform_to_new_db_model(
+    data: list[DailyUpdateRankingRecordDocument],
+) -> list[NewDbDailyUpateRankingRecord]:
+    result: list[NewDbDailyUpateRankingRecord] = []
+    for item in data:
+        result.append(  # noqa: PERF401
+            NewDbDailyUpateRankingRecord(
+                date=item.date.date(),
+                ranking=item.ranking,
+                user_slug=item.user_slug,
+                days=item.days,
+            )
+        )
+
+    return result
+
+
 @flow(
     **generate_flow_config(
         name="采集日更排行榜记录",
@@ -51,6 +71,9 @@ async def main() -> None:
         data.append(processed_item)
 
     await DailyUpdateRankingRecordDocument.insert_many(data)
+
+    new_data = transform_to_new_db_model(data)
+    await NewDbDailyUpateRankingRecord.insert_many(new_data)
 
     log_flow_run_success(logger, data_count=len(data))
 

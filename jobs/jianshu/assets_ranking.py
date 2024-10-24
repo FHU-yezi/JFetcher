@@ -14,6 +14,9 @@ from models.jianshu.assets_ranking_record import (
     AssetsRankingRecordDocument,
 )
 from models.jianshu.user import UserDocument
+from models.new.jianshu.assets_ranking_record import (
+    AssetsRankingRecord as NewDbAssetsRankingRecord,
+)
 from utils.log import (
     get_flow_run_name,
     log_flow_run_start,
@@ -84,6 +87,25 @@ async def process_item(
     )
 
 
+def transform_to_new_db_model(
+    data: list[AssetsRankingRecordDocument],
+) -> list[NewDbAssetsRankingRecord]:
+    result: list[NewDbAssetsRankingRecord] = []
+    for item in data:
+        result.append(  # noqa: PERF401
+            NewDbAssetsRankingRecord(
+                date=item.date.date(),
+                ranking=item.ranking,
+                user_slug=item.user_slug,
+                fp=item.amount.fp,
+                ftn=item.amount.ftn,
+                assets=item.amount.assets,
+            )
+        )
+
+    return result
+
+
 @flow(
     **generate_flow_config(
         name="采集资产排行榜记录",
@@ -103,6 +125,9 @@ async def main() -> None:
             break
 
     await AssetsRankingRecordDocument.insert_many(data)
+
+    new_data = transform_to_new_db_model(data)
+    await NewDbAssetsRankingRecord.insert_many(new_data)
 
     log_flow_run_success(logger, data_count=len(data))
 

@@ -15,6 +15,9 @@ from models.jianshu.article_earning_ranking_record import (
     EarningField,
 )
 from models.jianshu.user import UserDocument
+from models.new.jianshu.article_earning_ranking_record import (
+    ArticleEarningRankingRecord as NewDbArticleEarningRankingRecord,
+)
 from utils.log import (
     get_flow_run_name,
     log_flow_run_start,
@@ -88,6 +91,26 @@ async def process_item(
     )
 
 
+def transform_to_new_db_model(
+    data: list[ArticleEarningRankingRecordDocument],
+) -> list[NewDbArticleEarningRankingRecord]:
+    result: list[NewDbArticleEarningRankingRecord] = []
+    for item in data:
+        result.append(  # noqa: PERF401
+            NewDbArticleEarningRankingRecord(
+                date=item.date.date(),
+                ranking=item.ranking,
+                article_slug=item.article.slug,
+                article_title=item.article.title,
+                author_slug=item.author_slug,
+                earning_to_author=item.earning.to_author,
+                earning_to_voter=item.earning.to_voter,
+            )
+        )
+
+    return result
+
+
 @flow(
     **generate_flow_config(
         name="采集文章收益排行榜记录",
@@ -104,6 +127,9 @@ async def main() -> None:
         data.append(processed_item)
 
     await ArticleEarningRankingRecordDocument.insert_many(data)
+
+    new_data = transform_to_new_db_model(data)
+    await NewDbArticleEarningRankingRecord.insert_many(new_data)
 
     log_flow_run_success(logger, data_count=len(data))
 
