@@ -9,16 +9,8 @@ from prefect import flow
 from sshared.retry.asyncio import retry
 from sshared.time import get_today_as_datetime
 
-from models.jianshu.article_earning_ranking_record import (
-    ArticleEarningRankingRecordDocument,
-    ArticleField,
-    EarningField,
-)
-from models.jianshu.user import UserDocument
-from models.new.jianshu.article_earning_ranking_record import (
-    ArticleEarningRankingRecord as NewDbArticleEarningRankingRecord,
-)
-from models.new.jianshu.user import User as NewDbUser
+from models.jianshu.article_earning_ranking_record import ArticleEarningRankingRecord
+from models.jianshu.user import User
 from utils.log import (
     get_flow_run_name,
     log_flow_run_start,
@@ -66,56 +58,26 @@ async def get_author_slug_and_info(
 
 async def process_item(
     item: RecordField, date: datetime
-) -> ArticleEarningRankingRecordDocument:
+) -> ArticleEarningRankingRecord:
     author_slug, author_info = await get_author_slug_and_info(item)
 
     if author_slug is not None and author_info is not None:
-        await UserDocument.insert_or_update_one(
-            slug=author_slug,
-            id=author_info.id,
-            name=author_info.name,
-            avatar_url=author_info.avatar_url,
-        )
-        await NewDbUser.upsert(
+        await User.upsert(
             slug=author_slug,
             id=author_info.id,
             name=author_info.name,
             avatar_url=author_info.avatar_url,
         )
 
-    return ArticleEarningRankingRecordDocument(
-        date=date,
+    return ArticleEarningRankingRecord(
+        date=date.date(),
         ranking=item.ranking,
-        article=ArticleField(
-            title=item.title,
-            slug=item.slug,
-        ),
+        slug=item.slug,
+        title=item.title,
         author_slug=author_slug,
-        earning=EarningField(
-            to_author=item.fp_to_author_anount,
-            to_voter=item.fp_to_voter_amount,
-        ),
+        author_earning=item.fp_to_author_anount,
+        voter_earning=item.fp_to_voter_amount,
     )
-
-
-def transform_to_new_db_model(
-    data: list[ArticleEarningRankingRecordDocument],
-) -> list[NewDbArticleEarningRankingRecord]:
-    result: list[NewDbArticleEarningRankingRecord] = []
-    for item in data:
-        result.append(  # noqa: PERF401
-            NewDbArticleEarningRankingRecord(
-                date=item.date.date(),
-                ranking=item.ranking,
-                slug=item.article.slug,
-                title=item.article.title,
-                author_slug=item.author_slug,
-                author_earning=item.earning.to_author,
-                voter_earning=item.earning.to_voter,
-            )
-        )
-
-    return result
 
 
 @flow(
@@ -128,15 +90,12 @@ async def main() -> None:
 
     date = get_today_as_datetime() - timedelta(days=1)
 
-    data: list[ArticleEarningRankingRecordDocument] = []
+    data: list[ArticleEarningRankingRecord] = []
     async for item in ArticleEarningRanking(date.date()):
         processed_item = await process_item(item, date=date)
         data.append(processed_item)
 
-    await ArticleEarningRankingRecordDocument.insert_many(data)
-
-    new_data = transform_to_new_db_model(data)
-    await NewDbArticleEarningRankingRecord.insert_many(new_data)
+    await ArticleEarningRankingRecord.insert_many(data)
 
     log_flow_run_success(logger, data_count=len(data))
 

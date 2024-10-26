@@ -9,14 +9,9 @@ from prefect import flow
 from sshared.retry.asyncio import retry
 from sshared.time import get_today_as_datetime
 
-from models.jianshu.assets_ranking_record import (
-    AmountField,
-    AssetsRankingRecordDocument,
-)
-from models.jianshu.user import UserDocument
-from models.new.jianshu.user import User as NewDbUser
-from models.new.jianshu.user_assets_ranking_record import (
-    UserAssetsRankingRecord as NewDbAssetsRankingRecord,
+from models.jianshu.user import User as DbUser
+from models.jianshu.user_assets_ranking_record import (
+    UserAssetsRankingRecord as DbAssetsRankingRecord,
 )
 from utils.log import (
     get_flow_run_name,
@@ -65,52 +60,25 @@ async def get_fp_ftn_amount(
 
 async def process_item(
     item: AssetsRankingRecord, date: datetime
-) -> AssetsRankingRecordDocument:
+) -> DbAssetsRankingRecord:
     fp_amount, ftn_amount = await get_fp_ftn_amount(item)
 
     if item.user_info.slug:
-        await UserDocument.insert_or_update_one(
-            slug=item.user_info.slug,
-            id=item.user_info.id,
-            name=item.user_info.name,
-            avatar_url=item.user_info.avatar_url,
-        )
-        await NewDbUser.upsert(
+        await DbUser.upsert(
             slug=item.user_info.slug,
             id=item.user_info.id,
             name=item.user_info.name,
             avatar_url=item.user_info.avatar_url,
         )
 
-    return AssetsRankingRecordDocument(
-        date=date,
+    return DbAssetsRankingRecord(
+        date=date.date(),
         ranking=item.ranking,
-        amount=AmountField(
-            fp=fp_amount,
-            ftn=ftn_amount,
-            assets=item.assets_amount,
-        ),
-        user_slug=item.user_info.slug,
+        slug=item.user_info.slug,
+        fp=fp_amount,
+        ftn=ftn_amount,
+        assets=item.assets_amount,
     )
-
-
-def transform_to_new_db_model(
-    data: list[AssetsRankingRecordDocument],
-) -> list[NewDbAssetsRankingRecord]:
-    result: list[NewDbAssetsRankingRecord] = []
-    for item in data:
-        result.append(  # noqa: PERF401
-            NewDbAssetsRankingRecord(
-                date=item.date.date(),
-                ranking=item.ranking,
-                slug=item.user_slug,
-                fp=item.amount.fp,
-                ftn=item.amount.ftn,
-                assets=item.amount.assets,
-            )
-        )
-
-    return result
 
 
 @flow(
@@ -123,7 +91,7 @@ async def main() -> None:
 
     date = get_today_as_datetime()
 
-    data: list[AssetsRankingRecordDocument] = []
+    data: list[DbAssetsRankingRecord] = []
     async for item in AssetsRanking():
         processed_item = await process_item(item, date=date)
         data.append(processed_item)
@@ -131,10 +99,7 @@ async def main() -> None:
         if len(data) == 1000:
             break
 
-    await AssetsRankingRecordDocument.insert_many(data)
-
-    new_data = transform_to_new_db_model(data)
-    await NewDbAssetsRankingRecord.insert_many(new_data)
+    await DbAssetsRankingRecord.insert_many(data)
 
     log_flow_run_success(logger, data_count=len(data))
 
