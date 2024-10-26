@@ -1,108 +1,165 @@
 from datetime import datetime
 from enum import Enum
-from typing import Any, Optional
+from typing import Optional
 
-from jkit.msgspec_constraints import PositiveInt, UserName, UserSlug, UserUploadedUrl
-from sshared.mongo import Document, Index
+from sshared.postgres import Table, create_enum
+from sshared.strict_struct import NonEmptyStr, PositiveInt
 
-from utils.mongo import JIANSHU_DB
+from utils.postgres import get_jianshu_conn
 
 
-class JianshuUserStatus(Enum):
+class StatusEnum(Enum):
     NORMAL = "NORMAL"
-    INACCESSABLE = "INACCESSIBLE"
+    INACCESSIBLE = "INACCESSIBLE"
 
 
-class UserDocument(Document, frozen=True):
-    slug: UserSlug
-    status: JianshuUserStatus
-    updated_at: datetime
+class User(Table, frozen=True):
+    slug: NonEmptyStr
+    status: StatusEnum
+    update_time: datetime
     id: Optional[PositiveInt]
-    name: Optional[UserName]
-    history_names: list[UserName]
-    avatar_url: Optional[UserUploadedUrl]
+    name: Optional[NonEmptyStr]
+    history_names: list[NonEmptyStr]
+    avatar_url: Optional[NonEmptyStr]
 
-    class Meta:  # type: ignore
-        collection = JIANSHU_DB.users
-        indexes = (
-            Index(keys=("slug",), unique=True),
-            Index(keys=("updatedAt",)),
+    @classmethod
+    async def _create_enum(cls) -> None:
+        conn = await get_jianshu_conn()
+        await create_enum(conn=conn, name="enum_users_status", enum_class=StatusEnum)
+
+    @classmethod
+    async def _create_table(cls) -> None:
+        conn = await get_jianshu_conn()
+        await conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS users (
+                slug VARCHAR(12) CONSTRAINT pk_users_slug PRIMARY KEY,
+                status enum_users_status NOT NULL,
+                update_time TIMESTAMP NOT NULL,
+                id INTEGER,
+                name VARCHAR(15),
+                history_names VARCHAR(15)[] NOT NULL,
+                avatar_url TEXT
+            );
+            """
+        )
+
+    async def create(self) -> None:
+        self.validate()
+
+        conn = await get_jianshu_conn()
+        await conn.execute(
+            "INSERT INTO users (slug, status, update_time, id, name, "
+            "history_names, avatar_url) VALUES (%s, %s, %s, %s, %s, %s, %s);",
+            (
+                self.slug,
+                self.status,
+                self.update_time,
+                self.id,
+                self.name,
+                self.history_names,
+                self.avatar_url,
+            ),
         )
 
     @classmethod
-    async def is_record_exist(cls, slug: str) -> bool:
-        return await cls.find_one({"slug": slug}) is not None
+    async def get_by_slug(cls, slug: str) -> Optional["User"]:
+        conn = await get_jianshu_conn()
+        cursor = await conn.execute(
+            "SELECT status, update_time, id, name, history_names, "
+            "avatar_url FROM users WHERE slug = %s;",
+            (slug,),
+        )
+
+        data = await cursor.fetchone()
+        if not data:
+            return None
+
+        return cls(
+            slug=slug,
+            status=data[0],
+            update_time=data[1],
+            id=data[2],
+            name=data[3],
+            history_names=data[4],
+            avatar_url=data[5],
+        )
 
     @classmethod
-    async def insert_or_update_one(
+    async def upsert(
         cls,
-        *,
         slug: str,
-        updated_at: Optional[datetime] = None,
         id: Optional[int] = None,  # noqa: A002
         name: Optional[str] = None,
         avatar_url: Optional[str] = None,
     ) -> None:
-        if not updated_at:
-            updated_at = datetime.now()
-
-        if not await cls.is_record_exist(slug):
-            await UserDocument(
+        user = await cls.get_by_slug(slug)
+        # 如果不存在，创建用户
+        if not user:
+            await cls(
                 slug=slug,
-                status=JianshuUserStatus.NORMAL,
-                updated_at=updated_at,
+                status=StatusEnum.NORMAL,
+                update_time=datetime.now(),
                 id=id,
                 name=name,
                 history_names=[],
                 avatar_url=avatar_url,
-            ).save()
+            ).create()
             return
 
-        db_data = await cls.find_one({"slug": slug})
-        if not db_data:
-            raise AssertionError("意外的空值")
-        # 如果数据库中数据的更新时间晚于本次更新时间，则本次数据已不是最新
-        # 此时跳过更新
-        if updated_at < db_data.updated_at:
+        # 如果当前数据不是最新，跳过更新
+        if user.update_time > datetime.now():
             return
 
-        data_to_set: dict[str, Any] = {
-            # 刷新数据更新时间
-            "updatedAt": updated_at
-        }
+        # 在一个事务中一次性完成全部字段的更新
+        conn = await get_jianshu_conn()
+        async with conn.transaction():
+            # 更新更新时间
+            await conn.execute(
+                "UPDATE users SET update_time = %s WHERE slug = %s",
+                (datetime.now(), slug),
+            )
 
-        # 如果新数据中的 ID 与数据库不一致，报错
-        if (id is not None and db_data.id is not None) and id != db_data.id:
-            raise ValueError(f"ID 不一致（{id} 和 {db_data.id}）")
+            # ID 无法被修改，如果异常则抛出错误
+            if user.id and id and user.id != id:
+                raise ValueError(f"用户 ID 不一致：{user.id} != {id}")
 
-        # 如果获取到了之前未知的 ID，添加之
-        if id is not None and db_data.id is None:
-            data_to_set["id"] = id
+            # 如果没有存储 ID，进行添加
+            if not user.id and id:
+                await conn.execute(
+                    "UPDATE users SET id = %s WHERE slug = %s",
+                    (id, slug),
+                )
 
-        # 如果获取到了之前未知的昵称，添加之
-        if name is not None and db_data.name is None:
-            data_to_set["name"] = name
+            # 如果没有存储昵称，进行添加
+            if not user.name and name:
+                await conn.execute(
+                    "UPDATE users SET name = %s WHERE slug = %s",
+                    (name, slug),
+                )
 
-        # 如果昵称有变动，更新之
-        if (name is not None and db_data.name is not None) and name != db_data.name:
-            data_to_set["name"] = name
+            # 更新昵称
+            if user.name and name and user.name != name:
+                await conn.execute(
+                    "UPDATE users SET name = %s WHERE slug = %s",
+                    (name, slug),
+                )
+                await conn.execute(
+                    "UPDATE users SET history_names = array_append(history_names, %s) "
+                    "WHERE slug = %s;",
+                    (user.name, slug),
+                )
 
-            new_history_names = db_data.history_names.copy()
+            # 如果没有存储头像链接，进行添加
+            if not user.avatar_url and avatar_url:
+                await conn.execute(
+                    "UPDATE users SET avatar_url = %s WHERE slug = %s",
+                    (avatar_url, slug),
+                )
 
-            # 将旧昵称添加到历史昵称列表
-            new_history_names.append(db_data.name)
-            # 如果新昵称在历史昵称列表中，移除之
-            if name in new_history_names:
-                new_history_names.remove(name)
-
-            # 如果有变动，将历史昵称列表更新提交至数据库
-            if new_history_names != db_data.history_names:
-                data_to_set["historyNames"] = new_history_names
-
-        # 如果获取到了之前未知的头像链接，或头像链接有变动，添加 / 更新之
-        if avatar_url is not None and (
-            db_data.avatar_url is None or avatar_url != db_data.avatar_url
-        ):
-            data_to_set["avatarUrl"] = avatar_url
-
-        await cls.get_collection().update_one({"slug": slug}, {"$set": data_to_set})
+            # 更新头像链接
+            if user.avatar_url and avatar_url and user.avatar_url != avatar_url:
+                await conn.execute(
+                    "UPDATE users SET avatar_url = %s WHERE slug = %s",
+                    (avatar_url, slug),
+                )

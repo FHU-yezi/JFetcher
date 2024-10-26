@@ -1,36 +1,60 @@
-from datetime import datetime
+from datetime import date
 from typing import Optional
 
-from jkit.msgspec_constraints import (
-    ArticleSlug,
-    NonEmptyStr,
-    PositiveFloat,
-    PositiveInt,
-    UserSlug,
-)
-from sshared.mongo import Document, Field, Index
+from sshared.postgres import Table
+from sshared.strict_struct import NonEmptyStr, PositiveFloat, PositiveInt
 
-from utils.mongo import JIANSHU_DB
+from utils.postgres import get_jianshu_conn
 
 
-class ArticleField(Field, frozen=True):
-    slug: Optional[ArticleSlug]
-    title: Optional[NonEmptyStr]
-
-
-class EarningField(Field, frozen=True):
-    to_author: PositiveFloat
-    to_voter: PositiveFloat
-
-
-class ArticleEarningRankingRecordDocument(Document, frozen=True):
-    date: datetime
+class ArticleEarningRankingRecord(Table, frozen=True):
+    date: date
     ranking: PositiveInt
+    slug: Optional[NonEmptyStr]
+    title: Optional[NonEmptyStr]
+    author_slug: Optional[NonEmptyStr]
 
-    article: ArticleField
-    author_slug: Optional[UserSlug]
-    earning: EarningField
+    author_earning: PositiveFloat
+    voter_earning: PositiveFloat
 
-    class Meta:  # type: ignore
-        collection = JIANSHU_DB.article_earning_ranking_records
-        indexes = (Index(keys=("date", "ranking"), unique=True),)
+    @classmethod
+    async def _create_table(cls) -> None:
+        conn = await get_jianshu_conn()
+        await conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS article_earning_ranking_records (
+                date DATE NOT NULL,
+                ranking SMALLINT NOT NULL,
+                slug VARCHAR(12),
+                title TEXT,
+                author_slug VARCHAR(12),
+                author_earning NUMERIC NOT NULL,
+                voter_earning NUMERIC NOT NULL,
+                CONSTRAINT pk_article_earning_ranking_records_date_ranking PRIMARY KEY (date, ranking)
+            );
+            """  # noqa: E501
+        )
+
+    @classmethod
+    async def insert_many(cls, data: list["ArticleEarningRankingRecord"]) -> None:
+        for item in data:
+            item.validate()
+
+        conn = await get_jianshu_conn()
+        await conn.cursor().executemany(
+            "INSERT INTO article_earning_ranking_records (date, ranking, "
+            "slug, title, author_slug, author_earning, voter_earning) "
+            "VALUES (%s, %s, %s, %s, %s, %s, %s);",
+            [
+                (
+                    item.date,
+                    item.ranking,
+                    item.slug,
+                    item.title,
+                    item.author_slug,
+                    item.author_earning,
+                    item.voter_earning,
+                )
+                for item in data
+            ],
+        )

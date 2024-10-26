@@ -4,7 +4,7 @@ from typing import Optional
 from sshared.postgres import Table
 from sshared.strict_struct import NonEmptyStr, NonNegativeFloat, PositiveInt
 
-from utils.postgres import jianshu_conn
+from utils.postgres import get_jianshu_conn
 
 
 class UserAssetsRankingRecord(Table, frozen=True):
@@ -18,7 +18,8 @@ class UserAssetsRankingRecord(Table, frozen=True):
 
     @classmethod
     async def _create_table(cls) -> None:
-        await jianshu_conn.execute(
+        conn = await get_jianshu_conn()
+        await conn.execute(
             """
             CREATE TABLE IF NOT EXISTS user_assets_ranking_records (
                 date DATE NOT NULL,
@@ -37,7 +38,8 @@ class UserAssetsRankingRecord(Table, frozen=True):
         for item in data:
             item.validate()
 
-        await jianshu_conn.cursor().executemany(
+        conn = await get_jianshu_conn()
+        await conn.cursor().executemany(
             "INSERT INTO user_assets_ranking_records (date, ranking, "
             "slug, fp, ftn, assets) VALUES (%s, %s, %s, %s, %s, %s);",
             [
