@@ -5,7 +5,7 @@ from typing import Optional
 from sshared.postgres import Table, create_enum
 from sshared.strict_struct import NonEmptyStr, PositiveInt
 
-from utils.postgres import jianshu_conn
+from utils.postgres import get_jianshu_conn
 
 
 class StatusEnum(Enum):
@@ -24,13 +24,13 @@ class User(Table, frozen=True):
 
     @classmethod
     async def _create_enum(cls) -> None:
-        await create_enum(
-            conn=jianshu_conn, name="enum_users_status", enum_class=StatusEnum
-        )
+        conn = await get_jianshu_conn()
+        await create_enum(conn=conn, name="enum_users_status", enum_class=StatusEnum)
 
     @classmethod
     async def _create_table(cls) -> None:
-        await jianshu_conn.execute(
+        conn = await get_jianshu_conn()
+        await conn.execute(
             """
             CREATE TABLE IF NOT EXISTS users (
                 slug VARCHAR(12) CONSTRAINT pk_users_slug PRIMARY KEY,
@@ -46,7 +46,9 @@ class User(Table, frozen=True):
 
     async def create(self) -> None:
         self.validate()
-        await jianshu_conn.execute(
+
+        conn = await get_jianshu_conn()
+        await conn.execute(
             "INSERT INTO users (slug, status, update_time, id, name, "
             "history_names, avatar_url) VALUES (%s, %s, %s, %s, %s, %s, %s);",
             (
@@ -62,7 +64,8 @@ class User(Table, frozen=True):
 
     @classmethod
     async def get_by_slug(cls, slug: str) -> Optional["User"]:
-        cursor = await jianshu_conn.execute(
+        conn = await get_jianshu_conn()
+        cursor = await conn.execute(
             "SELECT status, update_time, id, name, history_names, "
             "avatar_url FROM users WHERE slug = %s;",
             (slug,),
@@ -109,9 +112,10 @@ class User(Table, frozen=True):
             return
 
         # 在一个事务中一次性完成全部字段的更新
-        async with jianshu_conn.transaction():
+        conn = await get_jianshu_conn()
+        async with conn.transaction():
             # 更新更新时间
-            await jianshu_conn.execute(
+            await conn.execute(
                 "UPDATE users SET update_time = %s WHERE slug = %s",
                 (datetime.now(), slug),
             )
@@ -122,25 +126,25 @@ class User(Table, frozen=True):
 
             # 如果没有存储 ID，进行添加
             if not user.id and id:
-                await jianshu_conn.execute(
+                await conn.execute(
                     "UPDATE users SET id = %s WHERE slug = %s",
                     (id, slug),
                 )
 
             # 如果没有存储昵称，进行添加
             if not user.name and name:
-                await jianshu_conn.execute(
+                await conn.execute(
                     "UPDATE users SET name = %s WHERE slug = %s",
                     (name, slug),
                 )
 
             # 更新昵称
             if user.name and name and user.name != name:
-                await jianshu_conn.execute(
+                await conn.execute(
                     "UPDATE users SET name = %s WHERE slug = %s",
                     (name, slug),
                 )
-                await jianshu_conn.execute(
+                await conn.execute(
                     "UPDATE users SET history_names = array_append(history_names, %s) "
                     "WHERE slug = %s;",
                     (user.name, slug),
@@ -148,14 +152,14 @@ class User(Table, frozen=True):
 
             # 如果没有存储头像链接，进行添加
             if not user.avatar_url and avatar_url:
-                await jianshu_conn.execute(
+                await conn.execute(
                     "UPDATE users SET avatar_url = %s WHERE slug = %s",
                     (avatar_url, slug),
                 )
 
             # 更新头像链接
             if user.avatar_url and avatar_url and user.avatar_url != avatar_url:
-                await jianshu_conn.execute(
+                await conn.execute(
                     "UPDATE users SET avatar_url = %s WHERE slug = %s",
                     (avatar_url, slug),
                 )

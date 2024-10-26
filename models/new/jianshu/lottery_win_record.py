@@ -3,7 +3,7 @@ from datetime import datetime
 from sshared.postgres import Table
 from sshared.strict_struct import NonEmptyStr, PositiveInt
 
-from utils.postgres import jianshu_conn
+from utils.postgres import get_jianshu_conn
 
 
 class LotteryWinRecord(Table, frozen=True):
@@ -14,7 +14,8 @@ class LotteryWinRecord(Table, frozen=True):
 
     @classmethod
     async def _create_table(cls) -> None:
-        await jianshu_conn.execute(
+        conn = await get_jianshu_conn()
+        await conn.execute(
             """
             CREATE TABLE IF NOT EXISTS lottery_win_records (
                 id INTEGER CONSTRAINT pk_lottery_win_records_id PRIMARY KEY,
@@ -30,7 +31,8 @@ class LotteryWinRecord(Table, frozen=True):
         for item in data:
             item.validate()
 
-        await jianshu_conn.cursor().executemany(
+        conn = await get_jianshu_conn()
+        await conn.cursor().executemany(
             "INSERT INTO lottery_win_records (id, time, user_slug, "
             "award_name) VALUES (%s, %s, %s, %s);",
             [
