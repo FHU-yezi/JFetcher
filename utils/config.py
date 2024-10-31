@@ -4,7 +4,8 @@ from sshared.config.blocks import GotifyBlock, LoggingBlock, MongoBlock, Postgre
 
 class _Config(ConfigBase, frozen=True):
     mongo: MongoBlock
-    postgres: PostgresBlock
+    jianshu_postgres: PostgresBlock
+    jpep_postgres: PostgresBlock
     logging: LoggingBlock
     notify: GotifyBlock
 
