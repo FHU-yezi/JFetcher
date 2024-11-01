@@ -11,4 +11,4 @@ _jianshu_connection_manager = ConnectionManager(
 _jpep_connection_manager = ConnectionManager(CONFIG.jpep_postgres.connection_string)
 
 get_jianshu_conn = _jianshu_connection_manager.get_conn
-get_jianshu_conn = _jpep_connection_manager.get_conn
+get_jpep_conn = _jpep_connection_manager.get_conn
