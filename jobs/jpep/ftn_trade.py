@@ -6,6 +6,8 @@ from prefect import flow
 
 from models.jpep.credit_record import CreditRecord
 from models.jpep.ftn_trade_order import AmountField, FTNTradeOrderDocument
+from models.jpep.new.ftn_macket_record import FTNMacketRecord
+from models.jpep.new.ftn_order import FTNOrder, TypeEnum
 from models.jpep.user import User
 from utils.log import log_flow_run_start, log_flow_run_success, logger
 from utils.prefect_helper import (
@@ -68,6 +70,40 @@ async def process_item(
     )
 
 
+async def transform_and_write_new_data_source(
+    type: Literal["buy", "sell"],  # noqa: A002
+    old_data: list[FTNTradeOrderDocument],
+) -> None:
+    new_data: list[FTNMacketRecord] = []
+    for item in old_data:
+        order = await FTNOrder.get_by_id(item.id)
+        if not order:
+            await FTNOrder(
+                id=item.id,
+                type={"buy": TypeEnum.BUY, "sell": TypeEnum.SELL}[type],
+                publisher_id=item.publisher_id,
+                publish_time=item.published_at,
+                last_seen_time=item.fetch_time,
+            ).create()
+        else:
+            await FTNOrder.update_last_seen_time(order.id, item.fetch_time)
+
+        new_data.append(
+            FTNMacketRecord(
+                fetch_time=item.fetch_time,
+                id=item.id,
+                price=item.price,
+                traded_count=item.traded_count,
+                total_amount=item.amount.total,
+                traded_amount=item.amount.traded,
+                remaining_amount=item.amount.tradable,
+                minimum_trade_amount=item.amount.minimum_trade,
+            )
+        )
+
+    await FTNMacketRecord.insert_many(new_data)
+
+
 @flow(
     **generate_flow_config(
         name="采集简书积分兑换平台简书贝交易挂单",
@@ -85,6 +121,7 @@ async def main(type: Literal["buy", "sell"]) -> None:  # noqa: A002
 
     if data:
         await FTNTradeOrderDocument.insert_many(data)
+        await transform_and_write_new_data_source(type, data)
     else:
         logger.warn("没有可采集的挂单信息，跳过数据写入")
 
