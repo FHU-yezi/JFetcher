@@ -4,12 +4,11 @@ from typing import Literal
 from jkit.jpep.ftn_macket import FTNMacket, FTNMacketOrderRecord
 from prefect import flow
 
-from models.jpep.credit_history import CreditHistoryDocument
-from models.jpep.ftn_trade_order import (
-    AmountField,
-    FTNTradeOrderDocument,
-)
-from models.jpep.user import UserDocument
+from models.jpep.credit_record import CreditRecord
+from models.jpep.ftn_trade_order import AmountField, FTNTradeOrderDocument
+from models.jpep.new.ftn_macket_record import FTNMacketRecord
+from models.jpep.new.ftn_order import FTNOrder, TypeEnum
+from models.jpep.user import User
 from utils.log import log_flow_run_start, log_flow_run_success, logger
 from utils.prefect_helper import (
     generate_deployment_config,
@@ -38,23 +37,21 @@ async def process_item(
     type: Literal["buy", "sell"],  # noqa: A002
 ) -> FTNTradeOrderDocument:
     if item.publisher_info.id:
-        await UserDocument.insert_or_update_one(
-            updated_at=time,
+        await User.upsert(
             id=item.publisher_info.id,
             name=item.publisher_info.name,
             hashed_name=item.publisher_info.hashed_name,
             avatar_url=item.publisher_info.avatar_url,
         )
 
-        latest_credit_value = await CreditHistoryDocument.get_latest_value(
-            item.publisher_info.id
-        )
-        if not latest_credit_value or latest_credit_value != item.publisher_info.credit:
-            await CreditHistoryDocument(
+        latest_credit = await CreditRecord.get_latest_credit(item.publisher_info.id)
+        # 如果没有记录过这个用户的信用值，或信用值已修改，增加新的记录
+        if not latest_credit or latest_credit != item.publisher_info.credit:
+            await CreditRecord(
                 time=time,
                 user_id=item.publisher_info.id,
-                value=item.publisher_info.credit,
-            ).save()
+                credit=item.publisher_info.credit,
+            ).create()
 
     return FTNTradeOrderDocument(
         fetch_time=time,
@@ -71,6 +68,40 @@ async def process_item(
         ),
         publisher_id=item.publisher_info.id,
     )
+
+
+async def transform_and_write_new_data_source(
+    type: Literal["buy", "sell"],  # noqa: A002
+    old_data: list[FTNTradeOrderDocument],
+) -> None:
+    new_data: list[FTNMacketRecord] = []
+    for item in old_data:
+        order = await FTNOrder.get_by_id(item.id)
+        if not order:
+            await FTNOrder(
+                id=item.id,
+                type={"buy": TypeEnum.BUY, "sell": TypeEnum.SELL}[type],
+                publisher_id=item.publisher_id,
+                publish_time=item.published_at,
+                last_seen_time=item.fetch_time,
+            ).create()
+        else:
+            await FTNOrder.update_last_seen_time(order.id, item.fetch_time)
+
+        new_data.append(
+            FTNMacketRecord(
+                fetch_time=item.fetch_time,
+                id=item.id,
+                price=item.price,
+                traded_count=item.traded_count,
+                total_amount=item.amount.total,
+                traded_amount=item.amount.traded,
+                remaining_amount=item.amount.tradable,
+                minimum_trade_amount=item.amount.minimum_trade,
+            )
+        )
+
+    await FTNMacketRecord.insert_many(new_data)
 
 
 @flow(
@@ -90,6 +121,7 @@ async def main(type: Literal["buy", "sell"]) -> None:  # noqa: A002
 
     if data:
         await FTNTradeOrderDocument.insert_many(data)
+        await transform_and_write_new_data_source(type, data)
     else:
         logger.warn("没有可采集的挂单信息，跳过数据写入")
 

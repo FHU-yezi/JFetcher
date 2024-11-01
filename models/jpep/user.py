@@ -1,96 +1,119 @@
 from datetime import datetime
-from typing import Any, Optional
+from typing import Optional
 
-from jkit.msgspec_constraints import NonNegativeInt, PositiveInt
-from sshared.mongo import Document, Field, Index
+from sshared.postgres import Table
+from sshared.strict_struct import (
+    NonEmptyStr,
+    PositiveInt,
+)
 
-from utils.mongo import JPEP_DB
-
-
-class CreditHistoryFieldItem(Field, frozen=True):
-    time: datetime
-    value: NonNegativeInt
+from utils.postgres import get_jpep_conn
 
 
-class UserDocument(Document, frozen=True):
-    updated_at: datetime
+class User(Table, frozen=True):
     id: PositiveInt
-    name: str
-    hashed_name: Optional[str]
-    avatar_url: Optional[str]
+    update_time: datetime
+    name: NonEmptyStr
+    hashed_name: NonEmptyStr
+    avatar_url: Optional[NonEmptyStr]
 
-    class Meta:  # type: ignore
-        collection = JPEP_DB.users
-        indexes = (
-            Index(keys=("id",), unique=True),
-            Index(keys=("updatedAt",)),
+    @classmethod
+    async def _create_table(cls) -> None:
+        conn = await get_jpep_conn()
+        await conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS users (
+                id INTEGER NOT NULL CONSTRAINT pk_users_id PRIMARY KEY,
+                update_time TIMESTAMP NOT NULL,
+                name TEXT NOT NULL,
+                hashed_name VARCHAR(9) NOT NULL,
+                avatar_url TEXT
+            );
+            """
+        )
+
+    async def create(self) -> None:
+        self.validate()
+
+        conn = await get_jpep_conn()
+        await conn.execute(
+            "INSERT INTO users (id, update_time, name, hashed_name, avatar_url) VALUES "
+            "(%s, %s, %s, %s, %s);",
+            (self.id, self.update_time, self.name, self.hashed_name, self.avatar_url),
         )
 
     @classmethod
-    async def is_record_exist(cls, id: int) -> bool:  # noqa: A002
-        return await cls.find_one({"id": id}) is not None
+    async def get_by_id(cls, id: int) -> Optional["User"]:  # noqa: A002
+        conn = await get_jpep_conn()
+        cursor = await conn.execute(
+            "SELECT update_time, name, hashed_name, avatar_url "
+            "FROM users WHERE id = %s",
+            (id,),
+        )
+
+        data = await cursor.fetchone()
+        if not data:
+            return None
+
+        return cls(
+            id=id,
+            update_time=data[0],
+            name=data[1],
+            hashed_name=data[2],
+            avatar_url=data[3],
+        )
 
     @classmethod
-    async def insert_or_update_one(
+    async def upsert(
         cls,
-        *,
-        updated_at: Optional[datetime] = None,
         id: int,  # noqa: A002
         name: str,
         hashed_name: str,
-        avatar_url: Optional[str],
+        avatar_url: Optional[str] = None,
     ) -> None:
-        if not updated_at:
-            updated_at = datetime.now()
-
-        if not await cls.is_record_exist(id):
-            await UserDocument(
-                updated_at=updated_at,
+        user = await cls.get_by_id(id)
+        # 如果不存在，创建用户
+        if not user:
+            await cls(
                 id=id,
+                update_time=datetime.now(),
                 name=name,
                 hashed_name=hashed_name,
                 avatar_url=avatar_url,
-            ).save()
+            ).create()
             return
 
-        db_data = await cls.find_one({"id": id})
-        if not db_data:
-            raise AssertionError("意外的空值")
-        # 如果数据库中数据的更新时间晚于本次更新时间，则本次数据已不是最新
-        # 此时跳过更新
-        if updated_at < db_data.updated_at:
+        # 如果当前数据不是最新，跳过更新
+        if user.update_time > datetime.now():
             return
 
-        update_data: dict[str, Any] = {
-            "$set": {
-                # 即使没有要更新的数据，也要刷新更新时间
-                "updatedAt": updated_at,
-            }
-        }
-        # 如果昵称不一致，更新之
-        if (name is not None and db_data.name is not None) and name != db_data.name:
-            update_data["$set"]["name"] = name
+        # 在一个事务中一次性完成全部字段的更新
+        conn = await get_jpep_conn()
+        async with conn.transaction():
+            # 更新更新时间
+            await conn.execute(
+                "UPDATE users SET update_time = %s WHERE id = %s",
+                (datetime.now(), id),
+            )
 
-        # 如果头像链接有变动，更新之
-        if avatar_url is not None and avatar_url != db_data.avatar_url:
-            update_data["$set"]["avatarUrl"] = avatar_url
+            # 更新昵称和哈希后昵称
+            if user.name and name and user.name != name:
+                # 哈希后昵称一定会跟随昵称变化，一同更新
+                await conn.execute(
+                    "UPDATE users SET name = %s, hashed_name = %s WHERE id = %s",
+                    (name, hashed_name, id),
+                )
 
-        await cls.get_collection().update_one({"id": id}, update_data)
+            # 如果没有存储头像链接，进行添加
+            if not user.avatar_url and avatar_url:
+                await conn.execute(
+                    "UPDATE users SET avatar_url = %s WHERE id = %s",
+                    (avatar_url, id),
+                )
 
-    @classmethod
-    async def insert_one_if_not_exist(
-        cls,
-        *,
-        updated_at: datetime,
-        id: int,  # noqa: A002
-        name: str,
-        hashed_name: Optional[str],
-    ) -> None:
-        if not await cls.is_record_exist(id):
-            await UserDocument(
-                updated_at=updated_at,
-                id=id,
-                name=name,
-                hashed_name=hashed_name,
-                avatar_url=None,
-            ).save()
+            # 更新头像链接
+            if user.avatar_url and avatar_url and user.avatar_url != avatar_url:
+                await conn.execute(
+                    "UPDATE users SET avatar_url = %s WHERE id = %s",
+                    (avatar_url, id),
+                )
