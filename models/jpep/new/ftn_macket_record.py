@@ -31,8 +31,23 @@ class FTNMacketRecord(Table, frozen=True):
                 remaining_amount INTEGER NOT NULL,
                 minimum_trade_amount INTEGER NOT NULL,
                 CONSTRAINT pk_ftn_macket_records_fetch_time_id PRIMARY KEY (fetch_time, id)
-            );
+            ) PARTITION BY RANGE (fetch_time);
             """  # noqa: E501
+        )
+        await conn.execute(
+            "CREATE TABLE IF NOT EXISTS ftn_macket_records_2023 PARTITION "
+            "OF ftn_macket_records FOR VALUES FROM ('2023-01-01 00:00:00') "
+            "TO ('2023-12-31 23:59:59');"
+        )
+        await conn.execute(
+            "CREATE TABLE IF NOT EXISTS ftn_macket_records_2024 PARTITION "
+            "OF ftn_macket_records FOR VALUES FROM ('2024-01-01 00:00:00') "
+            "TO ('2024-12-31 23:59:59');"
+        )
+        await conn.execute(
+            "CREATE TABLE IF NOT EXISTS ftn_macket_records_2025 PARTITION "
+            "OF ftn_macket_records FOR VALUES FROM ('2025-01-01 00:00:00') "
+            "TO ('2025-12-31 23:59:59');"
         )
 
     @classmethod
