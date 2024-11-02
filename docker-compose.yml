@@ -8,7 +8,7 @@ networks:
 
 services:
   main:
-    image: jfetcher:3.8.0
+    image: jfetcher:3.9.0
     container_name: jfetcher
     build: .
     volumes:
