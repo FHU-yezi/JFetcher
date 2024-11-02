@@ -1,6 +1,6 @@
 [project]
 name = "jfetcher"
-version = "3.8.0"
+version = "3.9.0"
 description = "简书数据采集工具"
 readme = "README.md"
 license = {file = "LICENSE"}
@@ -12,7 +12,7 @@ dependencies = [
     "jkit>=3.0.0a16",
     "prefect<3.0.0",
     "psycopg[binary]>=3.2.0",
-    "sshared[config,mongo,postgres]>=0.16.0",
+    "sshared[config,postgres]>=0.16.0",
 ]
 
 [tool.uv]

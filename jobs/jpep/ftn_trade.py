@@ -5,9 +5,8 @@ from jkit.jpep.ftn_macket import FTNMacket, FTNMacketOrderRecord
 from prefect import flow
 
 from models.jpep.credit_record import CreditRecord
-from models.jpep.ftn_trade_order import AmountField, FTNTradeOrderDocument
-from models.jpep.new.ftn_macket_record import FTNMacketRecord
-from models.jpep.new.ftn_order import FTNOrder, TypeEnum
+from models.jpep.ftn_macket_record import FTNMacketRecord
+from models.jpep.ftn_order import FTNOrder, TypeEnum
 from models.jpep.user import User
 from utils.log import log_flow_run_start, log_flow_run_success, logger
 from utils.prefect_helper import (
@@ -35,7 +34,7 @@ async def process_item(
     item: FTNMacketOrderRecord,
     time: datetime,
     type: Literal["buy", "sell"],  # noqa: A002
-) -> FTNTradeOrderDocument:
+) -> FTNMacketRecord:
     if item.publisher_info.id:
         await User.upsert(
             id=item.publisher_info.id,
@@ -53,55 +52,28 @@ async def process_item(
                 credit=item.publisher_info.credit,
             ).create()
 
-    return FTNTradeOrderDocument(
+    order = await FTNOrder.get_by_id(item.id)
+    if not order:
+        await FTNOrder(
+            id=item.id,
+            type={"buy": TypeEnum.BUY, "sell": TypeEnum.SELL}[type],
+            publisher_id=item.publisher_info.id,
+            publish_time=item.publish_time,
+            last_seen_time=time,
+        ).create()
+    else:
+        await FTNOrder.update_last_seen_time(order.id, time)
+
+    return FTNMacketRecord(
         fetch_time=time,
         id=item.id,
-        published_at=item.publish_time,
-        type=type,
         price=item.price,
         traded_count=item.traded_count,
-        amount=AmountField(
-            total=item.total_amount,
-            traded=item.traded_amount,
-            tradable=item.tradable_amount,
-            minimum_trade=item.minimum_trade_amount,
-        ),
-        publisher_id=item.publisher_info.id,
+        total_amount=item.total_amount,
+        traded_amount=item.traded_amount,
+        remaining_amount=item.tradable_amount,
+        minimum_trade_amount=item.minimum_trade_amount,
     )
-
-
-async def transform_and_write_new_data_source(
-    type: Literal["buy", "sell"],  # noqa: A002
-    old_data: list[FTNTradeOrderDocument],
-) -> None:
-    new_data: list[FTNMacketRecord] = []
-    for item in old_data:
-        order = await FTNOrder.get_by_id(item.id)
-        if not order:
-            await FTNOrder(
-                id=item.id,
-                type={"buy": TypeEnum.BUY, "sell": TypeEnum.SELL}[type],
-                publisher_id=item.publisher_id,
-                publish_time=item.published_at,
-                last_seen_time=item.fetch_time,
-            ).create()
-        else:
-            await FTNOrder.update_last_seen_time(order.id, item.fetch_time)
-
-        new_data.append(
-            FTNMacketRecord(
-                fetch_time=item.fetch_time,
-                id=item.id,
-                price=item.price,
-                traded_count=item.traded_count,
-                total_amount=item.amount.total,
-                traded_amount=item.amount.traded,
-                remaining_amount=item.amount.tradable,
-                minimum_trade_amount=item.amount.minimum_trade,
-            )
-        )
-
-    await FTNMacketRecord.insert_many(new_data)
 
 
 @flow(
@@ -114,14 +86,13 @@ async def main(type: Literal["buy", "sell"]) -> None:  # noqa: A002
 
     fetch_time = get_fetch_time()
 
-    data: list[FTNTradeOrderDocument] = []
+    data: list[FTNMacketRecord] = []
     async for item in FTNMacket().iter_orders(type=type):
         processed_item = await process_item(item, time=fetch_time, type=type)
         data.append(processed_item)
 
     if data:
-        await FTNTradeOrderDocument.insert_many(data)
-        await transform_and_write_new_data_source(type, data)
+        await FTNMacketRecord.insert_many(data)
     else:
         logger.warn("没有可采集的挂单信息，跳过数据写入")
 
