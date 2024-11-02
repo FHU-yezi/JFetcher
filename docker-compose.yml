@@ -20,7 +20,8 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - PREFECT_API_URL=http://prefect:4200/api
-    deploy:      resources:
+    deploy:
+      resources:
         limits:
           memory: 1G
       restart_policy:
