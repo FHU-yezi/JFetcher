@@ -1,8 +1,6 @@
 networks:
   gotify:
     external: true
-  mongodb:
-    external: true
   postgres:
     external: true
   prefect:
@@ -17,14 +15,12 @@ services:
       - ./config.toml:/app/config.toml:ro
     networks:
       - gotify
-      - mongodb
       - postgres
       - prefect
     environment:
       - PYTHONUNBUFFERED=1
       - PREFECT_API_URL=http://prefect:4200/api
-    deploy:
-      resources:
+    deploy:      resources:
         limits:
           memory: 1G
       restart_policy:
