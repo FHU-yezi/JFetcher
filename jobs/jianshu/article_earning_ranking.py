@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import date, timedelta
 from typing import Optional
 
 from jkit.config import CONFIG
@@ -7,7 +7,6 @@ from jkit.ranking.article_earning import ArticleEarningRanking, RecordField
 from jkit.user import UserInfo
 from prefect import flow
 from sshared.retry.asyncio import retry
-from sshared.time import get_today_as_datetime
 
 from models.jianshu.article_earning_ranking_record import ArticleEarningRankingRecord
 from models.jianshu.user import User
@@ -56,9 +55,7 @@ async def get_author_slug_and_info(
         return None, None
 
 
-async def process_item(
-    item: RecordField, date: datetime
-) -> ArticleEarningRankingRecord:
+async def process_item(item: RecordField, date_: date) -> ArticleEarningRankingRecord:
     author_slug, author_info = await get_author_slug_and_info(item)
 
     if author_slug is not None and author_info is not None:
@@ -70,7 +67,7 @@ async def process_item(
         )
 
     return ArticleEarningRankingRecord(
-        date=date.date(),
+        date=date_,
         ranking=item.ranking,
         slug=item.slug,
         title=item.title,
@@ -88,11 +85,11 @@ async def process_item(
 async def main() -> None:
     log_flow_run_start(logger)
 
-    date = get_today_as_datetime() - timedelta(days=1)
+    date_ = date.today() - timedelta(days=1)
 
     data: list[ArticleEarningRankingRecord] = []
-    async for item in ArticleEarningRanking(date.date()):
-        processed_item = await process_item(item, date=date)
+    async for item in ArticleEarningRanking(date_):
+        processed_item = await process_item(item, date_=date_)
         data.append(processed_item)
 
     await ArticleEarningRankingRecord.insert_many(data)

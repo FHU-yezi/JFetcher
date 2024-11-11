@@ -1,11 +1,10 @@
-from datetime import datetime
+from datetime import date
 
 from jkit.ranking.daily_update import (
     DailyUpdateRanking,
     DailyUpdateRankingRecord,
 )
 from prefect import flow
-from sshared.time import get_today_as_datetime
 
 from models.jianshu.daily_update_ranking_record import (
     DailyUpdateRankingRecord as DbDailyUpdateRankingRecord,
@@ -19,7 +18,7 @@ from utils.prefect_helper import (
 
 
 async def process_item(
-    item: DailyUpdateRankingRecord, date: datetime
+    item: DailyUpdateRankingRecord, date_: date
 ) -> DbDailyUpdateRankingRecord:
     await User.upsert(
         slug=item.user_info.slug,
@@ -28,7 +27,7 @@ async def process_item(
     )
 
     return DbDailyUpdateRankingRecord(
-        date=date.date(),
+        date=date_,
         ranking=item.ranking,
         slug=item.user_info.slug,
         days=item.days,
@@ -43,11 +42,11 @@ async def process_item(
 async def main() -> None:
     log_flow_run_start(logger)
 
-    date = get_today_as_datetime()
+    date_ = date.today()
 
     data: list[DbDailyUpdateRankingRecord] = []
     async for item in DailyUpdateRanking():
-        processed_item = await process_item(item, date=date)
+        processed_item = await process_item(item, date_=date_)
         data.append(processed_item)
 
     await DbDailyUpdateRankingRecord.insert_many(data)
