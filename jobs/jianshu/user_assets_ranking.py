@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date
 from typing import Optional
 
 from jkit.config import CONFIG
@@ -7,7 +7,6 @@ from jkit.ranking.assets import AssetsRanking, AssetsRankingRecord
 from jkit.user import User
 from prefect import flow
 from sshared.retry.asyncio import retry
-from sshared.time import get_today_as_datetime
 
 from models.jianshu.user import User as DbUser
 from models.jianshu.user_assets_ranking_record import (
@@ -58,9 +57,7 @@ async def get_fp_ftn_amount(
         return None, None
 
 
-async def process_item(
-    item: AssetsRankingRecord, date: datetime
-) -> DbAssetsRankingRecord:
+async def process_item(item: AssetsRankingRecord, date_: date) -> DbAssetsRankingRecord:
     fp_amount, ftn_amount = await get_fp_ftn_amount(item)
 
     if item.user_info.slug:
@@ -72,7 +69,7 @@ async def process_item(
         )
 
     return DbAssetsRankingRecord(
-        date=date.date(),
+        date=date_,
         ranking=item.ranking,
         slug=item.user_info.slug,
         fp=fp_amount,
@@ -89,11 +86,11 @@ async def process_item(
 async def main() -> None:
     log_flow_run_start(logger)
 
-    date = get_today_as_datetime()
+    date_ = date.today()
 
     data: list[DbAssetsRankingRecord] = []
     async for item in AssetsRanking():
-        processed_item = await process_item(item, date=date)
+        processed_item = await process_item(item, date_=date_)
         data.append(processed_item)
 
         if len(data) == 1000:

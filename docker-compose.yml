@@ -8,7 +8,7 @@ networks:
 
 services:
   main:
-    image: jfetcher:3.9.0
+    image: jfetcher:3.10.0
     container_name: jfetcher
     build: .
     volumes:
@@ -20,7 +20,8 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - PREFECT_API_URL=http://prefect:4200/api
-    deploy:      resources:
+    deploy:
+      resources:
         limits:
           memory: 1G
       restart_policy:

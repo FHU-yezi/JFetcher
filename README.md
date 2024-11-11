@@ -8,19 +8,21 @@
 
 ## 数据库准备
 
-创建用户：
+进入 `sql` 目录：
 
-```sql
-CREATE ROLE jfetcher LOGIN PASSWORD 'jfetcher';
+```shell
+cd sql
 ```
 
-创建数据库：
+如果您需要修改数据库用户名和密码，请修改 `sql` 目录下的 `0.sql` 和每个子目录下的 `0.sql` 文件。
 
-```sql
-CREATE DATABASE jianshu WITH OWNER = jfetcher;
-CREATE DATABASE jpep WITH OWNER = jfetcher;
-CREATE DATABASE logs;
-```
+您需要一个具有创建用户和数据库权限的用户（一般是超级用户）来完成数据库准备。
+
+每个目录中的 SQL 脚本均应按照编号顺序执行。
+
+首先，执行 `sql` 目录下的脚本。
+
+依次切换到与 `sql` 下的子目录（数据库目录）名称相同的数据库中，先执行每个表目录中的 SQL 脚本，再执行数据库目录下的 SQL 脚本。
 
 ## 配置
 
@@ -37,7 +39,7 @@ cp config.example.toml config.toml
 - logging.host 填写 `postgres`
 - notify.host 填写 `gotify`
 
-同时，您需要填写正确的 `postgres.user` 和 `postgres.password`。
+同时，您需要填写正确的 `{db_name}_postgres.user` 和 `{db_name}_postgres.password`。
 
 ## 使用 Docker 部署
 
