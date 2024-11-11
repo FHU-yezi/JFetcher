@@ -22,7 +22,7 @@ from utils.prefect_helper import (
 )
 
 
-@retry(attempts=5, delay=10)
+@retry(attempts=3, delay=5)
 async def get_author_slug_and_info(
     item: RecordField,
 ) -> tuple[Optional[str], Optional[UserInfo]]:
