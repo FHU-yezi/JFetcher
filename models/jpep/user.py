@@ -17,21 +17,6 @@ class User(Table, frozen=True):
     hashed_name: NonEmptyStr
     avatar_url: Optional[NonEmptyStr]
 
-    @classmethod
-    async def _create_table(cls) -> None:
-        async with jpep_pool.get_conn() as conn:
-            await conn.execute(
-                """
-                CREATE TABLE IF NOT EXISTS users (
-                    id INTEGER NOT NULL CONSTRAINT pk_users_id PRIMARY KEY,
-                    update_time TIMESTAMP NOT NULL,
-                    name TEXT NOT NULL,
-                    hashed_name VARCHAR(9) NOT NULL,
-                    avatar_url TEXT
-                );
-                """
-            )
-
     async def create(self) -> None:
         self.validate()
 
@@ -53,7 +38,7 @@ class User(Table, frozen=True):
         async with jpep_pool.get_conn() as conn:
             cursor = await conn.execute(
                 "SELECT update_time, name, hashed_name, avatar_url "
-                "FROM users WHERE id = %s",
+                "FROM users WHERE id = %s;",
                 (id,),
             )
 
@@ -98,7 +83,7 @@ class User(Table, frozen=True):
             async with conn.transaction():
                 # 更新更新时间
                 await conn.execute(
-                    "UPDATE users SET update_time = %s WHERE id = %s",
+                    "UPDATE users SET update_time = %s WHERE id = %s;",
                     (datetime.now(), id),
                 )
 
@@ -106,20 +91,20 @@ class User(Table, frozen=True):
                 if user.name and name and user.name != name:
                     # 哈希后昵称一定会跟随昵称变化，一同更新
                     await conn.execute(
-                        "UPDATE users SET name = %s, hashed_name = %s WHERE id = %s",
+                        "UPDATE users SET name = %s, hashed_name = %s WHERE id = %s;",
                         (name, hashed_name, id),
                     )
 
                 # 如果没有存储头像链接，进行添加
                 if not user.avatar_url and avatar_url:
                     await conn.execute(
-                        "UPDATE users SET avatar_url = %s WHERE id = %s",
+                        "UPDATE users SET avatar_url = %s WHERE id = %s;",
                         (avatar_url, id),
                     )
 
                 # 更新头像链接
                 if user.avatar_url and avatar_url and user.avatar_url != avatar_url:
                     await conn.execute(
-                        "UPDATE users SET avatar_url = %s WHERE id = %s",
+                        "UPDATE users SET avatar_url = %s WHERE id = %s;",
                         (avatar_url, id),
                     )

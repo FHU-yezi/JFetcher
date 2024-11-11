@@ -13,21 +13,6 @@ class DailyUpdateRankingRecord(Table, frozen=True):
     days: PositiveInt
 
     @classmethod
-    async def _create_table(cls) -> None:
-        async with jianshu_pool.get_conn() as conn:
-            await conn.execute(
-                """
-                CREATE TABLE IF NOT EXISTS daily_update_ranking_records (
-                    date DATE NOT NULL,
-                    ranking SMALLINT NOT NULL,
-                    slug VARCHAR(12),
-                    days SMALLINT,
-                    CONSTRAINT pk_daily_update_ranking_records_date_slug PRIMARY KEY (date, slug)
-                );
-                """  # noqa: E501
-            )
-
-    @classmethod
     async def insert_many(cls, data: list["DailyUpdateRankingRecord"]) -> None:
         for item in data:
             item.validate()

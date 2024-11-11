@@ -11,7 +11,7 @@ jianshu_pool = Pool(
     app_name="JFetcher",
 )
 jpep_pool = Pool(
-    CONFIG.jianshu_postgres.connection_string,
+    CONFIG.jpep_postgres.connection_string,
     min_size=1,
     max_size=4,
     app_name="JFetcher",

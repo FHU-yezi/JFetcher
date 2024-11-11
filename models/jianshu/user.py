@@ -2,7 +2,7 @@ from datetime import datetime
 from enum import Enum
 from typing import Optional
 
-from sshared.postgres import Table, create_enum
+from sshared.postgres import Table
 from sshared.strict_struct import NonEmptyStr, PositiveInt
 
 from utils.db import jianshu_pool
@@ -21,30 +21,6 @@ class User(Table, frozen=True):
     name: Optional[NonEmptyStr]
     history_names: list[NonEmptyStr]
     avatar_url: Optional[NonEmptyStr]
-
-    @classmethod
-    async def _create_enum(cls) -> None:
-        async with jianshu_pool.get_conn() as conn:
-            await create_enum(
-                conn=conn, name="enum_users_status", enum_class=StatusEnum
-            )
-
-    @classmethod
-    async def _create_table(cls) -> None:
-        async with jianshu_pool.get_conn() as conn:
-            await conn.execute(
-                """
-                CREATE TABLE IF NOT EXISTS users (
-                    slug VARCHAR(12) CONSTRAINT pk_users_slug PRIMARY KEY,
-                    status enum_users_status NOT NULL,
-                    update_time TIMESTAMP NOT NULL,
-                    id INTEGER,
-                    name VARCHAR(15),
-                    history_names VARCHAR(15)[] NOT NULL,
-                    avatar_url TEXT
-                );
-                """
-            )
 
     async def create(self) -> None:
         self.validate()
@@ -118,7 +94,7 @@ class User(Table, frozen=True):
             async with conn.transaction():
                 # 更新更新时间
                 await conn.execute(
-                    "UPDATE users SET update_time = %s WHERE slug = %s",
+                    "UPDATE users SET update_time = %s WHERE slug = %s;",
                     (datetime.now(), slug),
                 )
 
@@ -129,21 +105,21 @@ class User(Table, frozen=True):
                 # 如果没有存储 ID，进行添加
                 if not user.id and id:
                     await conn.execute(
-                        "UPDATE users SET id = %s WHERE slug = %s",
+                        "UPDATE users SET id = %s WHERE slug = %s;",
                         (id, slug),
                     )
 
                 # 如果没有存储昵称，进行添加
                 if not user.name and name:
                     await conn.execute(
-                        "UPDATE users SET name = %s WHERE slug = %s",
+                        "UPDATE users SET name = %s WHERE slug = %s;",
                         (name, slug),
                     )
 
                 # 更新昵称
                 if user.name and name and user.name != name:
                     await conn.execute(
-                        "UPDATE users SET name = %s WHERE slug = %s",
+                        "UPDATE users SET name = %s WHERE slug = %s;",
                         (name, slug),
                     )
                     await conn.execute(
@@ -155,13 +131,13 @@ class User(Table, frozen=True):
                 # 如果没有存储头像链接，进行添加
                 if not user.avatar_url and avatar_url:
                     await conn.execute(
-                        "UPDATE users SET avatar_url = %s WHERE slug = %s",
+                        "UPDATE users SET avatar_url = %s WHERE slug = %s;",
                         (avatar_url, slug),
                     )
 
                 # 更新头像链接
                 if user.avatar_url and avatar_url and user.avatar_url != avatar_url:
                     await conn.execute(
-                        "UPDATE users SET avatar_url = %s WHERE slug = %s",
+                        "UPDATE users SET avatar_url = %s WHERE slug = %s;",
                         (avatar_url, slug),
                     )

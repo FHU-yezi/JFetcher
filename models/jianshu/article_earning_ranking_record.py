@@ -18,24 +18,6 @@ class ArticleEarningRankingRecord(Table, frozen=True):
     voter_earning: PositiveFloat
 
     @classmethod
-    async def _create_table(cls) -> None:
-        async with jianshu_pool.get_conn() as conn:
-            await conn.execute(
-                """
-                CREATE TABLE IF NOT EXISTS article_earning_ranking_records (
-                    date DATE NOT NULL,
-                    ranking SMALLINT NOT NULL,
-                    slug VARCHAR(12),
-                    title TEXT,
-                    author_slug VARCHAR(12),
-                    author_earning NUMERIC NOT NULL,
-                    voter_earning NUMERIC NOT NULL,
-                    CONSTRAINT pk_article_earning_ranking_records_date_ranking PRIMARY KEY (date, ranking)
-                );
-                """  # noqa: E501
-            )
-
-    @classmethod
     async def insert_many(cls, data: list["ArticleEarningRankingRecord"]) -> None:
         for item in data:
             item.validate()

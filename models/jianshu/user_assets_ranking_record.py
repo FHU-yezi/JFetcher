@@ -17,23 +17,6 @@ class UserAssetsRankingRecord(Table, frozen=True):
     assets: Optional[NonNegativeFloat]
 
     @classmethod
-    async def _create_table(cls) -> None:
-        async with jianshu_pool.get_conn() as conn:
-            await conn.execute(
-                """
-                CREATE TABLE IF NOT EXISTS user_assets_ranking_records (
-                    date DATE NOT NULL,
-                    ranking SMALLINT NOT NULL,
-                    slug VARCHAR(12),
-                    fp NUMERIC,
-                    ftn NUMERIC,
-                    assets NUMERIC,
-                    CONSTRAINT pk_user_assets_ranking_records_date_ranking PRIMARY KEY (date, ranking)
-                );
-                """  # noqa: E501
-            )
-
-    @classmethod
     async def insert_many(cls, data: list["UserAssetsRankingRecord"]) -> None:
         for item in data:
             item.validate()

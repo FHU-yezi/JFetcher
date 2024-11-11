@@ -15,20 +15,6 @@ class CreditRecord(Table, frozen=True):
     user_id: PositiveInt
     credit: NonNegativeInt
 
-    @classmethod
-    async def _create_table(cls) -> None:
-        async with jpep_pool.get_conn() as conn:
-            await conn.execute(
-                """
-                CREATE TABLE IF NOT EXISTS credit_records (
-                    time TIMESTAMP NOT NULL,
-                    user_id INTEGER NOT NULL,
-                    credit INTEGER NOT NULL,
-                    CONSTRAINT pk_credit_records_time_user_id PRIMARY KEY (time, user_id)
-                );
-                """  # noqa: E501
-            )
-
     async def create(self) -> None:
         self.validate()
 
