@@ -5,7 +5,7 @@ from typing import Optional
 from sshared.postgres import Table, create_enum
 from sshared.strict_struct import PositiveInt
 
-from utils.postgres import get_jpep_conn
+from utils.db import jpep_pool
 
 
 class TypeEnum(Enum):
@@ -22,48 +22,50 @@ class FTNOrder(Table, frozen=True):
 
     @classmethod
     async def _create_enum(cls) -> None:
-        conn = await get_jpep_conn()
-        await create_enum(conn=conn, name="enum_ftn_orders_type", enum_class=TypeEnum)
+        async with jpep_pool.get_conn() as conn:
+            await create_enum(
+                conn=conn, name="enum_ftn_orders_type", enum_class=TypeEnum
+            )
 
     @classmethod
     async def _create_table(cls) -> None:
-        conn = await get_jpep_conn()
-        await conn.execute(
-            """
-            CREATE TABLE IF NOT EXISTS ftn_orders (
-                id INTEGER CONSTRAINT pk_ftn_orders_id PRIMARY KEY,
-                type enum_ftn_orders_type NOT NULL,
-                publisher_id INTEGER NOT NULL,
-                publish_time TIMESTAMP NOT NULL,
-                last_seen_time TIMESTAMP
-            );
-            """
-        )
+        async with jpep_pool.get_conn() as conn:
+            await conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS ftn_orders (
+                    id INTEGER CONSTRAINT pk_ftn_orders_id PRIMARY KEY,
+                    type enum_ftn_orders_type NOT NULL,
+                    publisher_id INTEGER NOT NULL,
+                    publish_time TIMESTAMP NOT NULL,
+                    last_seen_time TIMESTAMP
+                );
+                """
+            )
 
     async def create(self) -> None:
-        conn = await get_jpep_conn()
-        await conn.execute(
-            "INSERT INTO ftn_orders (id, type, publisher_id, publish_time, "
-            "last_seen_time) VALUES (%s, %s, %s, %s, %s);",
-            (
-                self.id,
-                self.type,
-                self.publisher_id,
-                self.publish_time,
-                self.last_seen_time,
-            ),
-        )
+        async with jpep_pool.get_conn() as conn:
+            await conn.execute(
+                "INSERT INTO ftn_orders (id, type, publisher_id, publish_time, "
+                "last_seen_time) VALUES (%s, %s, %s, %s, %s);",
+                (
+                    self.id,
+                    self.type,
+                    self.publisher_id,
+                    self.publish_time,
+                    self.last_seen_time,
+                ),
+            )
 
     @classmethod
     async def get_by_id(cls, id: int) -> Optional["FTNOrder"]:  # noqa: A002
-        conn = await get_jpep_conn()
-        cursor = await conn.execute(
-            "SELECT type, publisher_id, publish_time, last_seen_time "
-            "FROM ftn_orders WHERE id = %s;",
-            (id,),
-        )
+        async with jpep_pool.get_conn() as conn:
+            cursor = await conn.execute(
+                "SELECT type, publisher_id, publish_time, last_seen_time "
+                "FROM ftn_orders WHERE id = %s;",
+                (id,),
+            )
 
-        data = await cursor.fetchone()
+            data = await cursor.fetchone()
         if not data:
             return None
 
@@ -77,8 +79,8 @@ class FTNOrder(Table, frozen=True):
 
     @classmethod
     async def update_last_seen_time(cls, id: int, last_seen_time: datetime) -> None:  # noqa: A002
-        conn = await get_jpep_conn()
-        await conn.execute(
-            "UPDATE ftn_orders SET last_seen_time = %s WHERE id = %s;",
-            (last_seen_time, id),
-        )
+        async with jpep_pool.get_conn() as conn:
+            await conn.execute(
+                "UPDATE ftn_orders SET last_seen_time = %s WHERE id = %s;",
+                (last_seen_time, id),
+            )
