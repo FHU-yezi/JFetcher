@@ -1,11 +1,15 @@
+from __future__ import annotations
+
 from datetime import datetime
 from enum import Enum
-from typing import Optional
+from typing import TYPE_CHECKING
 
 from sshared.postgres import Table
-from sshared.strict_struct import NonEmptyStr, PositiveInt
 
 from utils.db import jianshu_pool
+
+if TYPE_CHECKING:
+    from sshared.strict_struct import NonEmptyStr, PositiveInt
 
 
 class StatusEnum(Enum):
@@ -17,10 +21,10 @@ class User(Table, frozen=True):
     slug: NonEmptyStr
     status: StatusEnum
     update_time: datetime
-    id: Optional[PositiveInt]
-    name: Optional[NonEmptyStr]
+    id: PositiveInt | None
+    name: NonEmptyStr | None
     history_names: list[NonEmptyStr]
-    avatar_url: Optional[NonEmptyStr]
+    avatar_url: NonEmptyStr | None
 
     async def create(self) -> None:
         self.validate()
@@ -41,7 +45,7 @@ class User(Table, frozen=True):
             )
 
     @classmethod
-    async def get_by_slug(cls, slug: str) -> Optional["User"]:
+    async def get_by_slug(cls, slug: str) -> User | None:
         async with jianshu_pool.get_conn() as conn:
             cursor = await conn.execute(
                 "SELECT status, update_time, id, name, history_names, "
@@ -67,9 +71,9 @@ class User(Table, frozen=True):
     async def upsert(
         cls,
         slug: str,
-        id: Optional[int] = None,  # noqa: A002
-        name: Optional[str] = None,
-        avatar_url: Optional[str] = None,
+        id: int | None = None,  # noqa: A002
+        name: str | None = None,
+        avatar_url: str | None = None,
     ) -> None:
         user = await cls.get_by_slug(slug)
         # 如果不存在，创建用户
@@ -90,54 +94,53 @@ class User(Table, frozen=True):
             return
 
         # 在一个事务中一次性完成全部字段的更新
-        async with jianshu_pool.get_conn() as conn:  # noqa: SIM117
-            async with conn.transaction():
-                # 更新更新时间
+        async with jianshu_pool.get_conn() as conn, conn.transaction():
+            # 更新更新时间
+            await conn.execute(
+                "UPDATE users SET update_time = %s WHERE slug = %s;",
+                (datetime.now(), slug),
+            )
+
+            # ID 无法被修改，如果异常则抛出错误
+            if user.id and id and user.id != id:
+                raise ValueError(f"用户 ID 不一致：{user.id} != {id}")
+
+            # 如果没有存储 ID，进行添加
+            if not user.id and id:
                 await conn.execute(
-                    "UPDATE users SET update_time = %s WHERE slug = %s;",
-                    (datetime.now(), slug),
+                    "UPDATE users SET id = %s WHERE slug = %s;",
+                    (id, slug),
                 )
 
-                # ID 无法被修改，如果异常则抛出错误
-                if user.id and id and user.id != id:
-                    raise ValueError(f"用户 ID 不一致：{user.id} != {id}")
+            # 如果没有存储昵称，进行添加
+            if not user.name and name:
+                await conn.execute(
+                    "UPDATE users SET name = %s WHERE slug = %s;",
+                    (name, slug),
+                )
 
-                # 如果没有存储 ID，进行添加
-                if not user.id and id:
-                    await conn.execute(
-                        "UPDATE users SET id = %s WHERE slug = %s;",
-                        (id, slug),
-                    )
+            # 更新昵称
+            if user.name and name and user.name != name:
+                await conn.execute(
+                    "UPDATE users SET name = %s WHERE slug = %s;",
+                    (name, slug),
+                )
+                await conn.execute(
+                    "UPDATE users SET history_names = array_append(history_names, "
+                    "%s) WHERE slug = %s;",
+                    (user.name, slug),
+                )
 
-                # 如果没有存储昵称，进行添加
-                if not user.name and name:
-                    await conn.execute(
-                        "UPDATE users SET name = %s WHERE slug = %s;",
-                        (name, slug),
-                    )
+            # 如果没有存储头像链接，进行添加
+            if not user.avatar_url and avatar_url:
+                await conn.execute(
+                    "UPDATE users SET avatar_url = %s WHERE slug = %s;",
+                    (avatar_url, slug),
+                )
 
-                # 更新昵称
-                if user.name and name and user.name != name:
-                    await conn.execute(
-                        "UPDATE users SET name = %s WHERE slug = %s;",
-                        (name, slug),
-                    )
-                    await conn.execute(
-                        "UPDATE users SET history_names = array_append(history_names, "
-                        "%s) WHERE slug = %s;",
-                        (user.name, slug),
-                    )
-
-                # 如果没有存储头像链接，进行添加
-                if not user.avatar_url and avatar_url:
-                    await conn.execute(
-                        "UPDATE users SET avatar_url = %s WHERE slug = %s;",
-                        (avatar_url, slug),
-                    )
-
-                # 更新头像链接
-                if user.avatar_url and avatar_url and user.avatar_url != avatar_url:
-                    await conn.execute(
-                        "UPDATE users SET avatar_url = %s WHERE slug = %s;",
-                        (avatar_url, slug),
-                    )
+            # 更新头像链接
+            if user.avatar_url and avatar_url and user.avatar_url != avatar_url:
+                await conn.execute(
+                    "UPDATE users SET avatar_url = %s WHERE slug = %s;",
+                    (avatar_url, slug),
+                )

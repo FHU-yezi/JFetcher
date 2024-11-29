@@ -1,13 +1,18 @@
-from datetime import datetime
-from typing import Optional
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
 
 from sshared.postgres import Table
-from sshared.strict_struct import (
-    NonNegativeInt,
-    PositiveInt,
-)
 
 from utils.db import jpep_pool
+
+if TYPE_CHECKING:
+    from datetime import datetime
+
+    from sshared.strict_struct import (
+        NonNegativeInt,
+        PositiveInt,
+    )
 
 
 class CreditRecord(Table, frozen=True):
@@ -26,7 +31,7 @@ class CreditRecord(Table, frozen=True):
             )
 
     @classmethod
-    async def get_latest_credit(cls, user_id: int) -> Optional[int]:
+    async def get_latest_credit(cls, user_id: int) -> int | None:
         async with jpep_pool.get_conn() as conn:
             cursor = await conn.execute(
                 "SELECT credit FROM credit_records WHERE user_id = %s "

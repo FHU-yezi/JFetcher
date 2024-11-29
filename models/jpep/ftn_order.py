@@ -1,11 +1,16 @@
-from datetime import datetime
+from __future__ import annotations
+
 from enum import Enum
-from typing import Optional
+from typing import TYPE_CHECKING
 
 from sshared.postgres import Table
-from sshared.strict_struct import PositiveInt
 
 from utils.db import jpep_pool
+
+if TYPE_CHECKING:
+    from datetime import datetime
+
+    from sshared.strict_struct import PositiveInt
 
 
 class TypeEnum(Enum):
@@ -18,7 +23,7 @@ class FTNOrder(Table, frozen=True):
     type: TypeEnum
     publisher_id: PositiveInt
     publish_time: datetime
-    last_seen_time: Optional[datetime]
+    last_seen_time: datetime | None
 
     async def create(self) -> None:
         async with jpep_pool.get_conn() as conn:
@@ -35,7 +40,7 @@ class FTNOrder(Table, frozen=True):
             )
 
     @classmethod
-    async def get_by_id(cls, id: int) -> Optional["FTNOrder"]:  # noqa: A002
+    async def get_by_id(cls, id: int) -> FTNOrder | None:  # noqa: A002
         async with jpep_pool.get_conn() as conn:
             cursor = await conn.execute(
                 "SELECT type, publisher_id, publish_time, last_seen_time "

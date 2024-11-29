@@ -1,5 +1,6 @@
+from __future__ import annotations
+
 from datetime import date
-from typing import Optional
 
 from jkit.config import CONFIG
 from jkit.exceptions import ResourceUnavailableError
@@ -27,7 +28,7 @@ from utils.prefect_helper import (
 @retry(attempts=5, delay=10)
 async def get_fp_ftn_amount(
     item: AssetsRankingRecord, /
-) -> tuple[Optional[float], Optional[float]]:
+) -> tuple[float | None, float | None]:
     flow_run_name = get_flow_run_name()
 
     if not item.user_info.slug:
@@ -46,8 +47,6 @@ async def get_fp_ftn_amount(
         fp_amount = await user_obj.fp_amount
         ftn_amount = abs(round(item.assets_amount - fp_amount, 3))
         CONFIG.data_validation.enabled = True
-
-        return fp_amount, ftn_amount
     except ResourceUnavailableError:
         logger.warn(
             "用户状态异常，跳过采集简书钻与简书贝信息",
@@ -55,6 +54,8 @@ async def get_fp_ftn_amount(
             ranking=item.ranking,
         )
         return None, None
+    else:
+        return fp_amount, ftn_amount
 
 
 async def process_item(item: AssetsRankingRecord, date_: date) -> DbAssetsRankingRecord:
@@ -93,7 +94,8 @@ async def main() -> None:
         processed_item = await process_item(item, date_=date_)
         data.append(processed_item)
 
-        if len(data) == 1000:
+        # TODO
+        if len(data) == 1000:  # noqa: PLR2004
             break
 
     await DbAssetsRankingRecord.insert_many(data)

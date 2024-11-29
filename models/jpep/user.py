@@ -1,13 +1,17 @@
+from __future__ import annotations
+
 from datetime import datetime
-from typing import Optional
+from typing import TYPE_CHECKING
 
 from sshared.postgres import Table
-from sshared.strict_struct import (
-    NonEmptyStr,
-    PositiveInt,
-)
 
 from utils.db import jpep_pool
+
+if TYPE_CHECKING:
+    from sshared.strict_struct import (
+        NonEmptyStr,
+        PositiveInt,
+    )
 
 
 class User(Table, frozen=True):
@@ -15,7 +19,7 @@ class User(Table, frozen=True):
     update_time: datetime
     name: NonEmptyStr
     hashed_name: NonEmptyStr
-    avatar_url: Optional[NonEmptyStr]
+    avatar_url: NonEmptyStr | None
 
     async def create(self) -> None:
         self.validate()
@@ -34,7 +38,7 @@ class User(Table, frozen=True):
             )
 
     @classmethod
-    async def get_by_id(cls, id: int) -> Optional["User"]:  # noqa: A002
+    async def get_by_id(cls, id: int) -> User | None:  # noqa: A002
         async with jpep_pool.get_conn() as conn:
             cursor = await conn.execute(
                 "SELECT update_time, name, hashed_name, avatar_url "
@@ -60,7 +64,7 @@ class User(Table, frozen=True):
         id: int,  # noqa: A002
         name: str,
         hashed_name: str,
-        avatar_url: Optional[str] = None,
+        avatar_url: str | None = None,
     ) -> None:
         user = await cls.get_by_id(id)
         # 如果不存在，创建用户
@@ -79,32 +83,31 @@ class User(Table, frozen=True):
             return
 
         # 在一个事务中一次性完成全部字段的更新
-        async with jpep_pool.get_conn() as conn:  # noqa: SIM117
-            async with conn.transaction():
-                # 更新更新时间
+        async with jpep_pool.get_conn() as conn, conn.transaction():
+            # 更新更新时间
+            await conn.execute(
+                "UPDATE users SET update_time = %s WHERE id = %s;",
+                (datetime.now(), id),
+            )
+
+            # 更新昵称和哈希后昵称
+            if user.name and name and user.name != name:
+                # 哈希后昵称一定会跟随昵称变化，一同更新
                 await conn.execute(
-                    "UPDATE users SET update_time = %s WHERE id = %s;",
-                    (datetime.now(), id),
+                    "UPDATE users SET name = %s, hashed_name = %s WHERE id = %s;",
+                    (name, hashed_name, id),
                 )
 
-                # 更新昵称和哈希后昵称
-                if user.name and name and user.name != name:
-                    # 哈希后昵称一定会跟随昵称变化，一同更新
-                    await conn.execute(
-                        "UPDATE users SET name = %s, hashed_name = %s WHERE id = %s;",
-                        (name, hashed_name, id),
-                    )
+            # 如果没有存储头像链接，进行添加
+            if not user.avatar_url and avatar_url:
+                await conn.execute(
+                    "UPDATE users SET avatar_url = %s WHERE id = %s;",
+                    (avatar_url, id),
+                )
 
-                # 如果没有存储头像链接，进行添加
-                if not user.avatar_url and avatar_url:
-                    await conn.execute(
-                        "UPDATE users SET avatar_url = %s WHERE id = %s;",
-                        (avatar_url, id),
-                    )
-
-                # 更新头像链接
-                if user.avatar_url and avatar_url and user.avatar_url != avatar_url:
-                    await conn.execute(
-                        "UPDATE users SET avatar_url = %s WHERE id = %s;",
-                        (avatar_url, id),
-                    )
+            # 更新头像链接
+            if user.avatar_url and avatar_url and user.avatar_url != avatar_url:
+                await conn.execute(
+                    "UPDATE users SET avatar_url = %s WHERE id = %s;",
+                    (avatar_url, id),
+                )

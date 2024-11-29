@@ -1,12 +1,16 @@
-from functools import partial
-from typing import Any, Literal, Union
+from __future__ import annotations
 
-from prefect.client.schemas.objects import Flow, FlowRun, State
+from functools import partial
+from typing import TYPE_CHECKING, Any, Literal
+
 from prefect.client.schemas.schedules import CronSchedule
 from sshared.notifier import Notifier
 
 from utils.config import CONFIG
 from utils.log import logger
+
+if TYPE_CHECKING:
+    from prefect.client.schemas.objects import Flow, FlowRun, State
 
 if CONFIG.notify.enabled:
     notifier = Notifier(
@@ -53,7 +57,7 @@ async def failed_flow_run_handler(
 def generate_flow_config(
     name: str,
     retries: int = 1,
-    retry_delay_seconds: Union[int, float] = 5,
+    retry_delay_seconds: int | float = 5,
     timeout: int = 3600,
 ) -> dict[str, Any]:
     return {

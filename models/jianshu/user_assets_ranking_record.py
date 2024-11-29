@@ -1,23 +1,28 @@
-from datetime import date
-from typing import Optional
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
 
 from sshared.postgres import Table
-from sshared.strict_struct import NonEmptyStr, NonNegativeFloat, PositiveInt
 
 from utils.db import jianshu_pool
+
+if TYPE_CHECKING:
+    from datetime import date
+
+    from sshared.strict_struct import NonEmptyStr, NonNegativeFloat, PositiveInt
 
 
 class UserAssetsRankingRecord(Table, frozen=True):
     date: date
     ranking: PositiveInt
-    slug: Optional[NonEmptyStr]
+    slug: NonEmptyStr | None
 
-    fp: Optional[NonNegativeFloat]
-    ftn: Optional[NonNegativeFloat]
-    assets: Optional[NonNegativeFloat]
+    fp: NonNegativeFloat | None
+    ftn: NonNegativeFloat | None
+    assets: NonNegativeFloat | None
 
     @classmethod
-    async def insert_many(cls, data: list["UserAssetsRankingRecord"]) -> None:
+    async def insert_many(cls, data: list[UserAssetsRankingRecord]) -> None:
         for item in data:
             item.validate()
 

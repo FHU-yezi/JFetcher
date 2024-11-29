@@ -1,10 +1,11 @@
+from __future__ import annotations
+
 from datetime import date, timedelta
-from typing import Optional
+from typing import TYPE_CHECKING
 
 from jkit.config import CONFIG
 from jkit.exceptions import ResourceUnavailableError
 from jkit.ranking.article_earning import ArticleEarningRanking, RecordField
-from jkit.user import UserInfo
 from prefect import flow
 from sshared.retry.asyncio import retry
 
@@ -21,11 +22,14 @@ from utils.prefect_helper import (
     generate_flow_config,
 )
 
+if TYPE_CHECKING:
+    from jkit.user import UserInfo
+
 
 @retry(attempts=3, delay=5)
 async def get_author_slug_and_info(
     item: RecordField,
-) -> tuple[Optional[str], Optional[UserInfo]]:
+) -> tuple[str | None, UserInfo | None]:
     flow_run_name = get_flow_run_name()
 
     if not item.slug:
@@ -44,8 +48,6 @@ async def get_author_slug_and_info(
 
         author_info = await author.info
         CONFIG.data_validation.enabled = True
-
-        return (author.slug, author_info)
     except ResourceUnavailableError:
         logger.warn(
             "文章或作者状态异常，跳过作者信息采集",
@@ -53,6 +55,8 @@ async def get_author_slug_and_info(
             ranking=item.ranking,
         )
         return None, None
+    else:
+        return (author.slug, author_info)
 
 
 async def process_item(item: RecordField, date_: date) -> ArticleEarningRankingRecord:
