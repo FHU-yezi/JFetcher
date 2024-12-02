@@ -1,18 +1,14 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from datetime import datetime
 
 from sshared.postgres import Table
+from sshared.strict_struct import (
+    NonNegativeInt,
+    PositiveInt,
+)
 
 from utils.db import jpep_pool
-
-if TYPE_CHECKING:
-    from datetime import datetime
-
-    from sshared.strict_struct import (
-        NonNegativeInt,
-        PositiveInt,
-    )
 
 
 class CreditRecord(Table, frozen=True):

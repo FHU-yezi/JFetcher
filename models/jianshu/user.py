@@ -2,14 +2,11 @@ from __future__ import annotations
 
 from datetime import datetime
 from enum import Enum
-from typing import TYPE_CHECKING
 
 from sshared.postgres import Table
+from sshared.strict_struct import NonEmptyStr, PositiveInt
 
 from utils.db import jianshu_pool
-
-if TYPE_CHECKING:
-    from sshared.strict_struct import NonEmptyStr, PositiveInt
 
 
 class StatusEnum(Enum):

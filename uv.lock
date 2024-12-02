@@ -710,9 +710,9 @@ name = "jfetcher"
 version = "3.10.0"
 source = { virtual = "." }
 dependencies = [
+    { name = "httpx" },
     { name = "jkit" },
     { name = "prefect" },
-    { name = "psycopg", extra = ["binary"] },
     { name = "sshared", extra = ["config", "postgres"] },
 ]
 
@@ -724,10 +724,10 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "httpx", specifier = "<0.28.0" },
     { name = "jkit", specifier = ">=3.0.0a16" },
     { name = "prefect", specifier = "<3.0.0" },
-    { name = "psycopg", extras = ["binary"], specifier = ">=3.2.0" },
-    { name = "sshared", extras = ["config", "postgres"], specifier = ">=0.18.0" },
+    { name = "sshared", extras = ["config", "postgres"], specifier = ">=0.19.0" },
 ]
 
 [package.metadata.requires-dev]
@@ -2031,14 +2031,14 @@ asyncio = [
 
 [[package]]
 name = "sshared"
-version = "0.18.0"
+version = "0.19.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "msgspec" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/bd/0a/f3c1dd9d53ec18b27638b5e5f0a6abce2875d9ecfea14ebf8675c1ddf137/sshared-0.18.0.tar.gz", hash = "sha256:0c5d1e5cc12e349b1495630f9386ce470f3432959da6870cdc4690c0dc14b4dd", size = 17696 }
+sdist = { url = "https://files.pythonhosted.org/packages/7c/c4/0c95970998f74029a18b659701efd18ddecc142ddf616b3251f7e5c94e85/sshared-0.19.1.tar.gz", hash = "sha256:9bd3d27d4ab693682527a36b7c494f137ca1df76a1e3bfa011fdc9f05dff4a5a", size = 15212 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/ef/48/2e2de70c0a3d97416ebb01715d0efac7dc84630ec172c4e41de9421d654d/sshared-0.18.0-py3-none-any.whl", hash = "sha256:cc413cd8959baafc527ece31c20cd61ebfc719325d8899eb54ef319c3b6ad328", size = 26155 },
+    { url = "https://files.pythonhosted.org/packages/57/61/3fdb4250993bfd58c551c2f5561e64abd78ee4ffe9ae6a60961804297202/sshared-0.19.1-py3-none-any.whl", hash = "sha256:2aded4f465345df8a335a4c3cb8055b43df8d83001d5263d9cd80514679be103", size = 21835 },
 ]
 
 [package.optional-dependencies]
@@ -2046,7 +2046,7 @@ config = [
     { name = "tomli" },
 ]
 postgres = [
-    { name = "psycopg" },
+    { name = "psycopg", extra = ["binary"] },
 ]
 
 [[package]]
