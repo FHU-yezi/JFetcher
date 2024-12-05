@@ -54,6 +54,7 @@ lint.select = [
 lint.ignore = [
     "ISC001",
     "PERF203",
+    "PLR2004",
     "RUF001",
     "RUF002",
     "RUF003",

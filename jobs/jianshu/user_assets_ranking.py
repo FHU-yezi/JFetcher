@@ -95,7 +95,7 @@ async def main() -> None:
         data.append(processed_item)
 
         # TODO
-        if len(data) == 1000:  # noqa: PLR2004
+        if len(data) == 1000:
             break
 
     await DbAssetsRankingRecord.insert_many(data)
