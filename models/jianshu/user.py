@@ -21,7 +21,7 @@ class User(Table, frozen=True):
     id: PositiveInt
     name: NonEmptyStr
     history_names: list[NonEmptyStr]
-    avatar_url: NonEmptyStr
+    avatar_url: NonEmptyStr | None
 
     async def create(self) -> None:
         self.validate()
