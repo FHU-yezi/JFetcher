@@ -4,7 +4,7 @@
 
 - Python 3.9+
 - PostgreSQL
-- Prefect 2
+- Prefect 3
 
 ## 数据库准备
 
