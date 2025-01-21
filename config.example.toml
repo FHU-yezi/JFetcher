@@ -3,7 +3,7 @@ host = "localhost"
 port = 5432
 user = "postgres"
 password = "postgres"
-database = "jfetcher"
+database = "jianshu"
 
 [jpep_postgres]
 host = "localhost"
@@ -11,18 +11,3 @@ port = 5432
 user = "postgres"
 password = "postgres"
 database = "jpep"
-
-[logging]
-host = "localhost"
-port = 5432
-user = "jfetcher"
-password = "jfetcher"
-table = "jfetcher"
-display_level = "DEBUG"
-save_level = "DEBUG"
-
-[notify]
-enabled = true
-host = "localhost"
-port = 8701
-token = ""

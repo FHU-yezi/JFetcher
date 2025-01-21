@@ -36,8 +36,6 @@ cp config.example.toml config.toml
 
 - jianshu_postgres.host 填写 `postgres`
 - jpep_postgres.host 填写 `postgres`
-- logging.host 填写 `postgres`
-- notify.host 填写 `gotify`
 
 同时，您需要填写正确的 `{db_name}_postgres.user` 和 `{db_name}_postgres.password`。
 
@@ -46,12 +44,9 @@ cp config.example.toml config.toml
 创建 Docker 网络：
 
 ```shell
-docker network create gotify
 docker network create postgres
 docker network create prefect
 ```
-
-您需要在 `gotify` 网络的 `27017` 端口上运行一个 Gotify 服务。
 
 您需要在 `postgres` 网络的 `5173` 端口上运行一个 PostgreSQL 服务，身份验证相关信息请参考 `部署 - 数据库准备` 一节。
 
@@ -67,7 +62,7 @@ docker compose up -d
 
 ## 传统部署（不推荐）
 
-下载 Python 项目管理工具 [uv](https://github.com/astral-sh/uv)：
+安装 Python 项目管理工具 [uv](https://github.com/astral-sh/uv)：
 
 ```shell
 pip install uv
@@ -78,8 +73,6 @@ pip install uv
 ```shell
 uv install
 ```
-
-您需要在 `8701` 端口上运行一个 Gotify 服务。
 
 您需要在 `5173` 端口上运行一个 PostgreSQL 服务，身份验证相关信息请参考 `部署 - 数据库准备` 一节。
 

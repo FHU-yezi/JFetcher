@@ -1,6 +1,4 @@
 networks:
-  gotify:
-    external: true
   postgres:
     external: true
   prefect:
@@ -14,7 +12,6 @@ services:
     volumes:
       - ./config.toml:/app/config.toml:ro
     networks:
-      - gotify
       - postgres
       - prefect
     environment:
