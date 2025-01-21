@@ -35,7 +35,7 @@ class User(Table, frozen=True):
             )
 
     @classmethod
-    async def get_by_id(cls, id: int) -> User | None:  # noqa: A002
+    async def get_by_id(cls, id: int) -> User | None:
         async with jpep_pool.get_conn() as conn:
             cursor = await conn.execute(
                 "SELECT update_time, name, hashed_name, avatar_url "
@@ -58,7 +58,7 @@ class User(Table, frozen=True):
     @classmethod
     async def upsert(
         cls,
-        id: int,  # noqa: A002
+        id: int,
         name: str,
         hashed_name: str,
         avatar_url: str | None = None,

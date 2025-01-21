@@ -68,7 +68,7 @@ class User(Table, frozen=True):
     async def upsert(
         cls,
         slug: str,
-        id: int | None = None,  # noqa: A002
+        id: int | None = None,
         name: str | None = None,
         avatar_url: str | None = None,
     ) -> None:

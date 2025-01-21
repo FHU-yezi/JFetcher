@@ -36,7 +36,7 @@ class FTNOrder(Table, frozen=True):
             )
 
     @classmethod
-    async def get_by_id(cls, id: int) -> FTNOrder | None:  # noqa: A002
+    async def get_by_id(cls, id: int) -> FTNOrder | None:
         async with jpep_pool.get_conn() as conn:
             cursor = await conn.execute(
                 "SELECT type, publisher_id, publish_time, last_seen_time "
@@ -57,7 +57,7 @@ class FTNOrder(Table, frozen=True):
         )
 
     @classmethod
-    async def update_last_seen_time(cls, id: int, last_seen_time: datetime) -> None:  # noqa: A002
+    async def update_last_seen_time(cls, id: int, last_seen_time: datetime) -> None:
         async with jpep_pool.get_conn() as conn:
             await conn.execute(
                 "UPDATE ftn_orders SET last_seen_time = %s WHERE id = %s;",
