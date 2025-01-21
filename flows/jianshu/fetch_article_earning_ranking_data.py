@@ -14,6 +14,7 @@ from models.jianshu.article_earning_ranking_record import ArticleEarningRankingR
 from models.jianshu.user import User as DbUser
 from utils.prefect_helper import get_flow_run_name, get_task_run_name
 
+CONFIG.data_validation.enabled = False
 CONFIG.endpoints.jianshu = "https://main-jianshu-proxy-sqrodthfab.cn-beijing.fcapp.run"
 
 

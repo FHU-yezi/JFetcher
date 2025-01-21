@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from datetime import date
 
 from sshared.postgres import Table
@@ -13,7 +15,7 @@ class DailyUpdateRankingRecord(Table, frozen=True):
     days: PositiveInt
 
     @classmethod
-    async def insert_many(cls, data: list["DailyUpdateRankingRecord"]) -> None:
+    async def insert_many(cls, data: list[DailyUpdateRankingRecord]) -> None:
         for item in data:
             item.validate()
 
@@ -31,3 +33,13 @@ class DailyUpdateRankingRecord(Table, frozen=True):
                     for item in data
                 ],
             )
+
+    @classmethod
+    async def is_records_exist(cls, date: date) -> bool:
+        async with jianshu_pool.get_conn() as conn:
+            cursor = await conn.cursor().execute(
+                "SELECT 1 FROM daily_update_ranking_records WHERE date = %s LIMIT 1;",
+                (date,),
+            )
+
+            return await cursor.fetchone() is not None
