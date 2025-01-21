@@ -18,10 +18,10 @@ class User(Table, frozen=True):
     slug: NonEmptyStr
     status: StatusEnum
     update_time: datetime
-    id: PositiveInt | None
-    name: NonEmptyStr | None
+    id: PositiveInt
+    name: NonEmptyStr
     history_names: list[NonEmptyStr]
-    avatar_url: NonEmptyStr | None
+    avatar_url: NonEmptyStr
 
     async def create(self) -> None:
         self.validate()
@@ -68,9 +68,9 @@ class User(Table, frozen=True):
     async def upsert(
         cls,
         slug: str,
-        id: int | None = None,
-        name: str | None = None,
-        avatar_url: str | None = None,
+        id: int,
+        name: str,
+        avatar_url: str,
     ) -> None:
         user = await cls.get_by_slug(slug)
         # 如果不存在，创建用户
