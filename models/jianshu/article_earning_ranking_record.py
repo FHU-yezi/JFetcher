@@ -41,3 +41,14 @@ class ArticleEarningRankingRecord(Table, frozen=True):
                     for item in data
                 ],
             )
+
+    @classmethod
+    async def is_records_exist(cls, date: date) -> bool:
+        async with jianshu_pool.get_conn() as conn:
+            cursor = await conn.cursor().execute(
+                "SELECT 1 FROM article_earning_ranking_records "
+                "WHERE date = %s LIMIT 1;",
+                (date,),
+            )
+
+            return await cursor.fetchone() is not None

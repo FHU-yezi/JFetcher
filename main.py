@@ -1,9 +1,14 @@
-from asyncio import run as asyncio_run
+from prefect import serve
+from prefect.deployments.runner import RunnerDeployment
 
+from flows.jianshu.fetch_article_earning_ranking_data import (
+    jianshu_fetch_article_earning_ranking_data,
+)
 
-async def main() -> None:
-    pass
+DEPLOYMENTS: tuple[RunnerDeployment, ...] = (
+    jianshu_fetch_article_earning_ranking_data.to_deployment(
+        name="JFetcher_采集简书文章收益排行榜数据",
+    ), # type: ignore
+)
 
-
-if __name__ == "__main__":
-    asyncio_run(main())
+serve(*DEPLOYMENTS)
