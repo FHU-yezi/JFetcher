@@ -8,6 +8,9 @@ from flows.jianshu.fetch_article_earning_ranking_data import (
 from flows.jianshu.fetch_daily_update_ranking_data import (
     jianshu_fetch_daily_update_ranking_data,
 )
+from flows.jianshu.fetch_user_assets_ranking_data import (
+    jianshu_fetch_user_assets_ranking_data,
+)
 
 DEPLOYMENTS: tuple[RunnerDeployment, ...] = (
     jianshu_fetch_article_earning_ranking_data.to_deployment(
@@ -24,6 +27,15 @@ DEPLOYMENTS: tuple[RunnerDeployment, ...] = (
         schedules=(
             CronSchedule(
                 cron="0 3 * * *",
+                timezone="Asia/Shanghai",
+            ),
+        ),
+    ),
+    jianshu_fetch_user_assets_ranking_data.to_deployment(
+        name="JFetcher_采集简书用户资产排行榜数据",
+        schedules=(
+            CronSchedule(
+                cron="0 1 * * *",
                 timezone="Asia/Shanghai",
             ),
         ),
