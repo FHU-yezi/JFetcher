@@ -3,7 +3,8 @@ from __future__ import annotations
 from collections.abc import AsyncGenerator
 from datetime import date, datetime, timedelta
 
-from httpx import HTTPStatusError, TimeoutException
+from httpcore import NetworkError, TimeoutException
+from httpx import HTTPError
 from jkit.config import CONFIG as JKIT_CONFIG
 from jkit.ranking.article_earning import ArticleEarningRanking, RecordField
 from jkit.user import UserInfo
@@ -24,7 +25,7 @@ if CONFIG.jianshu_endpoint:
 @retry(
     retries=3,
     base_delay=5,
-    exceptions=(HTTPStatusError, TimeoutException),
+    exceptions=(HTTPError, NetworkError, TimeoutException),
 )
 async def get_article_author_slug_and_info(
     item: RecordField,
@@ -67,7 +68,7 @@ async def jianshu_fetch_article_earning_ranking_data(date: date | None = None) -
     data: list[ArticleEarningRankingRecord] = []
     async for item in iter_article_earning_ranking(date):
         if not item.slug:
-            logger.warning("文章状态异常，跳过作者信息采集 ranking=%s", item.ranking)
+            logger.warning("文章状态异常，跳过作者数据采集 ranking=%s", item.ranking)
 
             data.append(
                 ArticleEarningRankingRecord(
