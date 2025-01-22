@@ -9,7 +9,7 @@ requires-python = ">=3.9"
 dependencies = [
     "jkit>=3.0.0b1",
     "prefect>=3.1.0",
-    "sshared[config, postgres]>=0.20.0",
+    "sshared[config, postgres, retry]>=0.21.0",
 ]
 
 [tool.uv]

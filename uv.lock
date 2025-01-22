@@ -664,7 +664,7 @@ source = { virtual = "." }
 dependencies = [
     { name = "jkit" },
     { name = "prefect" },
-    { name = "sshared", extra = ["config", "postgres"] },
+    { name = "sshared", extra = ["config", "postgres", "retry"] },
 ]
 
 [package.dev-dependencies]
@@ -677,7 +677,7 @@ dev = [
 requires-dist = [
     { name = "jkit", specifier = ">=3.0.0b1" },
     { name = "prefect", specifier = ">=3.1.0" },
-    { name = "sshared", extras = ["config", "postgres"], specifier = ">=0.20.0" },
+    { name = "sshared", extras = ["config", "postgres", "retry"], specifier = ">=0.20.0" },
 ]
 
 [package.metadata.requires-dev]
@@ -2016,14 +2016,14 @@ asyncio = [
 
 [[package]]
 name = "sshared"
-version = "0.20.0"
+version = "0.21.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "msgspec" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/d1/8a/5702b1e4ca064577b86c3a6d868f3e5cd70ecef0eb14017b934d61bd85d5/sshared-0.20.0.tar.gz", hash = "sha256:13ed482ea72b762504b83d56fbf9a4f07f2c45352c4f86dcb8a8b146c52ea84d", size = 44500 }
+sdist = { url = "https://files.pythonhosted.org/packages/53/d0/61198eb6e8c5c6b9ba895300ccb18eb4670f7c875221cf4f2c48b228e8c9/sshared-0.21.0.tar.gz", hash = "sha256:0586ea2b2c58e51b49f5e7cfaac68c8666a747d060b93cf82bddcfb522d15137", size = 46425 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/88/a1/8d6fb338cbb023609c4480f06e9f5e145904d49b064a0c9e7ae8e9177de5/sshared-0.20.0-py3-none-any.whl", hash = "sha256:e658107f3e4d0f206f182e4d819fbe71db120acc69a61293cfae88ead3eda232", size = 21685 },
+    { url = "https://files.pythonhosted.org/packages/43/9c/ffd48a13f809e934c82040e03478495f1384a921941c41abb01dc6e1eeaf/sshared-0.21.0-py3-none-any.whl", hash = "sha256:c9f07c8f88e2c8fc757848955adeddd589fef48b417bf89264574a832075305c", size = 22235 },
 ]
 
 [package.optional-dependencies]
@@ -2032,6 +2032,9 @@ config = [
 ]
 postgres = [
     { name = "psycopg", extra = ["binary"] },
+]
+retry = [
+    { name = "typing-extensions" },
 ]
 
 [[package]]
