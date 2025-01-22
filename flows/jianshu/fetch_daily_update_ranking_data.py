@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections.abc import AsyncGenerator
 from datetime import datetime
 
-from httpx import HTTPStatusError
+from httpx import HTTPStatusError, TimeoutException
 from jkit.config import CONFIG as JKIT_CONFIG
 from jkit.ranking.daily_update import DailyUpdateRanking, DailyUpdateRankingRecord
 from jkit.user import UserInfo
@@ -23,11 +23,16 @@ if CONFIG.jianshu_endpoint:
     JKIT_CONFIG.endpoints.jianshu = CONFIG.jianshu_endpoint
 
 
-@retry(retries=3, base_delay=5, exceptions=(HTTPStatusError,))
+@retry(
+    retries=3,
+    base_delay=5,
+    exceptions=(HTTPStatusError, TimeoutException),
+)
 async def get_user_info(
     item: DailyUpdateRankingRecord,
 ) -> UserInfo:
     user = item.user_info.to_user_obj()
+
     return await user.info
 
 

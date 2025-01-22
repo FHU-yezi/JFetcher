@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections.abc import AsyncGenerator
 from datetime import date, datetime, timedelta
 
-from httpx import HTTPStatusError
+from httpx import HTTPStatusError, TimeoutException
 from jkit.config import CONFIG as JKIT_CONFIG
 from jkit.ranking.article_earning import ArticleEarningRanking, RecordField
 from jkit.user import UserInfo
@@ -21,13 +21,18 @@ if CONFIG.jianshu_endpoint:
     JKIT_CONFIG.endpoints.jianshu = CONFIG.jianshu_endpoint
 
 
-@retry(retries=3, base_delay=5, exceptions=(HTTPStatusError,))
+@retry(
+    retries=3,
+    base_delay=5,
+    exceptions=(HTTPStatusError, TimeoutException),
+)
 async def get_article_author_slug_and_info(
     item: RecordField,
 ) -> tuple[str, UserInfo]:
     article = item.to_article_obj()
     article_info = await article.info
     author = article_info.author_info.to_user_obj()
+
     return (author.slug, await author.info)
 
 
