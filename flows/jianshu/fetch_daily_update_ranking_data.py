@@ -3,19 +3,32 @@ from __future__ import annotations
 from collections.abc import AsyncGenerator
 from datetime import datetime
 
-from jkit.config import CONFIG
+from httpx import HTTPStatusError
+from jkit.config import CONFIG as JKIT_CONFIG
 from jkit.ranking.daily_update import DailyUpdateRanking, DailyUpdateRankingRecord
+from jkit.user import UserInfo
 from prefect import flow, get_run_logger, task
 from prefect.states import Completed, Failed, State
+from sshared.retry import retry
 
 from models.jianshu.daily_update_ranking_record import (
     DailyUpdateRankingRecord as DbDailyUpdateRankingRecord,
 )
-from models.jianshu.user import User as DbUser
+from models.jianshu.user import User
+from utils.config import CONFIG
 from utils.prefect_helper import get_flow_run_name, get_task_run_name
 
-CONFIG.data_validation.enabled = False
-CONFIG.endpoints.jianshu = "https://main-jianshu-proxy-sqrodthfab.cn-beijing.fcapp.run"
+JKIT_CONFIG.data_validation.enabled = False
+if CONFIG.jianshu_endpoint:
+    JKIT_CONFIG.endpoints.jianshu = CONFIG.jianshu_endpoint
+
+
+@retry(retries=3, base_delay=5, exceptions=(HTTPStatusError,))
+async def get_user_info(
+    item: DailyUpdateRankingRecord,
+) -> UserInfo:
+    user = item.user_info.to_user_obj()
+    return await user.info
 
 
 @task(task_run_name=get_task_run_name)
@@ -32,8 +45,8 @@ async def save_data_to_db(data: list[DbDailyUpdateRankingRecord]) -> None:
 @flow(
     name="采集简书日更排行榜数据",
     flow_run_name=get_flow_run_name,
-    retries=1,
-    retry_delay_seconds=180,
+    retries=2,
+    retry_delay_seconds=300,
     timeout_seconds=300,
 )
 async def jianshu_fetch_daily_update_ranking_data() -> State:
@@ -42,16 +55,15 @@ async def jianshu_fetch_daily_update_ranking_data() -> State:
     date = datetime.now().date()
 
     if await DbDailyUpdateRankingRecord.is_records_exist(date):
-        logger.warning("该日期的数据已存在 date=%s", date)
+        logger.error("该日期的数据已存在 date=%s", date)
         return Failed()
 
     data: list[DbDailyUpdateRankingRecord] = []
     async for item in iter_daily_update_ranking():
-        user = item.user_info.to_user_obj()
-        user_info = await user.info
+        user_info = await get_user_info(item)
 
-        await DbUser.upsert(
-            slug=user.slug,
+        await User.upsert(
+            slug=item.user_info.slug,
             id=user_info.id,
             name=user_info.name,
             avatar_url=user_info.avatar_url,

@@ -23,7 +23,7 @@ DEPLOYMENTS: tuple[RunnerDeployment, ...] = (
         name="JFetcher_采集简书日更排行榜数据",
         schedules=(
             CronSchedule(
-                cron="0 1 * * *",
+                cron="0 3 * * *",
                 timezone="Asia/Shanghai",
             ),
         ),
