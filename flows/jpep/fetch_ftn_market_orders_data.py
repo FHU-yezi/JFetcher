@@ -8,9 +8,11 @@ from prefect.states import Completed, State
 
 from models.jpep.credit_record import CreditRecord
 from models.jpep.ftn_macket_record import FTNMacketRecord
-from models.jpep.ftn_order import FTNOrder, TypeEnum
+from models.jpep.ftn_order import FTNOrder
 from models.jpep.user import User
 from utils.prefect_helper import get_flow_run_name, get_task_run_name
+
+OrdersType = Literal["BUY", "SELL"]
 
 
 def get_fetch_time() -> datetime:
@@ -28,9 +30,9 @@ def get_fetch_time() -> datetime:
 
 @task(task_run_name=get_task_run_name)
 async def iter_ftn_macket_orders(
-    type: Literal["buy", "sell"],
+    type: OrdersType,
 ) -> AsyncGenerator[FTNMacketOrderRecord]:
-    async for item in FTNMacket().iter_orders(type=type):
+    async for item in FTNMacket().iter_orders(type=type.lower()):  # type: ignore
         yield item
 
 
@@ -46,7 +48,7 @@ async def save_data_to_db(data: list[FTNMacketRecord]) -> None:
     retry_delay_seconds=10,
     timeout_seconds=20,
 )
-async def jpep_ftn_ftn_market_orders_data(type: Literal["buy", "sell"]) -> State:
+async def jpep_ftn_ftn_market_orders_data(type: OrdersType) -> State:
     time = get_fetch_time()
 
     data: list[FTNMacketRecord] = []
@@ -66,7 +68,7 @@ async def jpep_ftn_ftn_market_orders_data(type: Literal["buy", "sell"]) -> State
 
         await FTNOrder.upsert(
             id=item.id,
-            type={"buy": TypeEnum.BUY, "sell": TypeEnum.SELL}[type],
+            type=type,
             publisher_id=item.publisher_info.id,
             publish_time=item.publish_time,
             last_seen_time=time,

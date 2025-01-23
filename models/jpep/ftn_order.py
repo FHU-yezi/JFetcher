@@ -1,22 +1,18 @@
 from __future__ import annotations
 
 from datetime import datetime
-from enum import Enum
+from typing import Literal
 
 from sshared.postgres import Table
 from sshared.strict_struct import PositiveInt
 
 from utils.db import jpep_pool
 
-
-class TypeEnum(Enum):
-    BUY = "BUY"
-    SELL = "SELL"
-
+OrdersType = Literal["BUY", "SELL"]
 
 class FTNOrder(Table, frozen=True):
     id: PositiveInt
-    type: TypeEnum
+    type: OrdersType
     publisher_id: PositiveInt
     publish_time: datetime
     last_seen_time: datetime | None
@@ -68,7 +64,7 @@ class FTNOrder(Table, frozen=True):
     async def upsert(
         cls,
         id: int,
-        type: TypeEnum,
+        type: OrdersType,
         publisher_id: int,
         publish_time: datetime,
         last_seen_time: datetime | None,

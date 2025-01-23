@@ -1,22 +1,19 @@
 from __future__ import annotations
 
 from datetime import datetime
-from enum import Enum
+from typing import Literal
 
 from sshared.postgres import Table
 from sshared.strict_struct import NonEmptyStr, PositiveInt
 
 from utils.db import jianshu_pool
 
-
-class StatusEnum(Enum):
-    NORMAL = "NORMAL"
-    INACCESSIBLE = "INACCESSIBLE"
+StatusType = Literal["NORMAL", "INACCESSIBLE"]
 
 
 class User(Table, frozen=True):
     slug: NonEmptyStr
-    status: StatusEnum
+    status: StatusType
     update_time: datetime
     id: PositiveInt
     name: NonEmptyStr
@@ -77,7 +74,7 @@ class User(Table, frozen=True):
         if not user:
             await cls(
                 slug=slug,
-                status=StatusEnum.NORMAL,
+                status="NORMAL",
                 update_time=datetime.now(),
                 id=id,
                 name=name,
