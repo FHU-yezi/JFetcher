@@ -27,7 +27,7 @@ class CreditRecord(Table, frozen=True):
             )
 
     @classmethod
-    async def get_latest_credit(cls, user_id: int) -> int | None:
+    async def get_credit_by_user_id(cls, user_id: int) -> int | None:
         async with jpep_pool.get_conn() as conn:
             cursor = await conn.execute(
                 "SELECT credit FROM credit_records WHERE user_id = %s "
@@ -40,3 +40,28 @@ class CreditRecord(Table, frozen=True):
             return None
 
         return data[0]
+
+    @classmethod
+    async def create_if_modified(
+        cls, time: datetime, user_id: int, credit: int
+    ) -> None:
+        latest_credit = await cls.get_credit_by_user_id(user_id)
+        # 如果从未记录过该用户的信用信息，添加记录
+        if not latest_credit:
+            await cls(
+                time=time,
+                user_id=user_id,
+                credit=credit,
+            ).create()
+            return
+
+        # 如果信用值未变化，跳过
+        if latest_credit == credit:
+            return
+
+        # 信用值已变化，添加记录
+        await cls(
+            time=time,
+            user_id=user_id,
+            credit=credit,
+        ).create()

@@ -58,26 +58,19 @@ async def jpep_ftn_ftn_market_orders_data(type: Literal["buy", "sell"]) -> State
             avatar_url=item.publisher_info.avatar_url,
         )
 
-        latest_credit = await CreditRecord.get_latest_credit(item.publisher_info.id)
-        # 如果没有记录过这个用户的信用值，或信用值已修改，增加新的记录
-        if not latest_credit or latest_credit != item.publisher_info.credit:
-            await CreditRecord(
-                time=time,
-                user_id=item.publisher_info.id,
-                credit=item.publisher_info.credit,
-            ).create()
+        await CreditRecord.create_if_modified(
+            time=time,
+            user_id=item.publisher_info.id,
+            credit=item.publisher_info.credit,
+        )
 
-        order = await FTNOrder.get_by_id(item.id)
-        if not order:
-            await FTNOrder(
-                id=item.id,
-                type={"buy": TypeEnum.BUY, "sell": TypeEnum.SELL}[type],
-                publisher_id=item.publisher_info.id,
-                publish_time=item.publish_time,
-                last_seen_time=time,
-            ).create()
-        else:
-            await FTNOrder.update_last_seen_time(order.id, time)
+        await FTNOrder.upsert(
+            id=item.id,
+            type={"buy": TypeEnum.BUY, "sell": TypeEnum.SELL}[type],
+            publisher_id=item.publisher_info.id,
+            publish_time=item.publish_time,
+            last_seen_time=time,
+        )
 
         data.append(
             FTNMacketRecord(

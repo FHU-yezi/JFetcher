@@ -63,3 +63,26 @@ class FTNOrder(Table, frozen=True):
                 "UPDATE ftn_orders SET last_seen_time = %s WHERE id = %s;",
                 (last_seen_time, id),
             )
+
+    @classmethod
+    async def upsert(
+        cls,
+        id: int,
+        type: TypeEnum,
+        publisher_id: int,
+        publish_time: datetime,
+        last_seen_time: datetime | None,
+    ) -> None:
+        order = await cls.get_by_id(id)
+        # 未记录过该订单，添加记录
+        if not order:
+            await cls(
+                id=id,
+                type=type,
+                publisher_id=publisher_id,
+                publish_time=publish_time,
+                last_seen_time=last_seen_time,
+            ).create()
+
+        # 订单已存在，更新最后出现时间
+        await cls.update_last_seen_time(id, last_seen_time) # type: ignore
