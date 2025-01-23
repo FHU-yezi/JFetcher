@@ -677,7 +677,7 @@ dev = [
 requires-dist = [
     { name = "jkit", specifier = ">=3.0.0b1" },
     { name = "prefect", specifier = ">=3.1.0" },
-    { name = "sshared", extras = ["config", "postgres", "retry"], specifier = ">=0.20.0" },
+    { name = "sshared", extras = ["config", "postgres", "retry"], specifier = ">=0.21.0" },
 ]
 
 [package.metadata.requires-dev]
