@@ -10,12 +10,13 @@ from utils.db import jpep_pool
 
 OrdersType = Literal["BUY", "SELL"]
 
+
 class FTNOrder(Table, frozen=True):
     id: PositiveInt
     type: OrdersType
     publisher_id: PositiveInt
     publish_time: datetime
-    last_seen_time: datetime | None
+    last_seen_time: datetime
 
     async def create(self) -> None:
         async with jpep_pool.get_conn() as conn:
@@ -67,7 +68,7 @@ class FTNOrder(Table, frozen=True):
         type: OrdersType,
         publisher_id: int,
         publish_time: datetime,
-        last_seen_time: datetime | None,
+        last_seen_time: datetime,
     ) -> None:
         order = await cls.get_by_id(id)
         # 未记录过该订单，添加记录
@@ -81,4 +82,4 @@ class FTNOrder(Table, frozen=True):
             ).create()
 
         # 订单已存在，更新最后出现时间
-        await cls.update_last_seen_time(id, last_seen_time) # type: ignore
+        await cls.update_last_seen_time(id, last_seen_time)
