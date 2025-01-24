@@ -43,7 +43,7 @@ DEPLOYMENTS: tuple[RunnerDeployment, ...] = (
     ),
     jpep_ftn_ftn_market_orders_data.to_deployment(
         name="JFetcher_采集简书积分兑换平台简书贝市场买单挂单数据",
-        parameters={"type": "buy"},
+        parameters={"type": "BUY"},
         schedules=(
             CronSchedule(
                 cron="*/10 * * * *",
@@ -53,7 +53,7 @@ DEPLOYMENTS: tuple[RunnerDeployment, ...] = (
     ),
     jpep_ftn_ftn_market_orders_data.to_deployment(
         name="JFetcher_采集简书积分兑换平台简书贝市场卖单挂单数据",
-        parameters={"type": "sell"},
+        parameters={"type": "SELL"},
         schedules=(
             CronSchedule(
                 cron="*/10 * * * *",
