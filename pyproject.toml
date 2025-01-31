@@ -7,7 +7,7 @@ license = { file = "LICENSE" }
 authors = [{ name = "FHU-yezi", email = "yehaowei20060411@qq.com" }]
 requires-python = ">=3.9"
 dependencies = [
-    "jkit>=3.0.0b1",
+    "jkit>=3.0.0b2",
     "prefect>=3.1.0",
     "sshared[config, postgres, retry]>=0.21.0",
 ]

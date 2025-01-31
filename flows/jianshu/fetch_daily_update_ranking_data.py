@@ -6,8 +6,9 @@ from datetime import datetime
 from httpcore import NetworkError, TimeoutException
 from httpx import HTTPError
 from jkit.config import CONFIG as JKIT_CONFIG
-from jkit.ranking.daily_update import DailyUpdateRanking, DailyUpdateRankingRecord
-from jkit.user import UserInfo
+from jkit.exceptions import RatelimitError
+from jkit.ranking.daily_update import DailyUpdateRanking, RecordData
+from jkit.user import InfoData as UserInfoData
 from prefect import flow, get_run_logger, task
 from prefect.states import Completed, Failed, State
 from sshared.retry import retry
@@ -21,25 +22,25 @@ from utils.prefect_helper import get_flow_run_name, get_task_run_name
 
 JKIT_CONFIG.data_validation.enabled = False
 if CONFIG.jianshu_endpoint:
-    JKIT_CONFIG.endpoints.jianshu = CONFIG.jianshu_endpoint
+    JKIT_CONFIG.datasources.jianshu.endpoint = CONFIG.jianshu_endpoint
 
 
 @retry(
     retries=3,
     base_delay=5,
-    exceptions=(HTTPError, NetworkError, TimeoutException),
+    exceptions=(RatelimitError, HTTPError, NetworkError, TimeoutException),
 )
 async def get_user_info(
-    item: DailyUpdateRankingRecord,
-) -> UserInfo:
+    item: RecordData,
+) -> UserInfoData:
     user = item.user_info.to_user_obj()
 
     return await user.info
 
 
 @task(task_run_name=get_task_run_name)
-async def iter_daily_update_ranking() -> AsyncGenerator[DailyUpdateRankingRecord]:
-    async for item in DailyUpdateRanking():
+async def iter_daily_update_ranking() -> AsyncGenerator[RecordData]:
+    async for item in DailyUpdateRanking().iter_records():
         yield item
 
 

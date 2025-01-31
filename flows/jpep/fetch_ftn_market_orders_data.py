@@ -2,7 +2,7 @@ from collections.abc import AsyncGenerator
 from datetime import datetime, timedelta
 from typing import Literal
 
-from jkit.jpep.ftn_macket import FTNMacket, FTNMacketOrderRecord
+from jkit.jpep.ftn_macket import FtnMacket, OrderData
 from prefect import flow, task
 from prefect.states import Completed, State
 
@@ -31,8 +31,8 @@ def get_fetch_time() -> datetime:
 @task(task_run_name=get_task_run_name)
 async def iter_ftn_macket_orders(
     type: OrdersType,
-) -> AsyncGenerator[FTNMacketOrderRecord]:
-    async for item in FTNMacket().iter_orders(type=type.lower()):  # type: ignore
+) -> AsyncGenerator[OrderData]:
+    async for item in FtnMacket().iter_orders(type=type):
         yield item
 
 
@@ -79,7 +79,7 @@ async def jpep_ftn_ftn_market_orders_data(type: OrdersType) -> State:
                 fetch_time=time,
                 id=item.id,
                 price=item.price,
-                traded_count=item.traded_count,
+                traded_count=item.completed_trades_count,
                 total_amount=item.total_amount,
                 traded_amount=item.traded_amount,
                 remaining_amount=item.tradable_amount,

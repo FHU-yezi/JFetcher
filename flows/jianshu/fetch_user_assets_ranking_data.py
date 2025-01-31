@@ -6,8 +6,12 @@ from datetime import datetime
 from httpcore import NetworkError, TimeoutException
 from httpx import HTTPError
 from jkit.config import CONFIG as JKIT_CONFIG
-from jkit.exceptions import APIUnsupportedError, ResourceUnavailableError
-from jkit.ranking.assets import AssetsRanking, AssetsRankingRecord
+from jkit.exceptions import (
+    APIUnsupportedError,
+    RatelimitError,
+    ResourceUnavailableError,
+)
+from jkit.ranking.user_assets import RecordData, UserAssetsRanking
 from prefect import flow, get_run_logger, task
 from prefect.states import Completed, Failed, State
 from sshared.retry import retry
@@ -19,33 +23,29 @@ from models.jianshu.user_assets_ranking_record import (
 from utils.config import CONFIG
 from utils.prefect_helper import get_flow_run_name, get_task_run_name
 
-JKIT_CONFIG.data_validation.enabled = False
 if CONFIG.jianshu_endpoint:
-    JKIT_CONFIG.endpoints.jianshu = CONFIG.jianshu_endpoint
+    JKIT_CONFIG.datasources.jianshu.endpoint = CONFIG.jianshu_endpoint
 
 
 @retry(
     retries=3,
     base_delay=5,
-    exceptions=(HTTPError, NetworkError, TimeoutException),
+    exceptions=(RatelimitError, HTTPError, NetworkError, TimeoutException),
 )
-async def get_user_fp_ftn_assets(
-    item: AssetsRankingRecord,
-) -> tuple[float, float, float]:
+async def get_user_assets_info(
+    item: RecordData,
+) -> tuple[float, float | None, float | None]:
     user = item.user_info.to_user_obj()
 
-    fp_amount = await user.fp_amount
-    assets_amount = await user.assets_amount
-    ftn_amount = round(assets_amount - fp_amount, 3)
-    return (fp_amount, ftn_amount, assets_amount)
+    return await user.assets_info
 
 
 @task(task_run_name=get_task_run_name)
 async def iter_user_assets_ranking(
     total_count: int,
-) -> AsyncGenerator[AssetsRankingRecord]:
+) -> AsyncGenerator[RecordData]:
     current_count = 0
-    async for item in AssetsRanking():
+    async for item in UserAssetsRanking().iter_records():
         yield item
         current_count += 1
 
@@ -96,7 +96,7 @@ async def jianshu_fetch_user_assets_ranking_data(total_count: int = 1000) -> Sta
         )
 
         try:
-            fp_amount, ftn_amount, assets_amount = await get_user_fp_ftn_assets(item)
+            fp_amount, ftn_amount, assets_amount = await get_user_assets_info(item)
         except ResourceUnavailableError:  # 用户状态异常
             logger.warning(
                 "用户状态异常，跳过资产数据采集 ranking=%s slug=%s",
