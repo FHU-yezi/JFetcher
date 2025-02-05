@@ -11,6 +11,9 @@ from flows.jianshu.fetch_daily_update_ranking_data import (
 from flows.jianshu.fetch_user_assets_ranking_data import (
     jianshu_fetch_user_assets_ranking_data,
 )
+from flows.jianshu.fetch_user_earning_ranking_data import (
+    jianshu_fetch_user_earning_ranking_data,
+)
 from flows.jpep.fetch_ftn_market_orders_data import jpep_ftn_ftn_market_orders_data
 
 DEPLOYMENTS: tuple[RunnerDeployment, ...] = (
@@ -37,6 +40,36 @@ DEPLOYMENTS: tuple[RunnerDeployment, ...] = (
         schedules=(
             CronSchedule(
                 cron="0 1 * * *",
+                timezone="Asia/Shanghai",
+            ),
+        ),
+    ),
+    jianshu_fetch_user_earning_ranking_data.to_deployment(
+        name="JFetcher_采集简书用户全部收益排行榜数据",
+        parameters={"type": "ALL"},
+        schedules=(
+            CronSchedule(
+                cron="50 0 * * *",
+                timezone="Asia/Shanghai",
+            ),
+        ),
+    ),
+    jianshu_fetch_user_earning_ranking_data.to_deployment(
+        name="JFetcher_采集简书用户创作收益排行榜数据",
+        parameters={"type": "CREATING"},
+        schedules=(
+            CronSchedule(
+                cron="50 0 * * *",
+                timezone="Asia/Shanghai",
+            ),
+        ),
+    ),
+    jianshu_fetch_user_earning_ranking_data.to_deployment(
+        name="JFetcher_采集简书用户投票收益排行榜数据",
+        parameters={"type": "VOTING"},
+        schedules=(
+            CronSchedule(
+                cron="50 0 * * *",
                 timezone="Asia/Shanghai",
             ),
         ),
