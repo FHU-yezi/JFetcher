@@ -14,6 +14,7 @@ from flows.jianshu.fetch_user_assets_ranking_data import (
 from flows.jianshu.fetch_user_earning_ranking_data import (
     jianshu_fetch_user_earning_ranking_data,
 )
+from flows.jianshu.fetch_users_count_data import jianshu_fetch_users_count_data
 from flows.jpep.fetch_ftn_market_orders_data import jpep_ftn_ftn_market_orders_data
 
 DEPLOYMENTS: tuple[RunnerDeployment, ...] = (
@@ -70,6 +71,15 @@ DEPLOYMENTS: tuple[RunnerDeployment, ...] = (
         schedules=(
             CronSchedule(
                 cron="50 0 * * *",
+                timezone="Asia/Shanghai",
+            ),
+        ),
+    ),
+    jianshu_fetch_users_count_data.to_deployment(
+        name="JFetcher_采集简书用户数量数据",
+        schedules=(
+            CronSchedule(
+                cron="55 0 * * *",
                 timezone="Asia/Shanghai",
             ),
         ),

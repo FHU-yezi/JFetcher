@@ -21,7 +21,6 @@ from utils.retry import get_network_request_retry_params
 JKIT_CONFIG.data_validation.enabled = False
 if CONFIG.jianshu_endpoint:
     JKIT_CONFIG.datasources.jianshu.endpoint = CONFIG.jianshu_endpoint
-    JKIT_CONFIG.datasources.jianshu.timeout = 20
 
 
 @retry(**get_network_request_retry_params())
