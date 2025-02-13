@@ -3,10 +3,7 @@ from __future__ import annotations
 from collections.abc import AsyncGenerator
 from datetime import date, datetime, timedelta
 
-from httpcore import NetworkError, TimeoutException
-from httpx import HTTPError
 from jkit.config import CONFIG as JKIT_CONFIG
-from jkit.exceptions import RatelimitError
 from jkit.ranking.article_earning import ArticleEarningRanking, RecordData
 from jkit.user import InfoData as UserInfoData
 from prefect import flow, get_run_logger, task
@@ -17,6 +14,7 @@ from models.jianshu.article_earning_ranking_record import ArticleEarningRankingR
 from models.jianshu.user import User
 from utils.config import CONFIG
 from utils.prefect_helper import get_flow_run_name, get_task_run_name
+from utils.retry import get_network_request_retry_params
 
 JKIT_CONFIG.data_validation.enabled = False
 if CONFIG.jianshu_endpoint:
@@ -24,11 +22,7 @@ if CONFIG.jianshu_endpoint:
     JKIT_CONFIG.datasources.jianshu.timeout = 20
 
 
-@retry(
-    retries=3,
-    base_delay=5,
-    exceptions=(RatelimitError, HTTPError, NetworkError, TimeoutException),
-)
+@retry(**get_network_request_retry_params())
 async def get_article_author_info(
     item: RecordData,
 ) -> UserInfoData:
