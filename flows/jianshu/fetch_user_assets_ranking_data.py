@@ -7,11 +7,11 @@ from httpcore import NetworkError, TimeoutException
 from httpx import HTTPError
 from jkit.config import CONFIG as JKIT_CONFIG
 from jkit.exceptions import (
-    APIUnsupportedError,
     RatelimitError,
     ResourceUnavailableError,
 )
 from jkit.ranking.user_assets import RecordData, UserAssetsRanking
+from jkit.user import AssetsInfoData
 from prefect import flow, get_run_logger, task
 from prefect.states import Completed, Failed, State
 from sshared.retry import retry
@@ -34,7 +34,7 @@ if CONFIG.jianshu_endpoint:
 )
 async def get_user_assets_info(
     item: RecordData,
-) -> tuple[float, float | None, float | None]:
+) -> AssetsInfoData:
     user = item.user_info.to_user_obj()
 
     return await user.assets_info
@@ -96,7 +96,7 @@ async def jianshu_fetch_user_assets_ranking_data(total_count: int = 1000) -> Sta
         )
 
         try:
-            fp_amount, ftn_amount, assets_amount = await get_user_assets_info(item)
+            assets_info: AssetsInfoData = await get_user_assets_info(item)
         except ResourceUnavailableError:  # 用户状态异常
             logger.warning(
                 "用户状态异常，跳过资产数据采集 ranking=%s slug=%s",
@@ -114,36 +114,37 @@ async def jianshu_fetch_user_assets_ranking_data(total_count: int = 1000) -> Sta
                     assets=item.assets_amount,
                 )
             )
-        except APIUnsupportedError:  # API 限制
-            logger.warning(
-                "受 API 限制，无法采集简书贝和总资产数据 ranking=%s slug=%s",
-                item.ranking,
-                item.user_info.slug,
-            )
-            # 此时 fp_amount 为实时数据，assets_amount 为非实时数据
-            # 为防止数据异常，不对 fp_amount 进行存储
-            data.append(
-                DbUserAssetsRankingRecord(
-                    date=date,
-                    ranking=item.ranking,
-                    slug=item.user_info.slug,
-                    fp=None,
-                    ftn=None,
-                    # 后备数据（资产排行榜，非实时）
-                    assets=item.assets_amount,
+        else:
+            if assets_info.ftn_amount is None and assets_info.assets_amount is None:
+                logger.warning(
+                    "受 API 限制，无法采集简书贝和总资产数据 ranking=%s slug=%s",
+                    item.ranking,
+                    item.user_info.slug,
                 )
-            )
-        else:  # 正常
-            data.append(
-                DbUserAssetsRankingRecord(
-                    date=date,
-                    ranking=item.ranking,
-                    slug=item.user_info.slug,
-                    fp=fp_amount,
-                    ftn=ftn_amount,
-                    assets=assets_amount,
+                # 此时 fp_amount 为实时数据，assets_amount 为非实时数据
+                # 为防止数据异常，不对 fp_amount 进行存储
+                data.append(
+                    DbUserAssetsRankingRecord(
+                        date=date,
+                        ranking=item.ranking,
+                        slug=item.user_info.slug,
+                        fp=None,
+                        ftn=None,
+                        # 后备数据（资产排行榜，非实时）
+                        assets=item.assets_amount,
+                    )
                 )
-            )
+            else:  # 正常
+                data.append(
+                    DbUserAssetsRankingRecord(
+                        date=date,
+                        ranking=item.ranking,
+                        slug=item.user_info.slug,
+                        fp=assets_info.fp_amount,
+                        ftn=assets_info.ftn_amount,
+                        assets=assets_info.assets_amount,
+                    )
+                )
 
     await save_data_to_db(data)
 
