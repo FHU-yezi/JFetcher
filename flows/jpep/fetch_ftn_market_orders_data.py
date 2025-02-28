@@ -4,7 +4,8 @@ from typing import Literal
 
 from jkit.jpep.ftn_macket import FtnMacket, OrderData
 from prefect import flow, task
-from prefect.states import Completed, State
+from prefect.client.schemas.objects import State
+from prefect.states import Completed
 
 from models.jpep.credit_record import CreditRecord
 from models.jpep.ftn_macket_record import FTNMacketRecord

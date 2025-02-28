@@ -15,7 +15,6 @@ click==8.1.8
 cloudpickle==3.1.1
 colorama==0.4.6
 coolname==2.2.0
-croniter==6.0.0
 cryptography==44.0.1
 dateparser==1.2.1
 deprecated==1.2.18
@@ -55,7 +54,7 @@ orjson==3.10.15
 packaging==24.2
 pathspec==0.12.1
 pendulum==3.0.0
-prefect==3.2.2
+prefect==3.2.8
 prometheus-client==0.21.1
 psycopg==3.2.4
 psycopg-binary==3.2.4 ; implementation_name != 'pypy'
@@ -100,6 +99,7 @@ tzdata==2025.1
 tzlocal==5.3
 ujson==5.10.0
 urllib3==2.3.0
+uv==0.6.3
 uvicorn==0.34.0
 websockets==13.1
 wrapt==1.17.2

@@ -10,7 +10,8 @@ from jkit.exceptions import (
 from jkit.ranking.user_assets import RecordData, UserAssetsRanking
 from jkit.user import AssetsInfoData
 from prefect import flow, get_run_logger, task
-from prefect.states import Completed, Failed, State
+from prefect.client.schemas.objects import State
+from prefect.states import Completed, Failed
 from sshared.retry import retry
 
 from models.jianshu.user import User

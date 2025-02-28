@@ -6,7 +6,8 @@ from datetime import date, datetime, timedelta
 from jkit.config import CONFIG as JKIT_CONFIG
 from jkit.ranking.user_earning import RecordData, UserEarningRanking
 from prefect import flow, get_run_logger, task
-from prefect.states import Completed, Failed, State
+from prefect.client.schemas.objects import State
+from prefect.states import Completed, Failed
 from sshared.retry import retry
 
 from models.jianshu.user import User

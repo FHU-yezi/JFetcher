@@ -7,7 +7,8 @@ from jkit.config import CONFIG as JKIT_CONFIG
 from jkit.ranking.article_earning import ArticleEarningRanking, RecordData
 from jkit.user import InfoData as UserInfoData
 from prefect import flow, get_run_logger, task
-from prefect.states import Completed, Failed, State
+from prefect.client.schemas.objects import State
+from prefect.states import Completed, Failed
 from sshared.retry import retry
 
 from models.jianshu.article_earning_ranking_record import ArticleEarningRankingRecord
