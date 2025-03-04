@@ -23,6 +23,7 @@ from flows.jpep.fetch_ftn_market_orders_data import jpep_fetch_ftn_market_orders
 DEPLOYMENTS: tuple[RunnerDeployment, ...] = (
     beijiaoyi_fetch_ftn_market_orders_data.to_deployment(
         name="JFetcher_采集贝交易平台简书贝市场买单挂单数据",
+        tags=["数据源 / 贝交易平台"],
         parameters={"type": "BUY"},
         schedules=(
             CronSchedule(
@@ -33,6 +34,7 @@ DEPLOYMENTS: tuple[RunnerDeployment, ...] = (
     ),
     beijiaoyi_fetch_ftn_market_orders_data.to_deployment(
         name="JFetcher_采集贝交易平台简书贝市场卖单挂单数据",
+        tags=["数据源 / 贝交易平台"],
         parameters={"type": "SELL"},
         schedules=(
             CronSchedule(
@@ -43,6 +45,7 @@ DEPLOYMENTS: tuple[RunnerDeployment, ...] = (
     ),
     jianshu_fetch_article_earning_ranking_data.to_deployment(
         name="JFetcher_采集简书文章收益排行榜数据",
+        tags=["数据源 / 简书"],
         schedules=(
             CronSchedule(
                 cron="45 0 * * *",
@@ -52,6 +55,7 @@ DEPLOYMENTS: tuple[RunnerDeployment, ...] = (
     ),
     jianshu_fetch_daily_update_ranking_data.to_deployment(
         name="JFetcher_采集简书日更排行榜数据",
+        tags=["数据源 / 简书"],
         schedules=(
             CronSchedule(
                 cron="0 3 * * *",
@@ -61,6 +65,7 @@ DEPLOYMENTS: tuple[RunnerDeployment, ...] = (
     ),
     jianshu_fetch_user_assets_ranking_data.to_deployment(
         name="JFetcher_采集简书用户资产排行榜数据",
+        tags=["数据源 / 简书"],
         schedules=(
             CronSchedule(
                 cron="0 1 * * *",
@@ -70,6 +75,7 @@ DEPLOYMENTS: tuple[RunnerDeployment, ...] = (
     ),
     jianshu_fetch_user_earning_ranking_data.to_deployment(
         name="JFetcher_采集简书用户全部收益排行榜数据",
+        tags=["数据源 / 简书"],
         parameters={"type": "ALL"},
         schedules=(
             CronSchedule(
@@ -80,6 +86,7 @@ DEPLOYMENTS: tuple[RunnerDeployment, ...] = (
     ),
     jianshu_fetch_user_earning_ranking_data.to_deployment(
         name="JFetcher_采集简书用户创作收益排行榜数据",
+        tags=["数据源 / 简书"],
         parameters={"type": "CREATING"},
         schedules=(
             CronSchedule(
@@ -90,6 +97,7 @@ DEPLOYMENTS: tuple[RunnerDeployment, ...] = (
     ),
     jianshu_fetch_user_earning_ranking_data.to_deployment(
         name="JFetcher_采集简书用户投票收益排行榜数据",
+        tags=["数据源 / 简书"],
         parameters={"type": "VOTING"},
         schedules=(
             CronSchedule(
@@ -100,6 +108,7 @@ DEPLOYMENTS: tuple[RunnerDeployment, ...] = (
     ),
     jianshu_fetch_users_count_data.to_deployment(
         name="JFetcher_采集简书用户数量数据",
+        tags=["数据源 / 简书"],
         schedules=(
             CronSchedule(
                 cron="55 0 * * *",
@@ -109,6 +118,7 @@ DEPLOYMENTS: tuple[RunnerDeployment, ...] = (
     ),
     jpep_fetch_ftn_market_orders_data.to_deployment(
         name="JFetcher_采集简书积分兑换平台简书贝市场买单挂单数据",
+        tags=["数据源 / 简书积分兑换平台"],
         parameters={"type": "BUY"},
         schedules=(
             CronSchedule(
@@ -119,6 +129,7 @@ DEPLOYMENTS: tuple[RunnerDeployment, ...] = (
     ),
     jpep_fetch_ftn_market_orders_data.to_deployment(
         name="JFetcher_采集简书积分兑换平台简书贝市场卖单挂单数据",
+        tags=["数据源 / 简书积分兑换平台"],
         parameters={"type": "SELL"},
         schedules=(
             CronSchedule(
