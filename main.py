@@ -48,7 +48,7 @@ DEPLOYMENTS: tuple[RunnerDeployment, ...] = (
         tags=["数据源 / 简书"],
         schedules=(
             CronSchedule(
-                cron="45 0 * * *",
+                cron="35 0 * * *",
                 timezone="Asia/Shanghai",
             ),
         ),
@@ -58,7 +58,7 @@ DEPLOYMENTS: tuple[RunnerDeployment, ...] = (
         tags=["数据源 / 简书"],
         schedules=(
             CronSchedule(
-                cron="0 3 * * *",
+                cron="15 3 * * *",
                 timezone="Asia/Shanghai",
             ),
         ),
@@ -79,7 +79,7 @@ DEPLOYMENTS: tuple[RunnerDeployment, ...] = (
         parameters={"type": "ALL"},
         schedules=(
             CronSchedule(
-                cron="50 0 * * *",
+                cron="35 0 * * *",
                 timezone="Asia/Shanghai",
             ),
         ),
@@ -90,7 +90,7 @@ DEPLOYMENTS: tuple[RunnerDeployment, ...] = (
         parameters={"type": "CREATING"},
         schedules=(
             CronSchedule(
-                cron="50 0 * * *",
+                cron="35 0 * * *",
                 timezone="Asia/Shanghai",
             ),
         ),
@@ -101,7 +101,7 @@ DEPLOYMENTS: tuple[RunnerDeployment, ...] = (
         parameters={"type": "VOTING"},
         schedules=(
             CronSchedule(
-                cron="50 0 * * *",
+                cron="35 0 * * *",
                 timezone="Asia/Shanghai",
             ),
         ),
@@ -111,7 +111,7 @@ DEPLOYMENTS: tuple[RunnerDeployment, ...] = (
         tags=["数据源 / 简书"],
         schedules=(
             CronSchedule(
-                cron="55 0 * * *",
+                cron="45 0 * * *",
                 timezone="Asia/Shanghai",
             ),
         ),
