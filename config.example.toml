@@ -1,5 +1,7 @@
 jianshu_endpoint = ""
 
+beijiaoyi_token = ""
+
 [jianshu_postgres]
 host = "localhost"
 port = 5432
@@ -13,3 +15,10 @@ port = 5432
 user = "postgres"
 password = "postgres"
 database = "jpep"
+
+[beijiaoyi_postgres]
+host = "localhost"
+port = 5432
+user = "postgres"
+password = "postgres"
+database = "beijiaoyi"

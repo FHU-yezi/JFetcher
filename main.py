@@ -2,6 +2,9 @@ from prefect import serve
 from prefect.client.schemas.schedules import CronSchedule
 from prefect.deployments.runner import RunnerDeployment
 
+from flows.beijiaoyi.fetch_ftn_market_orders_data import (
+    beijiaoyi_fetch_ftn_market_orders_data,
+)
 from flows.jianshu.fetch_article_earning_ranking_data import (
     jianshu_fetch_article_earning_ranking_data,
 )
@@ -15,9 +18,29 @@ from flows.jianshu.fetch_user_earning_ranking_data import (
     jianshu_fetch_user_earning_ranking_data,
 )
 from flows.jianshu.fetch_users_count_data import jianshu_fetch_users_count_data
-from flows.jpep.fetch_ftn_market_orders_data import jpep_ftn_ftn_market_orders_data
+from flows.jpep.fetch_ftn_market_orders_data import jpep_fetch_ftn_market_orders_data
 
 DEPLOYMENTS: tuple[RunnerDeployment, ...] = (
+    beijiaoyi_fetch_ftn_market_orders_data.to_deployment(
+        name="JFetcher_采集贝交易平台简书贝市场买单挂单数据",
+        parameters={"type": "BUY"},
+        schedules=(
+            CronSchedule(
+                cron="*/10 * * * *",
+                timezone="Asia/Shanghai",
+            ),
+        ),
+    ),
+    beijiaoyi_fetch_ftn_market_orders_data.to_deployment(
+        name="JFetcher_采集贝交易平台简书贝市场卖单挂单数据",
+        parameters={"type": "SELL"},
+        schedules=(
+            CronSchedule(
+                cron="*/10 * * * *",
+                timezone="Asia/Shanghai",
+            ),
+        ),
+    ),
     jianshu_fetch_article_earning_ranking_data.to_deployment(
         name="JFetcher_采集简书文章收益排行榜数据",
         schedules=(
@@ -84,7 +107,7 @@ DEPLOYMENTS: tuple[RunnerDeployment, ...] = (
             ),
         ),
     ),
-    jpep_ftn_ftn_market_orders_data.to_deployment(
+    jpep_fetch_ftn_market_orders_data.to_deployment(
         name="JFetcher_采集简书积分兑换平台简书贝市场买单挂单数据",
         parameters={"type": "BUY"},
         schedules=(
@@ -94,7 +117,7 @@ DEPLOYMENTS: tuple[RunnerDeployment, ...] = (
             ),
         ),
     ),
-    jpep_ftn_ftn_market_orders_data.to_deployment(
+    jpep_fetch_ftn_market_orders_data.to_deployment(
         name="JFetcher_采集简书积分兑换平台简书贝市场卖单挂单数据",
         parameters={"type": "SELL"},
         schedules=(

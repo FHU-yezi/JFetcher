@@ -2,15 +2,16 @@ from collections.abc import AsyncGenerator
 from datetime import datetime, timedelta
 from typing import Literal
 
-from jkit.jpep.ftn_macket import FtnMacket, OrderData
-from prefect import flow, task
+from jkit.beijiaoyi.ftn_macket import FtnMacket, OrderData
+from jkit.credentials import BeijiaoyiCredential
+from prefect import flow, get_run_logger, task
 from prefect.client.schemas.objects import State
-from prefect.states import Completed
+from prefect.states import Completed, Failed
 
-from models.jpep.credit_record import CreditRecord
-from models.jpep.ftn_macket_record import FTNMacketRecord
-from models.jpep.ftn_order import FTNOrder
-from models.jpep.user import User
+from models.beijiaoyi.ftn_macket_record import FTNMacketRecord
+from models.beijiaoyi.ftn_order import FTNOrder
+from models.beijiaoyi.user import User
+from utils.config import CONFIG
 from utils.prefect_helper import get_flow_run_name, get_task_run_name
 
 OrdersType = Literal["BUY", "SELL"]
@@ -33,7 +34,9 @@ def get_fetch_time() -> datetime:
 async def iter_ftn_macket_orders(
     type: OrdersType,
 ) -> AsyncGenerator[OrderData]:
-    async for item in FtnMacket().iter_orders(type=type):
+    async for item in FtnMacket(
+        credential=BeijiaoyiCredential.from_bearer_token(CONFIG.beijiaoyi_token)
+    ).iter_orders(type=type):
         yield item
 
 
@@ -43,13 +46,19 @@ async def save_data_to_db(data: list[FTNMacketRecord]) -> None:
 
 
 @flow(
-    name="采集贝交易平台简书贝市场挂单数据",
+    name="采集简书积分兑换平台简书贝市场挂单数据",
     flow_run_name=get_flow_run_name,
     retries=2,
     retry_delay_seconds=10,
     timeout_seconds=20,
 )
-async def jpep_fetch_ftn_market_orders_data(type: OrdersType) -> State:
+async def beijiaoyi_fetch_ftn_market_orders_data(type: OrdersType) -> State:
+    logger = get_run_logger()
+
+    if not CONFIG.beijiaoyi_token:
+        logger.error("未设置 beijiaoyi_token，无法进行数据采集")
+        return Failed()
+
     time = get_fetch_time()
 
     data: list[FTNMacketRecord] = []
@@ -57,14 +66,8 @@ async def jpep_fetch_ftn_market_orders_data(type: OrdersType) -> State:
         await User.upsert(
             id=item.publisher_info.id,
             name=item.publisher_info.name,
-            hashed_name=item.publisher_info.hashed_name,
-            avatar_url=item.publisher_info.avatar_url,
-        )
-
-        await CreditRecord.create_if_modified(
-            time=time,
-            user_id=item.publisher_info.id,
-            credit=item.publisher_info.credit,
+            # TODO: 等待 JKit 修复该类型
+            avatar_url=item.publisher_info.avatar_url, # type: ignore
         )
 
         await FTNOrder.upsert(
@@ -80,11 +83,12 @@ async def jpep_fetch_ftn_market_orders_data(type: OrdersType) -> State:
                 fetch_time=time,
                 id=item.id,
                 price=item.price,
-                traded_count=item.completed_trades_count,
                 total_amount=item.total_amount,
                 traded_amount=item.traded_amount,
                 remaining_amount=item.tradable_amount,
                 minimum_trade_amount=item.minimum_trade_amount,
+                maximum_trade_amount=item.maximum_trade_amount,
+                completed_trades_count=item.completed_trades_count,
             )
         )
 
