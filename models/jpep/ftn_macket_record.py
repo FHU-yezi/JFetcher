@@ -10,11 +10,11 @@ class FTNMacketRecord(Table, frozen=True):
     fetch_time: datetime
     id: PositiveInt
     price: PositiveFloat
-    traded_count: NonNegativeInt
     total_amount: PositiveInt
     traded_amount: NonNegativeInt
     remaining_amount: int
     minimum_trade_amount: PositiveInt
+    completed_trades_count: NonNegativeInt
 
     @classmethod
     async def insert_many(cls, data: list["FTNMacketRecord"]) -> None:
@@ -23,19 +23,20 @@ class FTNMacketRecord(Table, frozen=True):
 
         async with jpep_pool.get_conn() as conn:
             await conn.cursor().executemany(
-                "INSERT INTO ftn_macket_records (fetch_time, id, price, traded_count, "
-                "total_amount, traded_amount, remaining_amount, minimum_trade_amount) "
+                "INSERT INTO ftn_macket_records (fetch_time, id, price, total_amount, "
+                "traded_amount, remaining_amount, minimum_trade_amount, "
+                "completed_trades_count) "
                 "VALUES (%s, %s, %s, %s, %s, %s, %s, %s);",
                 [
                     (
                         item.fetch_time,
                         item.id,
                         item.price,
-                        item.traded_count,
                         item.total_amount,
                         item.traded_amount,
                         item.remaining_amount,
                         item.minimum_trade_amount,
+                        item.completed_trades_count,
                     )
                     for item in data
                 ],

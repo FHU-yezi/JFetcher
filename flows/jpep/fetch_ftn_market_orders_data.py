@@ -80,11 +80,11 @@ async def jpep_fetch_ftn_market_orders_data(type: OrdersType) -> State:
                 fetch_time=time,
                 id=item.id,
                 price=item.price,
-                traded_count=item.completed_trades_count,
                 total_amount=item.total_amount,
                 traded_amount=item.traded_amount,
                 remaining_amount=item.tradable_amount,
                 minimum_trade_amount=item.minimum_trade_amount,
+                completed_trades_count=item.completed_trades_count,
             )
         )
 
