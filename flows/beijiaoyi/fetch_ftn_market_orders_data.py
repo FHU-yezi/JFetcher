@@ -67,7 +67,7 @@ async def beijiaoyi_fetch_ftn_market_orders_data(type: OrdersType) -> State:
             id=item.publisher_info.id,
             name=item.publisher_info.name,
             # TODO: 等待 JKit 修复该类型
-            avatar_url=item.publisher_info.avatar_url, # type: ignore
+            avatar_url=item.publisher_info.avatar_url,  # type: ignore
         )
 
         await FTNOrder.upsert(

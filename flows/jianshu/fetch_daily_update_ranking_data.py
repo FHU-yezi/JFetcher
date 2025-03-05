@@ -62,14 +62,21 @@ async def jianshu_fetch_daily_update_ranking_data() -> State:
 
     data: list[DbDailyUpdateRankingRecord] = []
     async for item in iter_daily_update_ranking():
-        user_info = await get_user_info(item)
+        user_info: UserInfoData = await get_user_info(item)
 
-        await User.upsert(
-            slug=item.user_info.slug,
-            id=user_info.id,
-            name=user_info.name,
-            avatar_url=user_info.avatar_url,
-        )
+        if await User.exists_by_slug(user_info.slug):
+            await User.update_by_slug(
+                slug=user_info.slug,
+                name=user_info.name,
+                avatar_url=user_info.avatar_url,
+            )
+        else:
+            await User.create(
+                slug=user_info.slug,
+                id=user_info.id,
+                name=user_info.name,
+                avatar_url=user_info.avatar_url,
+            )
 
         data.append(
             DbDailyUpdateRankingRecord(

@@ -20,26 +20,37 @@ class User(Table, frozen=True):
     history_names: list[NonEmptyStr]
     avatar_url: NonEmptyStr | None
 
-    async def create(self) -> None:
-        self.validate()
-
+    @classmethod
+    async def create(
+        cls, *, slug: str, id: int, name: str, avatar_url: str | None
+    ) -> None:
         async with jianshu_pool.get_conn() as conn:
             await conn.execute(
                 "INSERT INTO users (slug, status, update_time, id, name, "
                 "history_names, avatar_url) VALUES (%s, %s, %s, %s, %s, %s, %s);",
                 (
-                    self.slug,
-                    self.status,
-                    self.update_time,
-                    self.id,
-                    self.name,
-                    self.history_names,
-                    self.avatar_url,
+                    slug,
+                    "NORMAL",
+                    datetime.now(),
+                    id,
+                    name,
+                    [],
+                    avatar_url,
                 ),
             )
 
     @classmethod
-    async def get_by_slug(cls, slug: str) -> User | None:
+    async def exists_by_slug(cls, slug: str, /) -> bool:
+        async with jianshu_pool.get_conn() as conn:
+            cursor = await conn.execute(
+                "SELECT 1 FROM users WHERE slug = %s LIMIT 1;",
+                (slug,),
+            )
+
+            return await cursor.fetchone() is not None
+
+    @classmethod
+    async def get_by_slug(cls, slug: str, /) -> User | None:
         async with jianshu_pool.get_conn() as conn:
             cursor = await conn.execute(
                 "SELECT status, update_time, id, name, history_names, "
@@ -59,81 +70,47 @@ class User(Table, frozen=True):
             name=data[3],
             history_names=data[4],
             avatar_url=data[5],
-        )
+        ).validate()
 
     @classmethod
-    async def upsert(
-        cls,
-        slug: str,
-        id: int,
-        name: str,
-        avatar_url: str,
+    async def update_by_slug(
+        cls, *, slug: str, name: str | None, avatar_url: str | None
     ) -> None:
-        user = await cls.get_by_slug(slug)
-        # 如果不存在，创建用户
-        if not user:
-            await cls(
-                slug=slug,
-                status="NORMAL",
-                update_time=datetime.now(),
-                id=id,
-                name=name,
-                history_names=[],
-                avatar_url=avatar_url,
-            ).create()
+        old_data = await cls.get_by_slug(slug)
+        if old_data is None:
+            raise ValueError
+
+        # 避免竞争更新导致数据过时
+        if old_data.update_time > datetime.now():
             return
 
-        # 如果当前数据不是最新，跳过更新
-        if user.update_time > datetime.now():
-            return
-
-        # 在一个事务中一次性完成全部字段的更新
         async with jianshu_pool.get_conn() as conn, conn.transaction():
-            # 更新更新时间
+            # 更新 update_time
             await conn.execute(
                 "UPDATE users SET update_time = %s WHERE slug = %s;",
                 (datetime.now(), slug),
             )
 
-            # ID 无法被修改，如果异常则抛出错误
-            if user.id and id and user.id != id:
-                raise ValueError(f"用户 ID 不一致：{user.id} != {id}")
-
-            # 如果没有存储 ID，进行添加
-            if not user.id and id:
-                await conn.execute(
-                    "UPDATE users SET id = %s WHERE slug = %s;",
-                    (id, slug),
-                )
-
-            # 如果没有存储昵称，进行添加
-            if not user.name and name:
+            # 如果传入了 name，且 name 已修改
+            if name is not None and name != old_data.name:
+                # 更新 name
                 await conn.execute(
                     "UPDATE users SET name = %s WHERE slug = %s;",
                     (name, slug),
                 )
 
-            # 更新昵称
-            if user.name and name and user.name != name:
+                # 将旧数据的 name 添加到 history_names 中
                 await conn.execute(
-                    "UPDATE users SET name = %s WHERE slug = %s;",
-                    (name, slug),
-                )
-                await conn.execute(
-                    "UPDATE users SET history_names = array_append(history_names, "
-                    "%s) WHERE slug = %s;",
-                    (user.name, slug),
+                    "UPDATE users SET history_names = "
+                    "array_append(history_names, %s) WHERE slug = %s;",
+                    (old_data.name, slug),
                 )
 
-            # 如果没有存储头像链接，进行添加
-            if not user.avatar_url and avatar_url:
-                await conn.execute(
-                    "UPDATE users SET avatar_url = %s WHERE slug = %s;",
-                    (avatar_url, slug),
-                )
-
-            # 更新头像链接
-            if user.avatar_url and avatar_url and user.avatar_url != avatar_url:
+            # 如果传入了 avatar_url，且旧数据中不存在 avatar_url 或 avatar_url 已修改
+            if avatar_url is not None and (
+                old_data.avatar_url is None or avatar_url != old_data.avatar_url
+            ):
+                # 更新 avatar_url
                 await conn.execute(
                     "UPDATE users SET avatar_url = %s WHERE slug = %s;",
                     (avatar_url, slug),

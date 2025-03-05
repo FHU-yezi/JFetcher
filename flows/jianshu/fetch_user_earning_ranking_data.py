@@ -5,6 +5,7 @@ from datetime import date, datetime, timedelta
 
 from jkit.config import CONFIG as JKIT_CONFIG
 from jkit.ranking.user_earning import RecordData, UserEarningRanking
+from jkit.user import InfoData
 from prefect import flow, get_run_logger, task
 from prefect.client.schemas.objects import State
 from prefect.states import Completed, Failed
@@ -25,10 +26,10 @@ if CONFIG.jianshu_endpoint:
 
 
 @retry(**get_network_request_retry_params())
-async def get_user_id(
+async def get_user_info(
     item: RecordData,
-) -> int:
-    return await item.to_user_obj().id
+) -> InfoData:
+    return await item.to_user_obj().info
 
 
 @task(task_run_name=get_task_run_name)
@@ -65,14 +66,21 @@ async def jianshu_fetch_user_earning_ranking_data(
 
     data: list[UserEarningRankingRecord] = []
     async for item in iter_user_earning_ranking(date=date, type=type):
-        user_id = await get_user_id(item)
+        user_info: InfoData = await get_user_info(item)
 
-        await User.upsert(
-            slug=item.slug,
-            id=user_id,
-            name=item.name,
-            avatar_url=item.avatar_url,
-        )
+        if await User.exists_by_slug(user_info.slug):
+            await User.update_by_slug(
+                slug=user_info.slug,
+                name=user_info.name,
+                avatar_url=user_info.avatar_url,
+            )
+        else:
+            await User.create(
+                slug=user_info.slug,
+                id=user_info.id,
+                name=user_info.name,
+                avatar_url=user_info.avatar_url,
+            )
 
         data.append(
             UserEarningRankingRecord(
