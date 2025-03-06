@@ -1,4 +1,9 @@
+from prefect.client.schemas.schedules import CronSchedule
 from prefect.runtime import flow_run, task_run
+
+
+def get_cron_schedule(cron: str, /) -> CronSchedule:
+    return CronSchedule(cron=cron, timezone="Asia/Shanghai")
 
 
 def get_task_run_name() -> str:
