@@ -59,7 +59,7 @@ class User(Table, frozen=True):
         async with jianshu_pool.get_conn() as conn:
             cursor = await conn.execute(
                 "SELECT status, update_time, id, name, history_names, "
-                "avatar_url, membership_type, membership_expxire_time "
+                "avatar_url, membership_type, membership_expire_time "
                 "FROM users WHERE slug = %s;",
                 (slug,),
             )
