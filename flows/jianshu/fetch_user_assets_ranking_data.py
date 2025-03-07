@@ -12,7 +12,7 @@ from jkit.user import AssetsInfoData
 from prefect import flow, get_run_logger, task
 from sshared.retry import retry
 
-from models.jianshu.user import User
+from models.jianshu.user import MEMBERSHIP_INFO_UNAVALIABLE, User
 from models.jianshu.user_assets_ranking_record import (
     UserAssetsRankingRecord as DbUserAssetsRankingRecord,
 )
@@ -98,12 +98,19 @@ async def jianshu_fetch_user_assets_ranking_data(total_count: int = 1000) -> Non
                 id=item.user_info.id,
                 name=item.user_info.name,
                 avatar_url=item.user_info.avatar_url,
+                # 数据不可用，默认无会员
+                # TODO: 优化采集策略，尽可能采集会员信息
+                membership_type="NONE",
+                membership_expire_time=None,
             )
         else:
             await User.update_by_slug(
                 slug=item.user_info.slug,
                 name=item.user_info.name,
                 avatar_url=item.user_info.avatar_url,
+                # TODO: 优化采集策略，尽可能采集会员信息
+                membership_type=MEMBERSHIP_INFO_UNAVALIABLE,
+                membership_expire_time=MEMBERSHIP_INFO_UNAVALIABLE,
             )
 
         try:

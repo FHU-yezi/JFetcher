@@ -99,12 +99,16 @@ async def jianshu_fetch_article_earning_ranking_data(date: date | None = None) -
                 id=author_info.id,
                 name=author_info.name,
                 avatar_url=author_info.avatar_url,
+                membership_type=author_info.membership_info.type,
+                membership_expire_time=author_info.membership_info.expire_time,
             )
         else:
             await User.update_by_slug(
                 slug=author_info.slug,
                 name=author_info.name,
                 avatar_url=author_info.avatar_url,
+                membership_type=author_info.membership_info.type,
+                membership_expire_time=author_info.membership_info.expire_time,
             )
 
         data.append(

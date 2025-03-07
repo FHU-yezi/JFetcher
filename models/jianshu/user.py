@@ -3,6 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Literal
 
+from jkit.user import MembershipType
 from sshared.postgres import Table
 from sshared.strict_struct import NonEmptyStr, PositiveInt
 
@@ -10,6 +11,8 @@ from utils.db import jianshu_pool
 
 StatusType = Literal["NORMAL", "INACCESSIBLE"]
 
+# HACK: 使用该常量标识会员信息不可用，跳过更新
+MEMBERSHIP_INFO_UNAVALIABLE = "MEMBERSHIP_INFO_UNAVALIABLE"
 
 class User(Table, frozen=True):
     slug: NonEmptyStr
@@ -19,15 +22,25 @@ class User(Table, frozen=True):
     name: NonEmptyStr
     history_names: list[NonEmptyStr]
     avatar_url: NonEmptyStr | None
+    membership_type: MembershipType
+    membership_expire_time: datetime | None
 
     @classmethod
-    async def create(
-        cls, *, slug: str, id: int, name: str, avatar_url: str | None
+    async def create(  # noqa: PLR0913
+        cls,
+        *,
+        slug: str,
+        id: int,
+        name: str,
+        avatar_url: str | None,
+        membership_type: MembershipType,
+        membership_expire_time: datetime | None,
     ) -> None:
         async with jianshu_pool.get_conn() as conn:
             await conn.execute(
                 "INSERT INTO users (slug, status, update_time, id, name, "
-                "history_names, avatar_url) VALUES (%s, %s, %s, %s, %s, %s, %s);",
+                "history_names, avatar_url, membership_type, membership_expire_time) "
+                "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s);",
                 (
                     slug,
                     "NORMAL",
@@ -36,6 +49,8 @@ class User(Table, frozen=True):
                     name,
                     [],
                     avatar_url,
+                    membership_type,
+                    membership_expire_time,
                 ),
             )
 
@@ -44,7 +59,8 @@ class User(Table, frozen=True):
         async with jianshu_pool.get_conn() as conn:
             cursor = await conn.execute(
                 "SELECT status, update_time, id, name, history_names, "
-                "avatar_url FROM users WHERE slug = %s;",
+                "avatar_url, membership_type, membership_expxire_time "
+                "FROM users WHERE slug = %s;",
                 (slug,),
             )
 
@@ -60,10 +76,21 @@ class User(Table, frozen=True):
             name=data[3],
             history_names=data[4],
             avatar_url=data[5],
+            membership_type=data[6],
+            membership_expire_time=data[7],
         ).validate()
 
     @classmethod
-    async def update_by_slug(cls, *, slug: str, name: str, avatar_url: str) -> None:
+    async def update_by_slug(
+        cls,
+        *,
+        slug: str,
+        name: str,
+        avatar_url: str,
+        # HACK
+        membership_type: MembershipType | str,
+        membership_expire_time: datetime | None | str,
+    ) -> None:
         old_data = await cls.get_by_slug(slug)
         if old_data is None:
             raise ValueError
@@ -100,4 +127,20 @@ class User(Table, frozen=True):
                 await conn.execute(
                     "UPDATE users SET avatar_url = %s WHERE slug = %s;",
                     (avatar_url, slug),
+                )
+
+            # 如果 membership_type 已修改
+            if membership_type != old_data.membership_type:
+                # 更新 membership_type 和 membership_expire_time
+                await conn.execute(
+                    "UPDATE users SET membership_type = %s, "
+                    "membership_expire_time = %s WHERE slug = %s;",
+                    (membership_type, membership_expire_time, slug),
+                )
+            # 如果 membership_expire_time 已修改
+            elif membership_expire_time != old_data.membership_expire_time:
+                # 更新 membership_expire_time
+                await conn.execute(
+                    "UPDATE users SET membership_expire_time = %s WHERE slug = %s;",
+                    (membership_expire_time, slug),
                 )
