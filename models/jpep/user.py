@@ -25,7 +25,7 @@ class User(Table, frozen=True):
         async with jpep_pool.get_conn() as conn:
             await conn.execute(
                 "INSERT INTO users (id, update_time, name, hashed_name, avatar_url) "
-                "VALUES (%s, %s, %s, %s);",
+                "VALUES (%s, %s, %s, %s, %s);",
                 (
                     id,
                     datetime.now(),

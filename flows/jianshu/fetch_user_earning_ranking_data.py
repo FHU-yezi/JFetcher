@@ -18,7 +18,7 @@ from models.jianshu.user_earning_ranking_record import (
 )
 from utils.config import CONFIG
 from utils.prefect_helper import get_flow_run_name, get_task_run_name
-from utils.retry import get_network_request_retry_params
+from utils.retry import NETWORK_REQUEST_RETRY_PARAMS
 
 TOTAL_DATA_COUNT = 100
 
@@ -27,7 +27,7 @@ if CONFIG.jianshu_endpoint:
     JKIT_CONFIG.datasources.jianshu.endpoint = CONFIG.jianshu_endpoint
 
 
-@retry(**get_network_request_retry_params())
+@retry(**NETWORK_REQUEST_RETRY_PARAMS)
 async def get_user_info(
     item: RecordData,
 ) -> InfoData:

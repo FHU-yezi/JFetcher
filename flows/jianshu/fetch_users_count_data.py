@@ -12,7 +12,7 @@ from sshared.retry import retry
 from models.jianshu.users_count_record import UsersCountRecord
 from utils.config import CONFIG
 from utils.prefect_helper import get_flow_run_name
-from utils.retry import get_network_request_retry_params
+from utils.retry import NETWORK_REQUEST_RETRY_PARAMS
 
 USERS_LIST_LENGTH = 20
 
@@ -21,7 +21,7 @@ if CONFIG.jianshu_endpoint:
     JKIT_CONFIG.datasources.jianshu.endpoint = CONFIG.jianshu_endpoint
 
 
-@retry(**get_network_request_retry_params())
+@retry(**NETWORK_REQUEST_RETRY_PARAMS)
 async def get_users_list(start_ranking: int) -> list[RecordData]:
     result: list[RecordData] = []
     async for item in UserAssetsRanking(start_ranking=start_ranking).iter_records():
