@@ -18,24 +18,25 @@ class User(Table, frozen=True):
     hashed_name: NonEmptyStr
     avatar_url: NonEmptyStr | None
 
-    async def create(self) -> None:
-        self.validate()
-
+    @classmethod
+    async def create(
+        cls, *, id: int, name: str, hashed_name: str, avatar_url: str | None
+    ) -> None:
         async with jpep_pool.get_conn() as conn:
             await conn.execute(
                 "INSERT INTO users (id, update_time, name, hashed_name, avatar_url) "
-                "VALUES (%s, %s, %s, %s, %s);",
+                "VALUES (%s, %s, %s, %s);",
                 (
-                    self.id,
-                    self.update_time,
-                    self.name,
-                    self.hashed_name,
-                    self.avatar_url,
+                    id,
+                    datetime.now(),
+                    name,
+                    hashed_name,
+                    avatar_url,
                 ),
             )
 
     @classmethod
-    async def get_by_id(cls, id: int) -> User | None:
+    async def get_by_id(cls, id: int, /) -> User | None:
         async with jpep_pool.get_conn() as conn:
             cursor = await conn.execute(
                 "SELECT update_time, name, hashed_name, avatar_url "
@@ -56,54 +57,35 @@ class User(Table, frozen=True):
         )
 
     @classmethod
-    async def upsert(
-        cls,
-        id: int,
-        name: str,
-        hashed_name: str,
-        avatar_url: str | None = None,
+    async def update_by_id(
+        cls, *, id: int, name: str, hashed_name: str, avatar_url: str | None
     ) -> None:
-        user = await cls.get_by_id(id)
-        # 如果不存在，创建用户
-        if not user:
-            await cls(
-                id=id,
-                update_time=datetime.now(),
-                name=name,
-                hashed_name=hashed_name,
-                avatar_url=avatar_url,
-            ).create()
+        old_data = await cls.get_by_id(id)
+        if old_data is None:
+            raise ValueError
+
+        # 避免竞争更新导致数据过时
+        if old_data.update_time > datetime.now():
             return
 
-        # 如果当前数据不是最新，跳过更新
-        if user.update_time > datetime.now():
-            return
-
-        # 在一个事务中一次性完成全部字段的更新
         async with jpep_pool.get_conn() as conn, conn.transaction():
-            # 更新更新时间
+            # 更新 update_time
             await conn.execute(
                 "UPDATE users SET update_time = %s WHERE id = %s;",
                 (datetime.now(), id),
             )
 
-            # 更新昵称和哈希后昵称
-            if user.name and name and user.name != name:
-                # 哈希后昵称一定会跟随昵称变化，一同更新
+            # 如果 name 已修改
+            if name != old_data.name:
+                # 更新 name 和 hashed_name
                 await conn.execute(
                     "UPDATE users SET name = %s, hashed_name = %s WHERE id = %s;",
                     (name, hashed_name, id),
                 )
 
-            # 如果没有存储头像链接，进行添加
-            if not user.avatar_url and avatar_url:
-                await conn.execute(
-                    "UPDATE users SET avatar_url = %s WHERE id = %s;",
-                    (avatar_url, id),
-                )
-
-            # 更新头像链接
-            if user.avatar_url and avatar_url and user.avatar_url != avatar_url:
+            # 如果旧数据中不存在 avatar_url 或 avatar_url 已修改
+            if old_data.avatar_url is None or avatar_url != old_data.avatar_url:
+                # 更新 avatar_url
                 await conn.execute(
                     "UPDATE users SET avatar_url = %s WHERE id = %s;",
                     (avatar_url, id),

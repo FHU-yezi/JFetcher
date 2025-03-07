@@ -40,16 +40,6 @@ class User(Table, frozen=True):
             )
 
     @classmethod
-    async def exists_by_slug(cls, slug: str, /) -> bool:
-        async with jianshu_pool.get_conn() as conn:
-            cursor = await conn.execute(
-                "SELECT 1 FROM users WHERE slug = %s LIMIT 1;",
-                (slug,),
-            )
-
-            return await cursor.fetchone() is not None
-
-    @classmethod
     async def get_by_slug(cls, slug: str, /) -> User | None:
         async with jianshu_pool.get_conn() as conn:
             cursor = await conn.execute(
@@ -73,9 +63,7 @@ class User(Table, frozen=True):
         ).validate()
 
     @classmethod
-    async def update_by_slug(
-        cls, *, slug: str, name: str | None, avatar_url: str | None
-    ) -> None:
+    async def update_by_slug(cls, *, slug: str, name: str, avatar_url: str) -> None:
         old_data = await cls.get_by_slug(slug)
         if old_data is None:
             raise ValueError
@@ -91,8 +79,8 @@ class User(Table, frozen=True):
                 (datetime.now(), slug),
             )
 
-            # 如果传入了 name，且 name 已修改
-            if name is not None and name != old_data.name:
+            # 如果 name 已修改
+            if name != old_data.name:
                 # 更新 name
                 await conn.execute(
                     "UPDATE users SET name = %s WHERE slug = %s;",
@@ -106,10 +94,8 @@ class User(Table, frozen=True):
                     (old_data.name, slug),
                 )
 
-            # 如果传入了 avatar_url，且旧数据中不存在 avatar_url 或 avatar_url 已修改
-            if avatar_url is not None and (
-                old_data.avatar_url is None or avatar_url != old_data.avatar_url
-            ):
+            # 如果旧数据中不存在 avatar_url 或 avatar_url 已修改
+            if old_data.avatar_url is None or avatar_url != old_data.avatar_url:
                 # 更新 avatar_url
                 await conn.execute(
                     "UPDATE users SET avatar_url = %s WHERE slug = %s;",

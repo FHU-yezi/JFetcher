@@ -83,16 +83,17 @@ async def jianshu_fetch_user_assets_ranking_data(total_count: int = 1000) -> Sta
             )
             continue
 
-        if await User.exists_by_slug(item.user_info.slug):
-            await User.update_by_slug(
+        user = await User.get_by_slug(item.user_info.slug)
+        if not user:
+            await User.create(
                 slug=item.user_info.slug,
+                id=item.user_info.id,
                 name=item.user_info.name,
                 avatar_url=item.user_info.avatar_url,
             )
         else:
-            await User.create(
+            await User.update_by_slug(
                 slug=item.user_info.slug,
-                id=item.user_info.id,
                 name=item.user_info.name,
                 avatar_url=item.user_info.avatar_url,
             )

@@ -15,7 +15,7 @@ class DailyUpdateRankingRecord(Table, frozen=True):
     days: PositiveInt
 
     @classmethod
-    async def insert_many(cls, data: list[DailyUpdateRankingRecord]) -> None:
+    async def insert_many(cls, data: list[DailyUpdateRankingRecord], /) -> None:
         for item in data:
             item.validate()
 

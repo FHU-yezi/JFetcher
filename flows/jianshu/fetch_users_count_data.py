@@ -91,6 +91,9 @@ async def jianshu_fetch_users_count_data(
             logger.error("已达到最大尝试次数 max_tries=%s", max_tries)
             return Failed()
 
-    await UsersCountRecord(date=date, total_users_count=users_list[-1].ranking).create()
+    await UsersCountRecord.create(
+        date=date,
+        total_users_count=users_list[-1].ranking,
+    )
 
     return Completed()

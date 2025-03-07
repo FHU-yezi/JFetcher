@@ -18,7 +18,7 @@ class UserAssetsRankingRecord(Table, frozen=True):
     assets: NonNegativeFloat | None
 
     @classmethod
-    async def insert_many(cls, data: list[UserAssetsRankingRecord]) -> None:
+    async def insert_many(cls, data: list[UserAssetsRankingRecord], /) -> None:
         for item in data:
             item.validate()
 

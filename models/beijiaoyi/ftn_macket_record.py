@@ -20,7 +20,7 @@ class FTNMacketRecord(Table, frozen=True):
     completed_trades_count: NonNegativeInt
 
     @classmethod
-    async def insert_many(cls, data: list[FTNMacketRecord]) -> None:
+    async def insert_many(cls, data: list[FTNMacketRecord], /) -> None:
         for item in data:
             item.validate()
 

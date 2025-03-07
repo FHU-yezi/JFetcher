@@ -64,16 +64,17 @@ async def jianshu_fetch_daily_update_ranking_data() -> State:
     async for item in iter_daily_update_ranking():
         user_info: UserInfoData = await get_user_info(item)
 
-        if await User.exists_by_slug(user_info.slug):
-            await User.update_by_slug(
+        user = await User.get_by_slug(user_info.slug)
+        if not user:
+            await User.create(
                 slug=user_info.slug,
+                id=user_info.id,
                 name=user_info.name,
                 avatar_url=user_info.avatar_url,
             )
         else:
-            await User.create(
+            await User.update_by_slug(
                 slug=user_info.slug,
-                id=user_info.id,
                 name=user_info.name,
                 avatar_url=user_info.avatar_url,
             )

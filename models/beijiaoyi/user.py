@@ -17,23 +17,22 @@ class User(Table, frozen=True):
     name: NonEmptyStr
     avatar_url: NonEmptyStr
 
-    async def create(self) -> None:
-        self.validate()
-
+    @classmethod
+    async def create(cls, *, id: int, name: str, avatar_url: str) -> None:
         async with beijiaoyi_pool.get_conn() as conn:
             await conn.execute(
                 "INSERT INTO users (id, update_time, name, avatar_url) "
                 "VALUES (%s, %s, %s, %s);",
                 (
-                    self.id,
-                    self.update_time,
-                    self.name,
-                    self.avatar_url,
+                    id,
+                    datetime.now(),
+                    name,
+                    avatar_url,
                 ),
             )
 
     @classmethod
-    async def get_by_id(cls, id: int) -> User | None:
+    async def get_by_id(cls, id: int, /) -> User | None:
         async with beijiaoyi_pool.get_conn() as conn:
             cursor = await conn.execute(
                 "SELECT update_time, name, avatar_url FROM users WHERE id = %s;",
@@ -52,45 +51,33 @@ class User(Table, frozen=True):
         )
 
     @classmethod
-    async def upsert(
-        cls,
-        id: int,
-        name: str,
-        avatar_url: str,
-    ) -> None:
-        user = await cls.get_by_id(id)
-        # 如果不存在，创建用户
-        if not user:
-            await cls(
-                id=id,
-                update_time=datetime.now(),
-                name=name,
-                avatar_url=avatar_url,
-            ).create()
+    async def update_by_id(cls, *, id: int, name: str, avatar_url: str) -> None:
+        old_data = await cls.get_by_id(id)
+        if old_data is None:
+            raise ValueError
+
+        # 避免竞争更新导致数据过时
+        if old_data.update_time > datetime.now():
             return
 
-        # 如果当前数据不是最新，跳过更新
-        if user.update_time > datetime.now():
-            return
-
-        # 在一个事务中一次性完成全部字段的更新
         async with beijiaoyi_pool.get_conn() as conn, conn.transaction():
-            # 更新更新时间
+            # 更新 update_time
             await conn.execute(
                 "UPDATE users SET update_time = %s WHERE id = %s;",
                 (datetime.now(), id),
             )
 
-            # 更新昵称
-            if user.name != name:
-                # 哈希后昵称一定会跟随昵称变化，一同更新
+            # 如果 name 已修改
+            if name != old_data.name:
+                # 更新 name
                 await conn.execute(
                     "UPDATE users SET name = %s WHERE id = %s;",
                     (name, id),
                 )
 
-            # 更新头像链接
-            if user.avatar_url != avatar_url:
+            # 如果 avatar_url 已修改
+            if avatar_url != old_data.avatar_url:
+                # 更新 avatar_url
                 await conn.execute(
                     "UPDATE users SET avatar_url = %s WHERE id = %s;",
                     (avatar_url, id),

@@ -81,16 +81,17 @@ async def jianshu_fetch_article_earning_ranking_data(date: date | None = None) -
 
         author_info: UserInfoData = await get_article_author_info(item)
 
-        if await User.exists_by_slug(author_info.slug):
-            await User.update_by_slug(
+        user = await User.get_by_slug(author_info.slug)
+        if not user:
+            await User.create(
                 slug=author_info.slug,
+                id=author_info.id,
                 name=author_info.name,
                 avatar_url=author_info.avatar_url,
             )
         else:
-            await User.create(
+            await User.update_by_slug(
                 slug=author_info.slug,
-                id=author_info.id,
                 name=author_info.name,
                 avatar_url=author_info.avatar_url,
             )

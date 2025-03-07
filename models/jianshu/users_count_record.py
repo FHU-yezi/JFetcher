@@ -12,14 +12,13 @@ class UsersCountRecord(Table, frozen=True):
     date: date
     total_users_count: PositiveInt
 
-    async def create(self) -> None:
-        self.validate()
-
+    @classmethod
+    async def create(cls, *, date: date, total_users_count: int) -> None:
         async with jianshu_pool.get_conn() as conn:
             await conn.execute(
                 "INSERT INTO users_count_records (date, total_users_count) "
                 "VALUES (%s, %s);",
-                (self.date, self.total_users_count),
+                (date, total_users_count),
             )
 
     @classmethod

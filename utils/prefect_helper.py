@@ -8,9 +8,16 @@ def get_cron_schedule(cron: str, /) -> CronSchedule:
 
 def get_task_run_name() -> str:
     task_name = task_run.get_task_name()
-    task_run_id_part = task_run.get_id().split("-")[0]  # type: ignore
-    return f"{task_name}_{task_run_id_part}"
+    task_run_id = task_run.get_id()
+    if task_name is None or task_run_id is None:
+        raise ValueError
+
+    return f"{task_name}_{task_run_id.split('-')[0]}"
 
 
 def get_flow_run_name() -> str:
-    return flow_run.get_id().split("-")[0]  # type: ignore
+    flow_run_id = flow_run.get_id()
+    if flow_run_id is None:
+        raise ValueError
+
+    return flow_run_id.split("-")[0]

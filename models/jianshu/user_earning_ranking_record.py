@@ -22,7 +22,7 @@ class UserEarningRankingRecord(Table, frozen=True):
     voting_earning: NonNegativeFloat
 
     @classmethod
-    async def insert_many(cls, data: list[UserEarningRankingRecord]) -> None:
+    async def insert_many(cls, data: list[UserEarningRankingRecord], /) -> None:
         for item in data:
             item.validate()
 

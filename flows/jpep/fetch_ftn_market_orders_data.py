@@ -54,26 +54,42 @@ async def jpep_fetch_ftn_market_orders_data(type: OrdersType) -> State:
 
     data: list[FTNMacketRecord] = []
     async for item in iter_ftn_macket_orders(type):
-        await User.upsert(
-            id=item.publisher_info.id,
-            name=item.publisher_info.name,
-            hashed_name=item.publisher_info.hashed_name,
-            avatar_url=item.publisher_info.avatar_url,
-        )
+        user = await User.get_by_id(item.publisher_info.id)
+        if not user:
+            await User.create(
+                id=item.publisher_info.id,
+                name=item.publisher_info.name,
+                hashed_name=item.publisher_info.hashed_name,
+                avatar_url=item.publisher_info.avatar_url,
+            )
+        else:
+            await User.update_by_id(
+                id=item.publisher_info.id,
+                name=item.publisher_info.name,
+                hashed_name=item.publisher_info.hashed_name,
+                avatar_url=item.publisher_info.avatar_url,
+            )
 
-        await CreditRecord.create_if_modified(
-            time=time,
-            user_id=item.publisher_info.id,
-            credit=item.publisher_info.credit,
-        )
+        credit_record = await CreditRecord.get_by_user_id(item.publisher_info.id)
+        # 如果信用值记录不存在或已更新，创建新的信用值记录
+        if not credit_record or item.publisher_info.credit != credit_record.credit:
+            await CreditRecord.create(
+                time=time,
+                user_id=item.publisher_info.id,
+                credit=item.publisher_info.credit,
+            )
 
-        await FTNOrder.upsert(
-            id=item.id,
-            type=type,
-            publisher_id=item.publisher_info.id,
-            publish_time=item.publish_time,
-            last_seen_time=time,
-        )
+        ftn_order = await FTNOrder.get_by_id(item.id)
+        if not ftn_order:
+            await FTNOrder.create(
+                id=item.id,
+                type=type,
+                publisher_id=item.publisher_info.id,
+                publish_time=item.publish_time,
+                last_seen_time=time,
+            )
+        else:
+            await FTNOrder.update_by_id(id=item.id, last_seen_time=time)
 
         data.append(
             FTNMacketRecord(

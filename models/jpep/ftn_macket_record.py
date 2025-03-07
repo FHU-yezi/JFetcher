@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from datetime import datetime
 
 from sshared.postgres import Table
@@ -17,7 +19,7 @@ class FTNMacketRecord(Table, frozen=True):
     completed_trades_count: NonNegativeInt
 
     @classmethod
-    async def insert_many(cls, data: list["FTNMacketRecord"]) -> None:
+    async def insert_many(cls, data: list[FTNMacketRecord], /) -> None:
         for item in data:
             item.validate()
 
