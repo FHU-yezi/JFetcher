@@ -47,7 +47,7 @@ async def jianshu_fetch_users_count_data(
 
     date = datetime.now().date() - timedelta(days=1)
 
-    if await UsersCountRecord.is_records_exist(date=date):
+    if await UsersCountRecord.exists_by_date(date):
         logger.error("该日期的数据已存在 date=%s", date)
         return Failed()
 

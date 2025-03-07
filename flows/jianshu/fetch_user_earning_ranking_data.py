@@ -20,6 +20,8 @@ from utils.config import CONFIG
 from utils.prefect_helper import get_flow_run_name, get_task_run_name
 from utils.retry import get_network_request_retry_params
 
+TOTAL_DATA_COUNT = 100
+
 JKIT_CONFIG.data_validation.enabled = False
 if CONFIG.jianshu_endpoint:
     JKIT_CONFIG.datasources.jianshu.endpoint = CONFIG.jianshu_endpoint
@@ -60,9 +62,13 @@ async def jianshu_fetch_user_earning_ranking_data(
     if not date:
         date = datetime.now().date() - timedelta(days=1)
 
-    if await UserEarningRankingRecord.is_records_exist(date=date, type=type):
+    current_data_count = await UserEarningRankingRecord.count_by_date(date)
+    if current_data_count == TOTAL_DATA_COUNT:
         logger.error("该日期的数据已存在 date=%s", date)
         return Failed()
+    if 0 < current_data_count < TOTAL_DATA_COUNT:
+        # TODO: 实现断点续采
+        raise NotImplementedError
 
     data: list[UserEarningRankingRecord] = []
     async for item in iter_user_earning_ranking(date=date, type=type):

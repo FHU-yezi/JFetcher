@@ -65,9 +65,13 @@ async def jianshu_fetch_user_assets_ranking_data(total_count: int = 1000) -> Sta
 
     date = datetime.now().date()
 
-    if await DbUserAssetsRankingRecord.is_records_exist(date):
+    current_data_count = await DbUserAssetsRankingRecord.count_by_date(date)
+    if current_data_count >= total_count:
         logger.error("该日期的数据已存在 date=%s", date)
         return Failed()
+    if 0 < current_data_count < total_count:
+        # TODO: 实现断点续采
+        raise NotImplementedError
 
     data: list[DbUserAssetsRankingRecord] = []
     async for item in iter_user_assets_ranking(total_count):

@@ -18,6 +18,20 @@ class UserAssetsRankingRecord(Table, frozen=True):
     assets: NonNegativeFloat | None
 
     @classmethod
+    async def count_by_date(cls, date: date, /) -> int:
+        async with jianshu_pool.get_conn() as conn:
+            cursor = await conn.execute(
+                "SELECT COUNT(*) FROM user_assets_ranking_records WHERE date = %s;",
+                (date,),
+            )
+
+            data = await cursor.fetchone()
+            if not data:
+                raise ValueError
+
+        return data[0]
+
+    @classmethod
     async def insert_many(cls, data: list[UserAssetsRankingRecord], /) -> None:
         for item in data:
             item.validate()
@@ -38,13 +52,3 @@ class UserAssetsRankingRecord(Table, frozen=True):
                     for item in data
                 ],
             )
-
-    @classmethod
-    async def is_records_exist(cls, date: date) -> bool:
-        async with jianshu_pool.get_conn() as conn:
-            cursor = await conn.execute(
-                "SELECT 1 FROM user_assets_ranking_records WHERE date = %s LIMIT 1;",
-                (date,),
-            )
-
-            return await cursor.fetchone() is not None

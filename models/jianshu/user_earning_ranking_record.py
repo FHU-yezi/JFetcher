@@ -22,6 +22,20 @@ class UserEarningRankingRecord(Table, frozen=True):
     voting_earning: NonNegativeFloat
 
     @classmethod
+    async def count_by_date(cls, date: date, /) -> int:
+        async with jianshu_pool.get_conn() as conn:
+            cursor = await conn.execute(
+                "SELECT COUNT(*) FROM user_earning_ranking_records WHERE date = %s;",
+                (date,),
+            )
+
+            data = await cursor.fetchone()
+            if not data:
+                raise ValueError
+
+        return data[0]
+
+    @classmethod
     async def insert_many(cls, data: list[UserEarningRankingRecord], /) -> None:
         for item in data:
             item.validate()
@@ -44,16 +58,3 @@ class UserEarningRankingRecord(Table, frozen=True):
                     for item in data
                 ],
             )
-
-    @classmethod
-    async def is_records_exist(
-        cls, date: date, type: UserEarningRankingRecordType
-    ) -> bool:
-        async with jianshu_pool.get_conn() as conn:
-            cursor = await conn.execute(
-                "SELECT 1 FROM user_earning_ranking_records "
-                "WHERE date = %s AND type = %s LIMIT 1;",
-                (date, type),
-            )
-
-            return await cursor.fetchone() is not None
