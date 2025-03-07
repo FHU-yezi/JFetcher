@@ -1,17 +1,16 @@
 from __future__ import annotations
 
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 
 from jkit.config import CONFIG as JKIT_CONFIG
 from jkit.ranking.user_assets import RecordData, UserAssetsRanking
-from prefect import flow, get_run_logger
-from prefect.client.schemas.objects import State
-from prefect.states import Completed, Failed
+from prefect import flow, get_run_logger, task
 from sshared.retry import retry
 
 from models.jianshu.users_count_record import UsersCountRecord
 from utils.config import CONFIG
-from utils.prefect_helper import get_flow_run_name
+from utils.exceptions import BinarySearchMaxTriesReachedError, DataExistsError
+from utils.prefect_helper import get_flow_run_name, get_task_run_name
 from utils.retry import NETWORK_REQUEST_RETRY_PARAMS
 
 USERS_LIST_LENGTH = 20
@@ -33,6 +32,13 @@ async def get_users_list(start_ranking: int) -> list[RecordData]:
     return result
 
 
+@task(task_run_name=get_task_run_name)
+async def pre_check(date: date) -> None:
+    if await UsersCountRecord.exists_by_date(date):
+        raise DataExistsError(f"该日期的数据已存在 {date=}")
+
+
+# TODO: 移除多余注释
 @flow(
     name="采集简书用户数量数据",
     flow_run_name=get_flow_run_name,
@@ -42,14 +48,10 @@ async def get_users_list(start_ranking: int) -> list[RecordData]:
 )
 async def jianshu_fetch_users_count_data(
     default_start_ranking: int = 18265000, initial_step: int = 2000, max_tries: int = 20
-) -> State:
+) -> None:
     logger = get_run_logger()
 
     date = datetime.now().date() - timedelta(days=1)
-
-    if await UsersCountRecord.exists_by_date(date):
-        logger.error("该日期的数据已存在 date=%s", date)
-        return Failed()
 
     # TODO: 从数据库获取昨日数据以加速查找收敛
     current_start_ranking = default_start_ranking
@@ -88,12 +90,10 @@ async def jianshu_fetch_users_count_data(
 
         tries_count += 1
         if tries_count == max_tries:
-            logger.error("已达到最大尝试次数 max_tries=%s", max_tries)
-            return Failed()
+            raise BinarySearchMaxTriesReachedError(f"已达到最大尝试次数 {max_tries=}")
 
+    # TODO: 拆分成单独任务
     await UsersCountRecord.create(
         date=date,
         total_users_count=users_list[-1].ranking,
     )
-
-    return Completed()

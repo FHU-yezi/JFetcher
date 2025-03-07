@@ -1,14 +1,12 @@
 from __future__ import annotations
 
 from collections.abc import AsyncGenerator
-from datetime import datetime
+from datetime import date, datetime
 
 from jkit.config import CONFIG as JKIT_CONFIG
 from jkit.ranking.daily_update import DailyUpdateRanking, RecordData
 from jkit.user import InfoData as UserInfoData
 from prefect import flow, get_run_logger, task
-from prefect.client.schemas.objects import State
-from prefect.states import Completed, Failed
 from sshared.retry import retry
 
 from models.jianshu.daily_update_ranking_record import (
@@ -16,6 +14,7 @@ from models.jianshu.daily_update_ranking_record import (
 )
 from models.jianshu.user import User
 from utils.config import CONFIG
+from utils.exceptions import DataExistsError
 from utils.prefect_helper import get_flow_run_name, get_task_run_name
 from utils.retry import NETWORK_REQUEST_RETRY_PARAMS
 
@@ -36,6 +35,17 @@ async def get_user_info(
 
 
 @task(task_run_name=get_task_run_name)
+async def pre_check(date: date) -> None:
+    logger = get_run_logger()
+
+    current_data_count = await DbDailyUpdateRankingRecord.count_by_date(date)
+    if current_data_count == TOTAL_DATA_COUNT:
+        raise DataExistsError(f"该日期的数据已存在 {date=}")
+    if 0 < current_data_count < TOTAL_DATA_COUNT:
+        logger.warning("正在进行断点续采 current_data_count=%s", current_data_count)
+
+
+@task(task_run_name=get_task_run_name)
 async def iter_daily_update_ranking() -> AsyncGenerator[RecordData]:
     async for item in DailyUpdateRanking().iter_records():
         yield item
@@ -53,20 +63,13 @@ async def save_data_to_db(data: list[DbDailyUpdateRankingRecord]) -> None:
     retry_delay_seconds=300,
     timeout_seconds=300,
 )
-async def jianshu_fetch_daily_update_ranking_data() -> State:
-    logger = get_run_logger()
-
+async def jianshu_fetch_daily_update_ranking_data() -> None:
     date = datetime.now().date()
 
-    current_data_count = await DbDailyUpdateRankingRecord.count_by_date(date)
-    if current_data_count == TOTAL_DATA_COUNT:
-        logger.error("该日期的数据已存在 date=%s", date)
-        return Failed()
-    if 0 < current_data_count < TOTAL_DATA_COUNT:
-        # TODO: 实现断点续采
-        raise NotImplementedError
+    await pre_check(date)
 
     data: list[DbDailyUpdateRankingRecord] = []
+    # TODO: 实现断点续采
     async for item in iter_daily_update_ranking():
         user_info: UserInfoData = await get_user_info(item)
 
@@ -95,5 +98,3 @@ async def jianshu_fetch_daily_update_ranking_data() -> State:
         )
 
     await save_data_to_db(data)
-
-    return Completed()

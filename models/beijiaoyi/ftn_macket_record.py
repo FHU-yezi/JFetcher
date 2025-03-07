@@ -20,6 +20,16 @@ class FTNMacketRecord(Table, frozen=True):
     completed_trades_count: NonNegativeInt
 
     @classmethod
+    async def exists_by_fetch_time(cls, fetch_time: datetime, /) -> bool:
+        async with beijiaoyi_pool.get_conn() as conn:
+            cursor = await conn.execute(
+                "SELECT 1 FROM ftn_macket_records WHERE fetch_time = %s LIMIT 1;",
+                (fetch_time,),
+            )
+
+            return await cursor.fetchone() is not None
+
+    @classmethod
     async def insert_many(cls, data: list[FTNMacketRecord], /) -> None:
         for item in data:
             item.validate()

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import AsyncGenerator
-from datetime import datetime
+from datetime import date, datetime
 
 from jkit.config import CONFIG as JKIT_CONFIG
 from jkit.exceptions import (
@@ -10,8 +10,6 @@ from jkit.exceptions import (
 from jkit.ranking.user_assets import RecordData, UserAssetsRanking
 from jkit.user import AssetsInfoData
 from prefect import flow, get_run_logger, task
-from prefect.client.schemas.objects import State
-from prefect.states import Completed, Failed
 from sshared.retry import retry
 
 from models.jianshu.user import User
@@ -33,6 +31,17 @@ async def get_user_assets_info(
     user = item.user_info.to_user_obj()
 
     return await user.assets_info
+
+
+@task(task_run_name=get_task_run_name)
+async def pre_check(date: date, total_count: int) -> None:
+    logger = get_run_logger()
+
+    current_data_count = await DbUserAssetsRankingRecord.count_by_date(date)
+    if current_data_count >= total_count:
+        logger.error("该日期的数据已存在 date=%s", date)
+    if 0 < current_data_count < total_count:
+        logger.warning("正在进行断点续采 current_data_count=%s", current_data_count)
 
 
 @task(task_run_name=get_task_run_name)
@@ -60,20 +69,15 @@ async def save_data_to_db(data: list[DbUserAssetsRankingRecord]) -> None:
     retry_delay_seconds=600,
     timeout_seconds=3600,
 )
-async def jianshu_fetch_user_assets_ranking_data(total_count: int = 1000) -> State:
+async def jianshu_fetch_user_assets_ranking_data(total_count: int = 1000) -> None:
     logger = get_run_logger()
 
     date = datetime.now().date()
 
-    current_data_count = await DbUserAssetsRankingRecord.count_by_date(date)
-    if current_data_count >= total_count:
-        logger.error("该日期的数据已存在 date=%s", date)
-        return Failed()
-    if 0 < current_data_count < total_count:
-        # TODO: 实现断点续采
-        raise NotImplementedError
+    await pre_check(date=date, total_count=total_count)
 
     data: list[DbUserAssetsRankingRecord] = []
+    # TODO: 实现断点续采
     async for item in iter_user_assets_ranking(total_count):
         if (
             item.user_info.slug is None
@@ -154,5 +158,3 @@ async def jianshu_fetch_user_assets_ranking_data(total_count: int = 1000) -> Sta
                 )
 
     await save_data_to_db(data)
-
-    return Completed()

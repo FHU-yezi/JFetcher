@@ -63,9 +63,7 @@ class FTNOrder(Table, frozen=True):
         )
 
     @classmethod
-    async def update_by_id(
-        cls, *, id: int, last_seen_time: datetime
-    ) -> None:
+    async def update_by_id(cls, *, id: int, last_seen_time: datetime) -> None:
         async with jpep_pool.get_conn() as conn:
             await conn.execute(
                 "UPDATE ftn_orders SET last_seen_time = %s WHERE id = %s;",

@@ -4,13 +4,12 @@ from typing import Literal
 
 from jkit.jpep.ftn_macket import FtnMacket, OrderData
 from prefect import flow, task
-from prefect.client.schemas.objects import State
-from prefect.states import Completed
 
 from models.jpep.credit_record import CreditRecord
 from models.jpep.ftn_macket_record import FTNMacketRecord
 from models.jpep.ftn_order import FTNOrder
 from models.jpep.user import User
+from utils.exceptions import DataExistsError
 from utils.prefect_helper import get_flow_run_name, get_task_run_name
 
 OrdersType = Literal["BUY", "SELL"]
@@ -27,6 +26,12 @@ def get_fetch_time() -> datetime:
         delta = timedelta(minutes=10 - (time.minute % 10))
 
     return time + delta
+
+
+@task(task_run_name=get_task_run_name)
+async def pre_check(fetch_time: datetime) -> None:
+    if await FTNMacketRecord.exists_by_fetch_time(fetch_time):
+        raise DataExistsError(f"该时间的数据已存在 {fetch_time=}")
 
 
 @task(task_run_name=get_task_run_name)
@@ -49,8 +54,10 @@ async def save_data_to_db(data: list[FTNMacketRecord]) -> None:
     retry_delay_seconds=10,
     timeout_seconds=20,
 )
-async def jpep_fetch_ftn_market_orders_data(type: OrdersType) -> State:
-    time = get_fetch_time()
+async def jpep_fetch_ftn_market_orders_data(type: OrdersType) -> None:
+    fetch_time = get_fetch_time()
+
+    await pre_check(fetch_time=fetch_time)
 
     data: list[FTNMacketRecord] = []
     async for item in iter_ftn_macket_orders(type):
@@ -74,7 +81,7 @@ async def jpep_fetch_ftn_market_orders_data(type: OrdersType) -> State:
         # 如果信用值记录不存在或已更新，创建新的信用值记录
         if not credit_record or item.publisher_info.credit != credit_record.credit:
             await CreditRecord.create(
-                time=time,
+                time=fetch_time,
                 user_id=item.publisher_info.id,
                 credit=item.publisher_info.credit,
             )
@@ -86,14 +93,14 @@ async def jpep_fetch_ftn_market_orders_data(type: OrdersType) -> State:
                 type=type,
                 publisher_id=item.publisher_info.id,
                 publish_time=item.publish_time,
-                last_seen_time=time,
+                last_seen_time=fetch_time,
             )
         else:
-            await FTNOrder.update_by_id(id=item.id, last_seen_time=time)
+            await FTNOrder.update_by_id(id=item.id, last_seen_time=fetch_time)
 
         data.append(
             FTNMacketRecord(
-                fetch_time=time,
+                fetch_time=fetch_time,
                 id=item.id,
                 price=item.price,
                 total_amount=item.total_amount,
@@ -105,5 +112,3 @@ async def jpep_fetch_ftn_market_orders_data(type: OrdersType) -> State:
         )
 
     await save_data_to_db(data)
-
-    return Completed()
