@@ -9,7 +9,7 @@ from models.beijiaoyi.ftn_macket_record import FTNMacketRecord
 from models.beijiaoyi.ftn_order import FTNOrder, OrdersType
 from models.beijiaoyi.user import User
 from utils.config import CONFIG
-from utils.exceptions import DataExistsError, MissingCredentialError
+from utils.exceptions import MissingCredentialError
 from utils.prefect_helper import get_flow_run_name, get_task_run_name
 
 
@@ -27,12 +27,11 @@ def get_fetch_time() -> datetime:
 
 
 @task(task_run_name=get_task_run_name)
-async def pre_check(*, fetch_time: datetime) -> None:
+async def pre_check() -> None:
     if not CONFIG.beijiaoyi_token:
         raise MissingCredentialError("beijiaoyi_token 未设置")
 
-    if await FTNMacketRecord.exists_by_fetch_time(fetch_time):
-        raise DataExistsError(f"该时间的数据已存在 {fetch_time=}")
+    # TODO: 实现防重机制
 
 
 @task(task_run_name=get_task_run_name)
@@ -111,7 +110,7 @@ async def beijiaoyi_fetch_ftn_market_orders_data(type: OrdersType) -> None:
 
     fetch_time = get_fetch_time()
 
-    await pre_check(fetch_time=fetch_time)
+    await pre_check()
 
     async for item in iter_ftn_macket_orders(type=type):
         try:
