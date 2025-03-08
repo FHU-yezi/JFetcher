@@ -34,10 +34,12 @@ async def get_user_info(
 
 
 @task(task_run_name=get_task_run_name)
-async def pre_check(*, date: date) -> int:
+async def pre_check(*, date: date, type: UserEarningRankingRecordType) -> int:
     logger = get_run_logger()
 
-    current_data_count = await UserEarningRankingRecord.count_by_date(date)
+    current_data_count = await UserEarningRankingRecord.count_by_date_and_type(
+        date=date, type=type
+    )
     if current_data_count == TOTAL_DATA_COUNT:
         raise DataExistsError(f"该日期的数据已存在 {date=}")
     if 0 < current_data_count < TOTAL_DATA_COUNT:
@@ -106,7 +108,7 @@ async def jianshu_fetch_user_earning_ranking_data(
     if not date:
         date = datetime.now().date() - timedelta(days=1)
 
-    start_ranking = await pre_check(date=date)
+    start_ranking = await pre_check(date=date, type=type)
 
     async for item in iter_user_earning_ranking(date=date, type=type):
         # 断点续采

@@ -50,11 +50,14 @@ class UserEarningRankingRecord(Table, frozen=True):
             )
 
     @classmethod
-    async def count_by_date(cls, date: date, /) -> int:
+    async def count_by_date_and_type(
+        cls, *, date: date, type: UserEarningRankingRecordType
+    ) -> int:
         async with jianshu_pool.get_conn() as conn:
             cursor = await conn.execute(
-                "SELECT COUNT(*) FROM user_earning_ranking_records WHERE date = %s;",
-                (date,),
+                "SELECT COUNT(*) FROM user_earning_ranking_records "
+                "WHERE date = %s AND type = %s;",
+                (date, type),
             )
 
             data = await cursor.fetchone()
