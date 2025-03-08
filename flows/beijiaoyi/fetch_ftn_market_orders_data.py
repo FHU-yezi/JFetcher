@@ -17,13 +17,13 @@ def get_fetch_time() -> datetime:
     time = datetime.now().replace(second=0, microsecond=0)
 
     # 12:01 -> timedelta = -1 minute
-    if time.minute <= 5:  # noqa: PLR2004
-        delta = -timedelta(minutes=time.minute % 10)
+    if time.minute % 10 < 5:  # noqa: PLR2004
+        delta = timedelta(minutes=time.minute % 10)
+        return time - delta
     # 11:57 -> timedelta = +3 minute
-    else:
+    else:  # noqa: RET505
         delta = timedelta(minutes=10 - (time.minute % 10))
-
-    return time + delta
+        return time + delta
 
 
 @task(task_run_name=get_task_run_name)
