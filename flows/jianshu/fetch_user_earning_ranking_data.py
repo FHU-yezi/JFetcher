@@ -73,7 +73,6 @@ async def jianshu_fetch_user_earning_ranking_data(
     await pre_check(date=date)
 
     data: list[UserEarningRankingRecord] = []
-    # TODO: 实现断点续采
     async for item in iter_user_earning_ranking(date=date, type=type):
         user_info: InfoData = await get_user_info(item)
 

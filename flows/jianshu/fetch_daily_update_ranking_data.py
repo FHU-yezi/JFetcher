@@ -69,7 +69,6 @@ async def jianshu_fetch_daily_update_ranking_data() -> None:
     await pre_check(date)
 
     data: list[DbDailyUpdateRankingRecord] = []
-    # TODO: 实现断点续采
     async for item in iter_daily_update_ranking():
         user_info: UserInfoData = await get_user_info(item)
 

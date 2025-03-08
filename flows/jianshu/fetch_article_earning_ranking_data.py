@@ -72,7 +72,6 @@ async def jianshu_fetch_article_earning_ranking_data(date: date | None = None) -
     await pre_check(date)
 
     data: list[ArticleEarningRankingRecord] = []
-    # TODO: 实现断点续采
     async for item in iter_article_earning_ranking(date):
         if not item.slug:
             logger.warning("文章状态异常，跳过作者数据采集 ranking=%s", item.ranking)
