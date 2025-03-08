@@ -23,6 +23,24 @@ class UsersCountRecord(Table, frozen=True):
             return await cursor.fetchone() is not None
 
     @classmethod
+    async def get_by_date(cls, date: date, /) -> UsersCountRecord | None:
+        async with jianshu_pool.get_conn() as conn:
+            cursor = await conn.execute(
+                "SELECT total_users_count FROM users_count_records WHERE date = %s;",
+                (date,),
+            )
+
+            data = await cursor.fetchone()
+
+        if not data:
+            return None
+
+        return cls(
+            date=date,
+            total_users_count=data[0],
+        ).validate()
+
+    @classmethod
     async def create(cls, *, date: date, total_users_count: int) -> None:
         async with jianshu_pool.get_conn() as conn:
             await conn.execute(

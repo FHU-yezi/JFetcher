@@ -14,6 +14,7 @@ from utils.prefect_helper import get_flow_run_name, get_task_run_name
 from utils.retry import NETWORK_REQUEST_RETRY_PARAMS
 
 USERS_LIST_LENGTH = 20
+DEFAULT_START_RANKING = 18270000
 
 JKIT_CONFIG.data_validation.enabled = False
 if CONFIG.jianshu_endpoint:
@@ -38,7 +39,14 @@ async def pre_check(date: date) -> None:
         raise DataExistsError(f"该日期的数据已存在 {date=}")
 
 
-# TODO: 移除多余注释
+@task(task_run_name=get_task_run_name)
+async def save_data_to_db(*, date: date, total_users_count: int) -> None:
+    await UsersCountRecord.create(
+        date=date,
+        total_users_count=total_users_count,
+    )
+
+
 @flow(
     name="采集简书用户数量数据",
     flow_run_name=get_flow_run_name,
@@ -47,53 +55,57 @@ async def pre_check(date: date) -> None:
     timeout_seconds=300,
 )
 async def jianshu_fetch_users_count_data(
-    default_start_ranking: int = 18265000, initial_step: int = 2000, max_tries: int = 20
+    initial_step: int = 1000, max_tries: int = 20
 ) -> None:
     logger = get_run_logger()
 
     date = datetime.now().date() - timedelta(days=1)
 
-    # TODO: 从数据库获取昨日数据以加速查找收敛
-    current_start_ranking = default_start_ranking
-    current_step = initial_step
-    logger.debug("开始尝试获取用户数量 start_ranking=%s", current_start_ranking)
+    await pre_check(date=date)
 
-    tries_count = 0
+    latest_data = await UsersCountRecord.get_by_date(date - timedelta(days=1))
+    if not latest_data:
+        start_ranking = DEFAULT_START_RANKING
+        logger.warning(
+            "获取数据库最新记录失败，将使用默认参数 start_ranking=%s",
+            start_ranking,
+        )
+    else:
+        start_ranking = latest_data.total_users_count
+        logger.warning(
+            "正在使用数据库历史参数加速查找收敛 start_ranking=%s",
+            start_ranking,
+        )
+
+    step = initial_step
+    tries = 1
     while True:
-        users_list: list[RecordData] = await get_users_list(
-            start_ranking=current_start_ranking
+        logger.info(
+            "正在获取资产排行榜数据 tries=%s start_ranking=%s step=%s",
+            tries,
+            start_ranking,
+            step,
         )
-        logger.debug(
-            "已获取用户列表 tries_count=%s min_ranking=%s max_ranking=%s",
-            tries_count,
-            users_list[0].ranking if users_list else None,
-            users_list[-1].ranking if users_list else None,
-        )
+        users_list: list[RecordData] = await get_users_list(start_ranking=start_ranking)
 
         # 已获取到用户列表末尾
         if 0 < len(users_list) < USERS_LIST_LENGTH:
-            logger.info("已完成用户数量获取 users_count=%s", users_list[-1].ranking)
             break
 
         # 获取到用户列表中段，向后跳转
         if len(users_list) == USERS_LIST_LENGTH:
-            current_start_ranking += current_step
+            start_ranking += step
         # 已超出用户列表范围，向前跳转
         if len(users_list) == 0:
-            current_step //= 2
-            current_start_ranking -= current_step
-        logger.debug(
-            "已调整获取参数 start_ranking=%s step=%s",
-            current_start_ranking,
-            current_step,
-        )
+            step //= 2
+            start_ranking -= step
 
-        tries_count += 1
-        if tries_count == max_tries:
+        if tries == max_tries:
             raise BinarySearchMaxTriesReachedError(f"已达到最大尝试次数 {max_tries=}")
 
-    # TODO: 拆分成单独任务
-    await UsersCountRecord.create(
+        tries += 1
+
+    await save_data_to_db(
         date=date,
         total_users_count=users_list[-1].ranking,
     )
