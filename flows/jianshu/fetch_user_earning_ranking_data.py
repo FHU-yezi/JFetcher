@@ -57,6 +57,11 @@ async def iter_user_earning_ranking(
 
 
 async def save_user_data(item: RecordData, /) -> None:
+    logger = get_run_logger()
+
+    if not item.slug or not item.name or not item.avatar_url:
+        logger.warning("用户数据不可用，跳过采集 ranking=%s", item.ranking)
+
     user_info: InfoData = await get_user_info(item)
 
     user = await User.get_by_slug(user_info.slug)
