@@ -34,13 +34,12 @@ async def get_users_list(start_ranking: int) -> list[RecordData]:
 
 
 @task(task_run_name=get_task_run_name)
-async def pre_check(date: date) -> None:
+async def pre_check(*, date: date) -> None:
     if await UsersCountRecord.exists_by_date(date):
         raise DataExistsError(f"该日期的数据已存在 {date=}")
 
 
-@task(task_run_name=get_task_run_name)
-async def save_data_to_db(*, date: date, total_users_count: int) -> None:
+async def save_users_count_record_data(*, date: date, total_users_count: int) -> None:
     await UsersCountRecord.create(
         date=date,
         total_users_count=total_users_count,
@@ -105,7 +104,7 @@ async def jianshu_fetch_users_count_data(
 
         tries += 1
 
-    await save_data_to_db(
+    await save_users_count_record_data(
         date=date,
         total_users_count=users_list[-1].ranking,
     )

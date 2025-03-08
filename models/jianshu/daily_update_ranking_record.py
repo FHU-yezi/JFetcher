@@ -15,6 +15,20 @@ class DailyUpdateRankingRecord(Table, frozen=True):
     days: PositiveInt
 
     @classmethod
+    async def create(cls, *, date: date, ranking: int, slug: str, days: int) -> None:
+        async with jianshu_pool.get_conn() as conn:
+            await conn.cursor().execute(
+                "INSERT INTO daily_update_ranking_records (date, ranking, "
+                "slug, days) VALUES (%s, %s, %s, %s);",
+                (
+                    date,
+                    ranking,
+                    slug,
+                    days,
+                ),
+            )
+
+    @classmethod
     async def count_by_date(cls, date: date, /) -> int:
         async with jianshu_pool.get_conn() as conn:
             cursor = await conn.execute(
@@ -27,23 +41,3 @@ class DailyUpdateRankingRecord(Table, frozen=True):
                 raise ValueError
 
         return data[0]
-
-    @classmethod
-    async def insert_many(cls, data: list[DailyUpdateRankingRecord], /) -> None:
-        for item in data:
-            item.validate()
-
-        async with jianshu_pool.get_conn() as conn:
-            await conn.cursor().executemany(
-                "INSERT INTO daily_update_ranking_records (date, ranking, "
-                "slug, days) VALUES (%s, %s, %s, %s);",
-                [
-                    (
-                        item.date,
-                        item.ranking,
-                        item.slug,
-                        item.days,
-                    )
-                    for item in data
-                ],
-            )

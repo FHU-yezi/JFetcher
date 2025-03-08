@@ -34,7 +34,7 @@ async def get_user_info(
 
 
 @task(task_run_name=get_task_run_name)
-async def pre_check(date: date) -> None:
+async def pre_check(*, date: date) -> int:
     logger = get_run_logger()
 
     current_data_count = await UserEarningRankingRecord.count_by_date(date)
@@ -42,6 +42,8 @@ async def pre_check(date: date) -> None:
         raise DataExistsError(f"该日期的数据已存在 {date=}")
     if 0 < current_data_count < TOTAL_DATA_COUNT:
         logger.warning("正在进行断点续采 current_data_count=%s", current_data_count)
+
+    return current_data_count + 1
 
 
 @task(task_run_name=get_task_run_name)
@@ -52,9 +54,42 @@ async def iter_user_earning_ranking(
         yield item
 
 
+async def save_user_data(item: RecordData, /) -> None:
+    user_info: InfoData = await get_user_info(item)
+
+    user = await User.get_by_slug(user_info.slug)
+    if not user:
+        await User.create(
+            slug=user_info.slug,
+            id=user_info.id,
+            name=user_info.name,
+            avatar_url=user_info.avatar_url,
+            membership_type=user_info.membership_info.type,
+            membership_expire_time=user_info.membership_info.expire_time,
+        )
+    else:
+        await User.update_by_slug(
+            slug=user_info.slug,
+            name=user_info.name,
+            avatar_url=user_info.avatar_url,
+            membership_type=user_info.membership_info.type,
+            membership_expire_time=user_info.membership_info.expire_time,
+        )
+
+
 @task(task_run_name=get_task_run_name)
-async def save_data_to_db(data: list[UserEarningRankingRecord]) -> None:
-    await UserEarningRankingRecord.insert_many(data)
+async def save_user_earning_ranking_record_data(
+    item: RecordData, /, *, date: date, type: UserEarningRankingRecordType
+) -> None:
+    await UserEarningRankingRecord.create(
+        date=date,
+        type=type,
+        ranking=item.ranking,
+        slug=item.slug,
+        total_earning=item.total_fp_amount,
+        creating_earning=item.fp_by_creating_anount,
+        voting_earning=item.fp_by_voting_amount,
+    )
 
 
 @flow(
@@ -67,44 +102,26 @@ async def save_data_to_db(data: list[UserEarningRankingRecord]) -> None:
 async def jianshu_fetch_user_earning_ranking_data(
     type: UserEarningRankingRecordType, date: date | None = None
 ) -> None:
+    logger = get_run_logger()
+
     if not date:
         date = datetime.now().date() - timedelta(days=1)
 
-    await pre_check(date=date)
+    start_ranking = await pre_check(date=date)
 
-    data: list[UserEarningRankingRecord] = []
     async for item in iter_user_earning_ranking(date=date, type=type):
-        user_info: InfoData = await get_user_info(item)
+        # 断点续采
+        if item.ranking < start_ranking:
+            continue
 
-        user = await User.get_by_slug(user_info.slug)
-        if not user:
-            await User.create(
-                slug=user_info.slug,
-                id=user_info.id,
-                name=user_info.name,
-                avatar_url=user_info.avatar_url,
-                membership_type=user_info.membership_info.type,
-                membership_expire_time=user_info.membership_info.expire_time,
-            )
-        else:
-            await User.update_by_slug(
-                slug=user_info.slug,
-                name=user_info.name,
-                avatar_url=user_info.avatar_url,
-                membership_type=user_info.membership_info.type,
-                membership_expire_time=user_info.membership_info.expire_time,
-            )
+        try:
+            await save_user_data(item)
+        except Exception:
+            logger.exception("保存用户数据时发生未知异常 ranking=%s", item.ranking)
 
-        data.append(
-            UserEarningRankingRecord(
-                date=date,
-                type=type,
-                ranking=item.ranking,
-                slug=item.slug,
-                total_earning=item.total_fp_amount,
-                creating_earning=item.fp_by_creating_anount,
-                voting_earning=item.fp_by_voting_amount,
+        try:
+            await save_user_earning_ranking_record_data(item, date=date, type=type)
+        except Exception:
+            logger.exception(
+                "保存用户收益排行榜数据时发生未知异常 ranking=%s", item.ranking
             )
-        )
-
-    await save_data_to_db(data)

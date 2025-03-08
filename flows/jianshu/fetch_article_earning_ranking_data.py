@@ -35,7 +35,7 @@ async def get_article_author_info(
 
 
 @task(task_run_name=get_task_run_name)
-async def pre_check(date: date) -> None:
+async def pre_check(*, date: date) -> int:
     logger = get_run_logger()
 
     current_data_count = await ArticleEarningRankingRecord.count_by_date(date)
@@ -44,6 +44,8 @@ async def pre_check(date: date) -> None:
     if 0 < current_data_count < TOTAL_DATA_COUNT:
         logger.warning("正在进行断点续采 current_data_count=%s", current_data_count)
 
+    return current_data_count + 1
+
 
 @task(task_run_name=get_task_run_name)
 async def iter_article_earning_ranking(date: date) -> AsyncGenerator[RecordData]:
@@ -51,9 +53,40 @@ async def iter_article_earning_ranking(date: date) -> AsyncGenerator[RecordData]
         yield item
 
 
+async def save_user_data(*, author_info: UserInfoData) -> None:
+    user = await User.get_by_slug(author_info.slug)
+    if not user:
+        await User.create(
+            slug=author_info.slug,
+            id=author_info.id,
+            name=author_info.name,
+            avatar_url=author_info.avatar_url,
+            membership_type=author_info.membership_info.type,
+            membership_expire_time=author_info.membership_info.expire_time,
+        )
+    else:
+        await User.update_by_slug(
+            slug=author_info.slug,
+            name=author_info.name,
+            avatar_url=author_info.avatar_url,
+            membership_type=author_info.membership_info.type,
+            membership_expire_time=author_info.membership_info.expire_time,
+        )
+
+
 @task(task_run_name=get_task_run_name)
-async def save_data_to_db(data: list[ArticleEarningRankingRecord]) -> None:
-    await ArticleEarningRankingRecord.insert_many(data)
+async def save_article_earning_ranking_record_data(
+    item: RecordData, /, *, date: date, author_info: UserInfoData | None
+) -> None:
+    await ArticleEarningRankingRecord.create(
+        date=date,
+        ranking=item.ranking,
+        slug=item.slug,
+        title=item.title,
+        author_slug=author_info.slug if author_info else None,
+        author_earning=item.fp_to_author_anount,
+        voter_earning=item.fp_to_voter_amount,
+    )
 
 
 @flow(
@@ -69,57 +102,28 @@ async def jianshu_fetch_article_earning_ranking_data(date: date | None = None) -
     if not date:
         date = datetime.now().date() - timedelta(days=1)
 
-    await pre_check(date)
+    start_ranking = await pre_check(date=date)
 
-    data: list[ArticleEarningRankingRecord] = []
     async for item in iter_article_earning_ranking(date):
-        if not item.slug:
-            logger.warning("文章状态异常，跳过作者数据采集 ranking=%s", item.ranking)
-
-            data.append(
-                ArticleEarningRankingRecord(
-                    date=date,
-                    ranking=item.ranking,
-                    slug=None,
-                    title=None,
-                    author_slug=None,
-                    author_earning=item.fp_to_author_anount,
-                    voter_earning=item.fp_to_voter_amount,
-                )
-            )
+        # 断点续采
+        if item.ranking < start_ranking:
             continue
 
-        author_info: UserInfoData = await get_article_author_info(item)
+        if item.slug:
+            author_info: UserInfoData = await get_article_author_info(item)
 
-        user = await User.get_by_slug(author_info.slug)
-        if not user:
-            await User.create(
-                slug=author_info.slug,
-                id=author_info.id,
-                name=author_info.name,
-                avatar_url=author_info.avatar_url,
-                membership_type=author_info.membership_info.type,
-                membership_expire_time=author_info.membership_info.expire_time,
-            )
+            try:
+                await save_user_data(author_info=author_info)
+            except Exception:
+                logger.exception("保存用户数据时发生未知异常")
         else:
-            await User.update_by_slug(
-                slug=author_info.slug,
-                name=author_info.name,
-                avatar_url=author_info.avatar_url,
-                membership_type=author_info.membership_info.type,
-                membership_expire_time=author_info.membership_info.expire_time,
-            )
+            # TODO
+            author_info = None  # type: ignore
+            logger.warning("文章状态异常，跳过作者数据采集 ranking=%s", item.ranking)
 
-        data.append(
-            ArticleEarningRankingRecord(
-                date=date,
-                ranking=item.ranking,
-                slug=item.slug,
-                title=item.title,
-                author_slug=author_info.slug,
-                author_earning=item.fp_to_author_anount,
-                voter_earning=item.fp_to_voter_amount,
+        try:
+            await save_article_earning_ranking_record_data(
+                item, date=date, author_info=author_info
             )
-        )
-
-    await save_data_to_db(data)
+        except Exception:
+            logger.exception("保存文章收益排行榜数据时发生未知异常 id=%s", item.ranking)

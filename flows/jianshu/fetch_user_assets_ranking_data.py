@@ -5,7 +5,6 @@ from datetime import date, datetime
 
 from jkit.config import CONFIG as JKIT_CONFIG
 from jkit.exceptions import (
-    RatelimitError,
     ResourceUnavailableError,
 )
 from jkit.ranking.user_assets import RecordData, UserAssetsRanking
@@ -45,7 +44,7 @@ async def get_user_assets_info(
 
 
 @task(task_run_name=get_task_run_name)
-async def pre_check(date: date, total_count: int) -> int:
+async def pre_check(*, date: date, total_count: int) -> int:
     logger = get_run_logger()
 
     current_data_count = await DbUserAssetsRankingRecord.count_by_date(date)
@@ -72,9 +71,84 @@ async def iter_user_assets_ranking(
             return
 
 
-@task(task_run_name=get_task_run_name)
-async def save_data_to_db(data: list[DbUserAssetsRankingRecord]) -> None:
-    await DbUserAssetsRankingRecord.insert_many(data)
+async def save_user_data(item: RecordData, /) -> None:
+    logger = get_run_logger()
+
+    if (
+        not item.user_info.id
+        or not item.user_info.slug
+        or not item.user_info.name
+        or not item.user_info.avatar_url
+    ):
+        logger.info("用户信息不可用，跳过用户数据采集 raning=%s", item.ranking)
+        return
+
+    user = await User.get_by_slug(item.user_info.slug)
+
+    try:
+        user_info: InfoData = await get_user_info(item)
+    except ResourceUnavailableError:
+        # 用户不存在或已注销 / 被封禁，将其 status 设置为 INACCESSIBLE
+        # 如果用户记录尚不存在，先创建
+        if not user:
+            await User.create(
+                slug=item.user_info.slug,
+                id=item.user_info.id,
+                name=item.user_info.name,
+                avatar_url=item.user_info.avatar_url,
+                membership_type="NONE",
+                membership_expire_time=None,
+            )
+        logger.info(
+            "用户不存在或已注销 / 被封禁，status 已设为 INACCESSIBLE slug=%s",
+            item.user_info.slug,
+        )
+    else:
+        if not user:
+            await User.create(
+                slug=item.user_info.slug,
+                id=item.user_info.id,
+                name=item.user_info.name,
+                avatar_url=item.user_info.avatar_url,
+                membership_type=user_info.membership_info.type,
+                membership_expire_time=user_info.membership_info.expire_time,
+            )
+        else:
+            await User.update_by_slug(
+                slug=item.user_info.slug,
+                name=item.user_info.name,
+                avatar_url=item.user_info.avatar_url,
+                membership_type=user_info.membership_info.type,
+                membership_expire_time=user_info.membership_info.expire_time,
+            )
+
+
+async def save_user_assets_ranking_record_data(
+    item: RecordData, /, *, date: date
+) -> None:
+    logger = get_run_logger()
+
+    try:
+        assets_info: AssetsInfoData = await get_user_assets_info(item)
+    except Exception:
+        assets_info = None  # type: ignore
+    else:
+        if assets_info.ftn_amount is None and assets_info.assets_amount is None:
+            logger.warning(
+                "受 API 限制，无法采集简书贝和总资产数据 ranking=%s slug=%s",
+                item.ranking,
+                item.user_info.slug,
+            )
+
+    await DbUserAssetsRankingRecord.create(
+        date=date,
+        ranking=item.ranking,
+        slug=item.user_info.slug,
+        fp=assets_info.fp_amount if assets_info else None,
+        ftn=assets_info.ftn_amount if assets_info else None,
+        # 后备数据（资产排行榜，非实时）
+        assets=assets_info.assets_amount if assets_info else item.assets_amount,
+    )
 
 
 @flow(
@@ -91,109 +165,19 @@ async def jianshu_fetch_user_assets_ranking_data(total_count: int = 3000) -> Non
 
     start_ranking = await pre_check(date=date, total_count=total_count)
 
-    data: list[DbUserAssetsRankingRecord] = []
-    try:
-        async for item in iter_user_assets_ranking(
-            start_ranking=start_ranking, total_count=total_count
-        ):
-            if (
-                item.user_info.slug is None
-                or item.user_info.id is None
-                or item.user_info.name is None
-                or item.user_info.avatar_url is None
-            ):  # 用户数据为空
-                logger.warning(
-                    "用户数据为空，跳过资产数据采集 ranking=%s",
-                    item.ranking,
-                )
-                continue
+    async for item in iter_user_assets_ranking(
+        # 断点续采
+        start_ranking=start_ranking,
+        total_count=total_count,
+    ):
+        try:
+            await save_user_data(item)
+        except Exception:
+            logger.exception("保存用户数据时发生未知异常 ranking=%s", item.ranking)
 
-            try:
-                user_info: InfoData = await get_user_info(item)
-            except ResourceUnavailableError:
-                # 用户不存在或已注销 / 被封禁
-                # 如果数据库中有该用户的记录，将其 status 设置为 INACCESSIBLE
-                # 否则，不做任何事，因为采集不存在的用户数据没有意义
-                user = await User.get_by_slug(item.user_info.slug)
-                if user:
-                    await User.update_status_by_slug(
-                        slug=item.user_info.slug, status="INACCESSIBLE"
-                    )
-                    logger.info(
-                        "用户不存在或已注销 / 被封禁，status 已设为 "
-                        "INACCESSIBLE slug=%s",
-                        item.user_info.slug,
-                    )
-
-                logger.warning(
-                    "用户状态异常，跳过资产数据采集 ranking=%s slug=%s",
-                    item.ranking,
-                    item.user_info.slug,
-                )
-                data.append(
-                    DbUserAssetsRankingRecord(
-                        date=date,
-                        ranking=item.ranking,
-                        slug=item.user_info.slug,
-                        fp=None,
-                        ftn=None,
-                        # 后备数据（资产排行榜，非实时）
-                        assets=item.assets_amount,
-                    )
-                )
-            else:
-                user = await User.get_by_slug(item.user_info.slug)
-                if not user:
-                    await User.create(
-                        slug=item.user_info.slug,
-                        id=item.user_info.id,
-                        name=item.user_info.name,
-                        avatar_url=item.user_info.avatar_url,
-                        membership_type=user_info.membership_info.type,
-                        membership_expire_time=user_info.membership_info.expire_time,
-                    )
-                else:
-                    await User.update_by_slug(
-                        slug=item.user_info.slug,
-                        name=item.user_info.name,
-                        avatar_url=item.user_info.avatar_url,
-                        membership_type=user_info.membership_info.type,
-                        membership_expire_time=user_info.membership_info.expire_time,
-                    )
-
-            # 此时不可能再次出现 ResourceUnavaliableError
-            # 因此不做错误处理
-            assets_info: AssetsInfoData = await get_user_assets_info(item)
-            if assets_info.ftn_amount is None and assets_info.assets_amount is None:
-                logger.warning(
-                    "受 API 限制，无法采集简书贝和总资产数据 ranking=%s slug=%s",
-                    item.ranking,
-                    item.user_info.slug,
-                )
-                # 此时 fp_amount 为实时数据，assets_amount 为非实时数据
-                # 为防止数据异常，不对 fp_amount 进行存储
-                data.append(
-                    DbUserAssetsRankingRecord(
-                        date=date,
-                        ranking=item.ranking,
-                        slug=item.user_info.slug,
-                        fp=None,
-                        ftn=None,
-                        # 后备数据（资产排行榜，非实时）
-                        assets=item.assets_amount,
-                    )
-                )
-            else:  # 正常
-                data.append(
-                    DbUserAssetsRankingRecord(
-                        date=date,
-                        ranking=item.ranking,
-                        slug=item.user_info.slug,
-                        fp=assets_info.fp_amount,
-                        ftn=assets_info.ftn_amount,
-                        assets=assets_info.assets_amount,
-                    )
-                )
-    except RatelimitError:
-        await save_data_to_db(data)
-        raise RatelimitError("触发简书限流，已保存部分数据") from None
+        try:
+            await save_user_assets_ranking_record_data(item, date=date)
+        except Exception:
+            logger.exception(
+                "保存用户收益排行榜数据时发生未知异常 ranking=%s", item.ranking
+            )

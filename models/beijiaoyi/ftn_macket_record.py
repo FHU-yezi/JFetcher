@@ -20,6 +20,39 @@ class FTNMacketRecord(Table, frozen=True):
     completed_trades_count: NonNegativeInt
 
     @classmethod
+    async def create(  # noqa: PLR0913
+        cls,
+        *,
+        fetch_time: datetime,
+        id: int,
+        price: float,
+        total_amount: int,
+        traded_amount: int,
+        remaining_amount: int,
+        minimum_trade_amount: int,
+        maximum_trade_amount: int | None,
+        completed_trades_count: int,
+    ) -> None:
+        async with beijiaoyi_pool.get_conn() as conn:
+            await conn.cursor().execute(
+                "INSERT INTO ftn_macket_records (fetch_time, id, price, total_amount, "
+                "traded_amount, remaining_amount, minimum_trade_amount, "
+                "maximum_trade_amount, completed_trades_count) "
+                "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s);",
+                (
+                    fetch_time,
+                    id,
+                    price,
+                    total_amount,
+                    traded_amount,
+                    remaining_amount,
+                    minimum_trade_amount,
+                    maximum_trade_amount,
+                    completed_trades_count,
+                ),
+            )
+
+    @classmethod
     async def exists_by_fetch_time(cls, fetch_time: datetime, /) -> bool:
         async with beijiaoyi_pool.get_conn() as conn:
             cursor = await conn.execute(
@@ -28,30 +61,3 @@ class FTNMacketRecord(Table, frozen=True):
             )
 
             return await cursor.fetchone() is not None
-
-    @classmethod
-    async def insert_many(cls, data: list[FTNMacketRecord], /) -> None:
-        for item in data:
-            item.validate()
-
-        async with beijiaoyi_pool.get_conn() as conn:
-            await conn.cursor().executemany(
-                "INSERT INTO ftn_macket_records (fetch_time, id, price, total_amount, "
-                "traded_amount, remaining_amount, minimum_trade_amount, "
-                "maximum_trade_amount, completed_trades_count) "
-                "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s);",
-                [
-                    (
-                        item.fetch_time,
-                        item.id,
-                        item.price,
-                        item.total_amount,
-                        item.traded_amount,
-                        item.remaining_amount,
-                        item.minimum_trade_amount,
-                        item.maximum_trade_amount,
-                        item.completed_trades_count,
-                    )
-                    for item in data
-                ],
-            )

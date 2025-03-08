@@ -22,13 +22,13 @@ from utils.prefect_helper import get_cron_schedule
 
 DEPLOYMENTS: tuple[RunnerDeployment, ...] = (
     beijiaoyi_fetch_ftn_market_orders_data.to_deployment(
-        name="JFetcher_采集贝交易平台简书贝市场买单挂单数据",
+        name="JFetcher_采集贝交易平台简书贝市场买单订单数据",
         tags=["数据源 / 贝交易平台"],
         parameters={"type": "BUY"},
         schedules=(get_cron_schedule("*/10 * * * *"),),
     ),
     beijiaoyi_fetch_ftn_market_orders_data.to_deployment(
-        name="JFetcher_采集贝交易平台简书贝市场卖单挂单数据",
+        name="JFetcher_采集贝交易平台简书贝市场卖单订单数据",
         tags=["数据源 / 贝交易平台"],
         parameters={"type": "SELL"},
         schedules=(get_cron_schedule("*/10 * * * *"),),
@@ -72,13 +72,13 @@ DEPLOYMENTS: tuple[RunnerDeployment, ...] = (
         schedules=(get_cron_schedule("45 0 * * *"),),
     ),
     jpep_fetch_ftn_market_orders_data.to_deployment(
-        name="JFetcher_采集简书积分兑换平台简书贝市场买单挂单数据",
+        name="JFetcher_采集简书积分兑换平台简书贝市场买单订单数据",
         tags=["数据源 / 简书积分兑换平台"],
         parameters={"type": "BUY"},
         schedules=(get_cron_schedule("*/10 * * * *"),),
     ),
     jpep_fetch_ftn_market_orders_data.to_deployment(
-        name="JFetcher_采集简书积分兑换平台简书贝市场卖单挂单数据",
+        name="JFetcher_采集简书积分兑换平台简书贝市场卖单订单数据",
         tags=["数据源 / 简书积分兑换平台"],
         parameters={"type": "SELL"},
         schedules=(get_cron_schedule("*/10 * * * *"),),

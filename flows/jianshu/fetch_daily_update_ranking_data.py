@@ -35,7 +35,7 @@ async def get_user_info(
 
 
 @task(task_run_name=get_task_run_name)
-async def pre_check(date: date) -> None:
+async def pre_check(*, date: date) -> int:
     logger = get_run_logger()
 
     current_data_count = await DbDailyUpdateRankingRecord.count_by_date(date)
@@ -44,6 +44,8 @@ async def pre_check(date: date) -> None:
     if 0 < current_data_count < TOTAL_DATA_COUNT:
         logger.warning("正在进行断点续采 current_data_count=%s", current_data_count)
 
+    return current_data_count + 1
+
 
 @task(task_run_name=get_task_run_name)
 async def iter_daily_update_ranking() -> AsyncGenerator[RecordData]:
@@ -51,9 +53,39 @@ async def iter_daily_update_ranking() -> AsyncGenerator[RecordData]:
         yield item
 
 
+async def save_user_data(item: RecordData, /) -> None:
+    user_info: UserInfoData = await get_user_info(item)
+
+    user = await User.get_by_slug(user_info.slug)
+    if not user:
+        await User.create(
+            slug=user_info.slug,
+            id=user_info.id,
+            name=user_info.name,
+            avatar_url=user_info.avatar_url,
+            membership_type=user_info.membership_info.type,
+            membership_expire_time=user_info.membership_info.expire_time,
+        )
+    else:
+        await User.update_by_slug(
+            slug=user_info.slug,
+            name=user_info.name,
+            avatar_url=user_info.avatar_url,
+            membership_type=user_info.membership_info.type,
+            membership_expire_time=user_info.membership_info.expire_time,
+        )
+
+
 @task(task_run_name=get_task_run_name)
-async def save_data_to_db(data: list[DbDailyUpdateRankingRecord]) -> None:
-    await DbDailyUpdateRankingRecord.insert_many(data)
+async def save_daily_update_ranking_record_data(
+    item: RecordData, /, *, date: date
+) -> None:
+    await DbDailyUpdateRankingRecord.create(
+        date=date,
+        ranking=item.ranking,
+        slug=item.user_info.slug,
+        days=item.days,
+    )
 
 
 @flow(
@@ -64,40 +96,25 @@ async def save_data_to_db(data: list[DbDailyUpdateRankingRecord]) -> None:
     timeout_seconds=300,
 )
 async def jianshu_fetch_daily_update_ranking_data() -> None:
+    logger = get_run_logger()
+
     date = datetime.now().date()
 
-    await pre_check(date)
+    start_ranking = await pre_check(date=date)
 
-    data: list[DbDailyUpdateRankingRecord] = []
     async for item in iter_daily_update_ranking():
-        user_info: UserInfoData = await get_user_info(item)
+        # 断点续采
+        if item.ranking < start_ranking:
+            continue
 
-        user = await User.get_by_slug(user_info.slug)
-        if not user:
-            await User.create(
-                slug=user_info.slug,
-                id=user_info.id,
-                name=user_info.name,
-                avatar_url=user_info.avatar_url,
-                membership_type=user_info.membership_info.type,
-                membership_expire_time=user_info.membership_info.expire_time,
-            )
-        else:
-            await User.update_by_slug(
-                slug=user_info.slug,
-                name=user_info.name,
-                avatar_url=user_info.avatar_url,
-                membership_type=user_info.membership_info.type,
-                membership_expire_time=user_info.membership_info.expire_time,
-            )
+        try:
+            await save_user_data(item)
+        except Exception:
+            logger.exception("保存用户数据时发生未知异常 ranking=%s", item.ranking)
 
-        data.append(
-            DbDailyUpdateRankingRecord(
-                date=date,
-                ranking=item.ranking,
-                slug=item.user_info.slug,
-                days=item.days,
+        try:
+            await save_daily_update_ranking_record_data(item, date=date)
+        except Exception:
+            logger.exception(
+                "保存日更排行榜数据时发生未知异常 ranking=%s", item.ranking
             )
-        )
-
-    await save_data_to_db(data)

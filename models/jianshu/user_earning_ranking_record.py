@@ -22,6 +22,34 @@ class UserEarningRankingRecord(Table, frozen=True):
     voting_earning: NonNegativeFloat
 
     @classmethod
+    async def create(  # noqa: PLR0913
+        cls,
+        *,
+        date: date,
+        type: UserEarningRankingRecordType,
+        ranking: int,
+        slug: str,
+        total_earning: float,
+        creating_earning: float,
+        voting_earning: float,
+    ) -> None:
+        async with jianshu_pool.get_conn() as conn:
+            await conn.cursor().execute(
+                "INSERT INTO user_earning_ranking_records (date, type, "
+                "ranking, slug, total_earning, creating_earning, voting_earning) "
+                "VALUES (%s, %s, %s, %s, %s, %s, %s);",
+                (
+                    date,
+                    type,
+                    ranking,
+                    slug,
+                    total_earning,
+                    creating_earning,
+                    voting_earning,
+                ),
+            )
+
+    @classmethod
     async def count_by_date(cls, date: date, /) -> int:
         async with jianshu_pool.get_conn() as conn:
             cursor = await conn.execute(
@@ -34,27 +62,3 @@ class UserEarningRankingRecord(Table, frozen=True):
                 raise ValueError
 
         return data[0]
-
-    @classmethod
-    async def insert_many(cls, data: list[UserEarningRankingRecord], /) -> None:
-        for item in data:
-            item.validate()
-
-        async with jianshu_pool.get_conn() as conn:
-            await conn.cursor().executemany(
-                "INSERT INTO user_earning_ranking_records (date, type, "
-                "ranking, slug, total_earning, creating_earning, voting_earning) "
-                "VALUES (%s, %s, %s, %s, %s, %s, %s);",
-                [
-                    (
-                        item.date,
-                        item.type,
-                        item.ranking,
-                        item.slug,
-                        item.total_earning,
-                        item.creating_earning,
-                        item.voting_earning,
-                    )
-                    for item in data
-                ],
-            )
