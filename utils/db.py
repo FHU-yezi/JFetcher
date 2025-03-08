@@ -16,3 +16,9 @@ jpep_pool = Pool(
     max_size=4,
     app_name="JFetcher",
 )
+beijiaoyi_pool = Pool(
+    CONFIG.beijiaoyi_postgres.connection_string,
+    min_size=1,
+    max_size=4,
+    app_name="JFetcher",
+)

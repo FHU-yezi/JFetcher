@@ -1,5 +1,6 @@
+from __future__ import annotations
+
 from datetime import datetime
-from typing import Optional
 
 from sshared.postgres import Table
 from sshared.strict_struct import (
@@ -15,21 +16,20 @@ class CreditRecord(Table, frozen=True):
     user_id: PositiveInt
     credit: NonNegativeInt
 
-    async def create(self) -> None:
-        self.validate()
-
+    @classmethod
+    async def create(cls, *, time: datetime, user_id: int, credit: int) -> None:
         async with jpep_pool.get_conn() as conn:
             await conn.execute(
                 "INSERT INTO credit_records (time, user_id, credit) VALUES "
                 "(%s, %s, %s);",
-                (self.time, self.user_id, self.credit),
+                (time, user_id, credit),
             )
 
     @classmethod
-    async def get_latest_credit(cls, user_id: int) -> Optional[int]:
+    async def get_by_user_id(cls, user_id: int) -> CreditRecord | None:
         async with jpep_pool.get_conn() as conn:
             cursor = await conn.execute(
-                "SELECT credit FROM credit_records WHERE user_id = %s "
+                "SELECT time, credit FROM credit_records WHERE user_id = %s "
                 "ORDER BY time DESC LIMIT 1;",
                 (user_id,),
             )
@@ -38,4 +38,8 @@ class CreditRecord(Table, frozen=True):
         if not data:
             return None
 
-        return data[0]
+        return cls(
+            time=data[0],
+            user_id=user_id,
+            credit=data[1],
+        ).validate()

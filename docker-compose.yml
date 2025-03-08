@@ -1,6 +1,4 @@
 networks:
-  gotify:
-    external: true
   postgres:
     external: true
   prefect:
@@ -8,13 +6,12 @@ networks:
 
 services:
   main:
-    image: jfetcher:3.10.0
+    image: jfetcher:4.0.0
     container_name: jfetcher
     build: .
     volumes:
       - ./config.toml:/app/config.toml:ro
     networks:
-      - gotify
       - postgres
       - prefect
     environment:

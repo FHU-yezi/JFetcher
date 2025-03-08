@@ -1,51 +1,64 @@
-from datetime import datetime
-from enum import Enum
-from typing import Optional
+from __future__ import annotations
 
+from datetime import datetime
+from typing import Literal
+
+from jkit.user import MembershipType
 from sshared.postgres import Table
 from sshared.strict_struct import NonEmptyStr, PositiveInt
 
 from utils.db import jianshu_pool
 
-
-class StatusEnum(Enum):
-    NORMAL = "NORMAL"
-    INACCESSIBLE = "INACCESSIBLE"
+StatusType = Literal["NORMAL", "INACCESSIBLE"]
 
 
 class User(Table, frozen=True):
     slug: NonEmptyStr
-    status: StatusEnum
+    status: StatusType
     update_time: datetime
-    id: Optional[PositiveInt]
-    name: Optional[NonEmptyStr]
+    id: PositiveInt
+    name: NonEmptyStr
     history_names: list[NonEmptyStr]
-    avatar_url: Optional[NonEmptyStr]
+    avatar_url: NonEmptyStr | None
+    membership_type: MembershipType
+    membership_expire_time: datetime | None
 
-    async def create(self) -> None:
-        self.validate()
-
+    @classmethod
+    async def create(  # noqa: PLR0913
+        cls,
+        *,
+        slug: str,
+        id: int,
+        name: str,
+        avatar_url: str | None,
+        membership_type: MembershipType,
+        membership_expire_time: datetime | None,
+    ) -> None:
         async with jianshu_pool.get_conn() as conn:
             await conn.execute(
                 "INSERT INTO users (slug, status, update_time, id, name, "
-                "history_names, avatar_url) VALUES (%s, %s, %s, %s, %s, %s, %s);",
+                "history_names, avatar_url, membership_type, membership_expire_time) "
+                "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s);",
                 (
-                    self.slug,
-                    self.status,
-                    self.update_time,
-                    self.id,
-                    self.name,
-                    self.history_names,
-                    self.avatar_url,
+                    slug,
+                    "NORMAL",
+                    datetime.now(),
+                    id,
+                    name,
+                    [],
+                    avatar_url,
+                    membership_type,
+                    membership_expire_time,
                 ),
             )
 
     @classmethod
-    async def get_by_slug(cls, slug: str) -> Optional["User"]:
+    async def get_by_slug(cls, slug: str, /) -> User | None:
         async with jianshu_pool.get_conn() as conn:
             cursor = await conn.execute(
                 "SELECT status, update_time, id, name, history_names, "
-                "avatar_url FROM users WHERE slug = %s;",
+                "avatar_url, membership_type, membership_expire_time "
+                "FROM users WHERE slug = %s;",
                 (slug,),
             )
 
@@ -61,83 +74,78 @@ class User(Table, frozen=True):
             name=data[3],
             history_names=data[4],
             avatar_url=data[5],
-        )
+            membership_type=data[6],
+            membership_expire_time=data[7],
+        ).validate()
 
     @classmethod
-    async def upsert(
+    async def update_by_slug(
         cls,
+        *,
         slug: str,
-        id: Optional[int] = None,  # noqa: A002
-        name: Optional[str] = None,
-        avatar_url: Optional[str] = None,
+        name: str,
+        avatar_url: str,
+        membership_type: MembershipType,
+        membership_expire_time: datetime | None,
     ) -> None:
-        user = await cls.get_by_slug(slug)
-        # 如果不存在，创建用户
-        if not user:
-            await cls(
-                slug=slug,
-                status=StatusEnum.NORMAL,
-                update_time=datetime.now(),
-                id=id,
-                name=name,
-                history_names=[],
-                avatar_url=avatar_url,
-            ).create()
+        old_data = await cls.get_by_slug(slug)
+        if old_data is None:
+            raise ValueError
+
+        # 避免竞争更新导致数据过时
+        if old_data.update_time > datetime.now():
             return
 
-        # 如果当前数据不是最新，跳过更新
-        if user.update_time > datetime.now():
-            return
+        async with jianshu_pool.get_conn() as conn, conn.transaction():
+            # 更新 update_time
+            await conn.execute(
+                "UPDATE users SET update_time = %s WHERE slug = %s;",
+                (datetime.now(), slug),
+            )
 
-        # 在一个事务中一次性完成全部字段的更新
-        async with jianshu_pool.get_conn() as conn:  # noqa: SIM117
-            async with conn.transaction():
-                # 更新更新时间
+            # 如果 name 已修改
+            if name != old_data.name:
+                # 更新 name
                 await conn.execute(
-                    "UPDATE users SET update_time = %s WHERE slug = %s;",
-                    (datetime.now(), slug),
+                    "UPDATE users SET name = %s WHERE slug = %s;",
+                    (name, slug),
                 )
 
-                # ID 无法被修改，如果异常则抛出错误
-                if user.id and id and user.id != id:
-                    raise ValueError(f"用户 ID 不一致：{user.id} != {id}")
+                # 将旧数据的 name 添加到 history_names 中
+                await conn.execute(
+                    "UPDATE users SET history_names = "
+                    "array_append(history_names, %s) WHERE slug = %s;",
+                    (old_data.name, slug),
+                )
 
-                # 如果没有存储 ID，进行添加
-                if not user.id and id:
-                    await conn.execute(
-                        "UPDATE users SET id = %s WHERE slug = %s;",
-                        (id, slug),
-                    )
+            # 如果旧数据中不存在 avatar_url 或 avatar_url 已修改
+            if old_data.avatar_url is None or avatar_url != old_data.avatar_url:
+                # 更新 avatar_url
+                await conn.execute(
+                    "UPDATE users SET avatar_url = %s WHERE slug = %s;",
+                    (avatar_url, slug),
+                )
 
-                # 如果没有存储昵称，进行添加
-                if not user.name and name:
-                    await conn.execute(
-                        "UPDATE users SET name = %s WHERE slug = %s;",
-                        (name, slug),
-                    )
+            # 如果 membership_type 已修改
+            if membership_type != old_data.membership_type:
+                # 更新 membership_type 和 membership_expire_time
+                await conn.execute(
+                    "UPDATE users SET membership_type = %s, "
+                    "membership_expire_time = %s WHERE slug = %s;",
+                    (membership_type, membership_expire_time, slug),
+                )
+            # 如果 membership_expire_time 已修改
+            elif membership_expire_time != old_data.membership_expire_time:
+                # 更新 membership_expire_time
+                await conn.execute(
+                    "UPDATE users SET membership_expire_time = %s WHERE slug = %s;",
+                    (membership_expire_time, slug),
+                )
 
-                # 更新昵称
-                if user.name and name and user.name != name:
-                    await conn.execute(
-                        "UPDATE users SET name = %s WHERE slug = %s;",
-                        (name, slug),
-                    )
-                    await conn.execute(
-                        "UPDATE users SET history_names = array_append(history_names, "
-                        "%s) WHERE slug = %s;",
-                        (user.name, slug),
-                    )
-
-                # 如果没有存储头像链接，进行添加
-                if not user.avatar_url and avatar_url:
-                    await conn.execute(
-                        "UPDATE users SET avatar_url = %s WHERE slug = %s;",
-                        (avatar_url, slug),
-                    )
-
-                # 更新头像链接
-                if user.avatar_url and avatar_url and user.avatar_url != avatar_url:
-                    await conn.execute(
-                        "UPDATE users SET avatar_url = %s WHERE slug = %s;",
-                        (avatar_url, slug),
-                    )
+    @classmethod
+    async def update_status_by_slug(cls, *, slug: str, status: StatusType) -> None:
+        async with jianshu_pool.get_conn() as conn:
+            await conn.execute(
+                "UPDATE users SET status = %s WHERE slug = %s;",
+                (status, slug),
+            )

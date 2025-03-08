@@ -6,7 +6,7 @@ from typing import Literal
 from sshared.postgres import Table
 from sshared.strict_struct import PositiveInt
 
-from utils.db import jpep_pool
+from utils.db import beijiaoyi_pool
 
 OrdersType = Literal["BUY", "SELL"]
 
@@ -28,7 +28,7 @@ class FTNOrder(Table, frozen=True):
         publish_time: datetime,
         last_seen_time: datetime,
     ) -> None:
-        async with jpep_pool.get_conn() as conn:
+        async with beijiaoyi_pool.get_conn() as conn:
             await conn.execute(
                 "INSERT INTO ftn_orders (id, type, publisher_id, publish_time, "
                 "last_seen_time) VALUES (%s, %s, %s, %s, %s);",
@@ -43,7 +43,7 @@ class FTNOrder(Table, frozen=True):
 
     @classmethod
     async def get_by_id(cls, id: int, /) -> FTNOrder | None:
-        async with jpep_pool.get_conn() as conn:
+        async with beijiaoyi_pool.get_conn() as conn:
             cursor = await conn.execute(
                 "SELECT type, publisher_id, publish_time, last_seen_time "
                 "FROM ftn_orders WHERE id = %s;",
@@ -64,7 +64,7 @@ class FTNOrder(Table, frozen=True):
 
     @classmethod
     async def update_by_id(cls, *, id: int, last_seen_time: datetime) -> None:
-        async with jpep_pool.get_conn() as conn:
+        async with beijiaoyi_pool.get_conn() as conn:
             await conn.execute(
                 "UPDATE ftn_orders SET last_seen_time = %s WHERE id = %s;",
                 (last_seen_time, id),

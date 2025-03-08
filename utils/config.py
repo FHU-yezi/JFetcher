@@ -1,12 +1,13 @@
 from sshared.config import ConfigBase
-from sshared.config.blocks import GotifyBlock, LoggingBlock, PostgresBlock
+from sshared.config.blocks import PostgresBlock
 
 
 class _Config(ConfigBase, frozen=True):
+    jianshu_endpoint: str
+    beijiaoyi_token: str
     jianshu_postgres: PostgresBlock
     jpep_postgres: PostgresBlock
-    logging: LoggingBlock
-    notify: GotifyBlock
+    beijiaoyi_postgres: PostgresBlock
 
 
 CONFIG = _Config.load_from_file("config.toml")
