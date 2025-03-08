@@ -54,7 +54,7 @@ class User(Table, frozen=True):
             name=data[1],
             hashed_name=data[2],
             avatar_url=data[3],
-        )
+        ).validate()
 
     @classmethod
     async def update_by_id(

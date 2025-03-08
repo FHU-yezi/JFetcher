@@ -60,7 +60,7 @@ class FTNOrder(Table, frozen=True):
             publisher_id=data[1],
             publish_time=data[2],
             last_seen_time=data[3],
-        )
+        ).validate()
 
     @classmethod
     async def update_by_id(cls, *, id: int, last_seen_time: datetime) -> None:

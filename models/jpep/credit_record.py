@@ -42,4 +42,4 @@ class CreditRecord(Table, frozen=True):
             time=data[0],
             user_id=user_id,
             credit=data[1],
-        )
+        ).validate()

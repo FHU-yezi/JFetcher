@@ -48,7 +48,7 @@ class User(Table, frozen=True):
             update_time=data[0],
             name=data[1],
             avatar_url=data[2],
-        )
+        ).validate()
 
     @classmethod
     async def update_by_id(cls, *, id: int, name: str, avatar_url: str) -> None:
