@@ -8,11 +8,11 @@ from jkit.exceptions import (
     ResourceUnavailableError,
 )
 from jkit.ranking.user_assets import RecordData, UserAssetsRanking
-from jkit.user import AssetsInfoData
+from jkit.user import AssetsInfoData, InfoData
 from prefect import flow, get_run_logger, task
 from sshared.retry import retry
 
-from models.jianshu.user import MEMBERSHIP_INFO_UNAVALIABLE, User
+from models.jianshu.user import User
 from models.jianshu.user_assets_ranking_record import (
     UserAssetsRankingRecord as DbUserAssetsRankingRecord,
 )
@@ -22,6 +22,15 @@ from utils.retry import NETWORK_REQUEST_RETRY_PARAMS
 
 if CONFIG.jianshu_endpoint:
     JKIT_CONFIG.datasources.jianshu.endpoint = CONFIG.jianshu_endpoint
+
+
+@retry(**NETWORK_REQUEST_RETRY_PARAMS)
+async def get_user_info(
+    item: RecordData,
+) -> InfoData:
+    user = item.user_info.to_user_obj()
+
+    return await user.info
 
 
 @retry(**NETWORK_REQUEST_RETRY_PARAMS)
@@ -91,31 +100,22 @@ async def jianshu_fetch_user_assets_ranking_data(total_count: int = 1000) -> Non
             )
             continue
 
-        user = await User.get_by_slug(item.user_info.slug)
-        if not user:
-            await User.create(
-                slug=item.user_info.slug,
-                id=item.user_info.id,
-                name=item.user_info.name,
-                avatar_url=item.user_info.avatar_url,
-                # 数据不可用，默认无会员
-                # TODO: 优化采集策略，尽可能采集会员信息
-                membership_type="NONE",
-                membership_expire_time=None,
-            )
-        else:
-            await User.update_by_slug(
-                slug=item.user_info.slug,
-                name=item.user_info.name,
-                avatar_url=item.user_info.avatar_url,
-                # TODO: 优化采集策略，尽可能采集会员信息
-                membership_type=MEMBERSHIP_INFO_UNAVALIABLE,
-                membership_expire_time=MEMBERSHIP_INFO_UNAVALIABLE,
-            )
-
         try:
-            assets_info: AssetsInfoData = await get_user_assets_info(item)
-        except ResourceUnavailableError:  # 用户状态异常
+            user_info: InfoData = await get_user_info(item)
+        except ResourceUnavailableError:
+            # 用户不存在或已注销 / 被封禁
+            # 如果数据库中有该用户的记录，将其 status 设置为 INACCESSIBLE
+            # 否则，不做任何事，因为采集不存在的用户数据没有意义
+            user = await User.get_by_slug(item.user_info.slug)
+            if user:
+                await User.update_status_by_slug(
+                    slug=item.user_info.slug, status="INACCESSIBLE"
+                )
+                logger.info(
+                    "用户不存在或已注销 / 被封禁，status 已设为 INACCESSIBLE slug=%s",
+                    item.user_info.slug,
+                )
+
             logger.warning(
                 "用户状态异常，跳过资产数据采集 ranking=%s slug=%s",
                 item.ranking,
@@ -133,35 +133,57 @@ async def jianshu_fetch_user_assets_ranking_data(total_count: int = 1000) -> Non
                 )
             )
         else:
-            if assets_info.ftn_amount is None and assets_info.assets_amount is None:
-                logger.warning(
-                    "受 API 限制，无法采集简书贝和总资产数据 ranking=%s slug=%s",
-                    item.ranking,
-                    item.user_info.slug,
+            user = await User.get_by_slug(item.user_info.slug)
+            if not user:
+                await User.create(
+                    slug=item.user_info.slug,
+                    id=item.user_info.id,
+                    name=item.user_info.name,
+                    avatar_url=item.user_info.avatar_url,
+                    membership_type=user_info.membership_info.type,
+                    membership_expire_time=user_info.membership_info.expire_time,
                 )
-                # 此时 fp_amount 为实时数据，assets_amount 为非实时数据
-                # 为防止数据异常，不对 fp_amount 进行存储
-                data.append(
-                    DbUserAssetsRankingRecord(
-                        date=date,
-                        ranking=item.ranking,
-                        slug=item.user_info.slug,
-                        fp=None,
-                        ftn=None,
-                        # 后备数据（资产排行榜，非实时）
-                        assets=item.assets_amount,
-                    )
+            else:
+                await User.update_by_slug(
+                    slug=item.user_info.slug,
+                    name=item.user_info.name,
+                    avatar_url=item.user_info.avatar_url,
+                    membership_type=user_info.membership_info.type,
+                    membership_expire_time=user_info.membership_info.expire_time,
                 )
-            else:  # 正常
-                data.append(
-                    DbUserAssetsRankingRecord(
-                        date=date,
-                        ranking=item.ranking,
-                        slug=item.user_info.slug,
-                        fp=assets_info.fp_amount,
-                        ftn=assets_info.ftn_amount,
-                        assets=assets_info.assets_amount,
-                    )
+
+        # 此时不可能再次出现 ResourceUnavaliableError
+        # 因此不做错误处理
+        assets_info: AssetsInfoData = await get_user_assets_info(item)
+        if assets_info.ftn_amount is None and assets_info.assets_amount is None:
+            logger.warning(
+                "受 API 限制，无法采集简书贝和总资产数据 ranking=%s slug=%s",
+                item.ranking,
+                item.user_info.slug,
+            )
+            # 此时 fp_amount 为实时数据，assets_amount 为非实时数据
+            # 为防止数据异常，不对 fp_amount 进行存储
+            data.append(
+                DbUserAssetsRankingRecord(
+                    date=date,
+                    ranking=item.ranking,
+                    slug=item.user_info.slug,
+                    fp=None,
+                    ftn=None,
+                    # 后备数据（资产排行榜，非实时）
+                    assets=item.assets_amount,
                 )
+            )
+        else:  # 正常
+            data.append(
+                DbUserAssetsRankingRecord(
+                    date=date,
+                    ranking=item.ranking,
+                    slug=item.user_info.slug,
+                    fp=assets_info.fp_amount,
+                    ftn=assets_info.ftn_amount,
+                    assets=assets_info.assets_amount,
+                )
+            )
 
     await save_data_to_db(data)

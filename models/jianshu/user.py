@@ -11,8 +11,6 @@ from utils.db import jianshu_pool
 
 StatusType = Literal["NORMAL", "INACCESSIBLE"]
 
-# HACK: 使用该常量标识会员信息不可用，跳过更新
-MEMBERSHIP_INFO_UNAVALIABLE = "MEMBERSHIP_INFO_UNAVALIABLE"
 
 class User(Table, frozen=True):
     slug: NonEmptyStr
@@ -87,9 +85,8 @@ class User(Table, frozen=True):
         slug: str,
         name: str,
         avatar_url: str,
-        # HACK
-        membership_type: MembershipType | str,
-        membership_expire_time: datetime | None | str,
+        membership_type: MembershipType,
+        membership_expire_time: datetime | None,
     ) -> None:
         old_data = await cls.get_by_slug(slug)
         if old_data is None:
@@ -144,3 +141,11 @@ class User(Table, frozen=True):
                     "UPDATE users SET membership_expire_time = %s WHERE slug = %s;",
                     (membership_expire_time, slug),
                 )
+
+    @classmethod
+    async def update_status_by_slug(cls, *, slug: str, status: StatusType) -> None:
+        async with jianshu_pool.get_conn() as conn:
+            await conn.execute(
+                "UPDATE users SET status = %s WHERE slug = %s;",
+                (status, slug),
+            )
