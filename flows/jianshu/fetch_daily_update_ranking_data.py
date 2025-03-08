@@ -76,7 +76,6 @@ async def save_user_data(item: RecordData, /) -> None:
         )
 
 
-@task(task_run_name=get_task_run_name)
 async def save_daily_update_ranking_record_data(
     item: RecordData, /, *, date: date
 ) -> None:

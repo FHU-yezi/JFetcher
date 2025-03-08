@@ -74,7 +74,6 @@ async def save_user_data(*, author_info: UserInfoData) -> None:
         )
 
 
-@task(task_run_name=get_task_run_name)
 async def save_article_earning_ranking_record_data(
     item: RecordData, /, *, date: date, author_info: UserInfoData | None
 ) -> None:
