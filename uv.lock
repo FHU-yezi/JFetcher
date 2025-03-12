@@ -671,8 +671,8 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "jkit", specifier = ">=3.0.0b4" },
-    { name = "prefect", specifier = ">=3.1.0" },
+    { name = "jkit", specifier = ">=3.0.0b5" },
+    { name = "prefect", specifier = ">=3.2.0" },
     { name = "sshared", extras = ["config", "postgres", "retry"], specifier = ">=0.21.0" },
 ]
 
@@ -709,15 +709,15 @@ wheels = [
 
 [[package]]
 name = "jkit"
-version = "3.0.0b4"
+version = "3.0.0b5"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "httpx", extra = ["http2"] },
     { name = "msgspec" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/5b/1a/4b52563e74aa7b26328c099145958cf7ed83a483445966465c10384dc125/jkit-3.0.0b4.tar.gz", hash = "sha256:da77c279c10bb9c2ffc30f657c3102367d23cf7e9ef60591a57cc463deec3d0c", size = 21675 }
+sdist = { url = "https://files.pythonhosted.org/packages/14/53/1642aef56339f1a0c7cc71e6d502079e144e16fd0196cc4aff7711bb0ed7/jkit-3.0.0b5.tar.gz", hash = "sha256:f808751b6206e35149eb2837dc002b28a21c470d1b5a70a58715facf03baad0d", size = 21722 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/3f/ed/cb2bdb187b5d4881c648bba3e501bf9de9ca9b081b160d7f61de6bf4684c/jkit-3.0.0b4-py3-none-any.whl", hash = "sha256:6b2f2743816edf98ef8ab7c560d1f9572213632827ef085fb50d7bc81d0d6464", size = 36964 },
+    { url = "https://files.pythonhosted.org/packages/c5/f8/0e749c24b2ef7f5d41dcd8baa7e79b94a37536562cc63e91959e56948cd0/jkit-3.0.0b5-py3-none-any.whl", hash = "sha256:e4fbbc16748be6e9650f6380d0490be0fa3bca9926b4d8b9702197a6233a8a11", size = 37083 },
 ]
 
 [[package]]

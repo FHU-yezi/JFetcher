@@ -52,7 +52,7 @@ async def pre_check(*, date: date, type: UserEarningRankingRecordType) -> int:
 async def iter_user_earning_ranking(
     date: date, type: UserEarningRankingRecordType
 ) -> AsyncGenerator[RecordData]:
-    async for item in UserEarningRanking(date).iter_records(type=type):
+    async for item in UserEarningRanking(date_=date).iter_records(type=type):
         yield item
 
 
@@ -93,7 +93,7 @@ async def save_user_earning_ranking_record_data(
         ranking=item.ranking,
         slug=item.slug,
         total_earning=item.total_fp_amount,
-        creating_earning=item.fp_by_creating_anount,
+        creating_earning=item.fp_by_creating_amount,
         voting_earning=item.fp_by_voting_amount,
     )
 

@@ -1,7 +1,7 @@
 from collections.abc import AsyncGenerator
 from datetime import datetime, timedelta
 
-from jkit.jpep.ftn_macket import FtnMacket, OrderData
+from jkit.jpep.ftn_market import FtnMarket, OrderData
 from prefect import flow, get_run_logger, task
 
 from models.jpep.credit_record import CreditRecord
@@ -32,7 +32,7 @@ async def pre_check() -> None:
 
 @task(task_run_name=get_task_run_name)
 async def iter_ftn_macket_orders(*, type: OrdersType) -> AsyncGenerator[OrderData]:
-    async for item in FtnMacket().iter_orders(type=type):
+    async for item in FtnMarket().iter_orders(type=type):
         yield item
 
 
@@ -90,7 +90,7 @@ async def save_ftn_macket_record_data(
         price=item.price,
         total_amount=item.total_amount,
         traded_amount=item.traded_amount,
-        remaining_amount=item.tradable_amount,
+        remaining_amount=item.remaining_amount,
         minimum_trade_amount=item.minimum_trade_amount,
         completed_trades_count=item.completed_trades_count,
     )

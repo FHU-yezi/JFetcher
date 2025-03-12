@@ -1,7 +1,7 @@
 from collections.abc import AsyncGenerator
 from datetime import datetime, timedelta
 
-from jkit.beijiaoyi.ftn_macket import FtnMacket, OrderData
+from jkit.beijiaoyi.ftn_market import FtnMarket, OrderData
 from jkit.credentials import BeijiaoyiCredential
 from prefect import flow, get_run_logger, task
 
@@ -39,7 +39,7 @@ async def iter_ftn_macket_orders(
     *,
     type: OrdersType,
 ) -> AsyncGenerator[OrderData]:
-    async for item in FtnMacket(
+    async for item in FtnMarket(
         credential=BeijiaoyiCredential.from_bearer_token(CONFIG.beijiaoyi_token)
     ).iter_orders(type=type):
         yield item
@@ -51,15 +51,13 @@ async def save_user_data(item: OrderData, /) -> None:
         await User.create(
             id=item.publisher_info.id,
             name=item.publisher_info.name,
-            # TODO: 等待 JKit 修复该类型
-            avatar_url=item.publisher_info.avatar_url,  # type: ignore
+            avatar_url=item.publisher_info.avatar_url,
         )
     else:
         await User.update_by_id(
             id=item.publisher_info.id,
             name=item.publisher_info.name,
-            # TODO: 等待 JKit 修复该类型
-            avatar_url=item.publisher_info.avatar_url,  # type: ignore
+            avatar_url=item.publisher_info.avatar_url,
         )
 
 
@@ -91,7 +89,7 @@ async def save_ftn_macket_record_data(
         price=item.price,
         total_amount=item.total_amount,
         traded_amount=item.traded_amount,
-        remaining_amount=item.tradable_amount,
+        remaining_amount=item.remaining_amount,
         minimum_trade_amount=item.minimum_trade_amount,
         maximum_trade_amount=item.maximum_trade_amount,
         completed_trades_count=item.completed_trades_count,
