@@ -5,7 +5,7 @@ from jkit.jpep.ftn_market import FtnMarket, OrderData
 from prefect import flow, get_run_logger, task
 
 from models.jpep.credit_record import CreditRecord
-from models.jpep.ftn_macket_record import FTNMacketRecord
+from models.jpep.ftn_market_record import FTNMarketRecord
 from models.jpep.ftn_order import FTNOrder, OrdersType
 from models.jpep.user import User
 from utils.prefect_helper import get_flow_run_name, get_task_run_name
@@ -31,7 +31,7 @@ async def pre_check() -> None:
 
 
 @task(task_run_name=get_task_run_name)
-async def iter_ftn_macket_orders(*, type: OrdersType) -> AsyncGenerator[OrderData]:
+async def iter_ftn_market_orders(*, type: OrdersType) -> AsyncGenerator[OrderData]:
     async for item in FtnMarket().iter_orders(type=type):
         yield item
 
@@ -81,10 +81,10 @@ async def save_ftn_order_data(
         await FTNOrder.update_by_id(id=item.id, last_seen_time=fetch_time)
 
 
-async def save_ftn_macket_record_data(
+async def save_ftn_market_record_data(
     item: OrderData, /, *, fetch_time: datetime
 ) -> None:
-    await FTNMacketRecord.create(
+    await FTNMarketRecord.create(
         fetch_time=fetch_time,
         id=item.id,
         price=item.price,
@@ -110,7 +110,7 @@ async def jpep_fetch_ftn_market_orders_data(type: OrdersType) -> None:
 
     await pre_check()
 
-    async for item in iter_ftn_macket_orders(type=type):
+    async for item in iter_ftn_market_orders(type=type):
         try:
             await save_user_data(item)
         except Exception:
@@ -127,6 +127,6 @@ async def jpep_fetch_ftn_market_orders_data(type: OrdersType) -> None:
             logger.exception("保存简书贝订单数据时发生未知异常 id=%s", item.id)
 
         try:
-            await save_ftn_macket_record_data(item, fetch_time=fetch_time)
+            await save_ftn_market_record_data(item, fetch_time=fetch_time)
         except Exception:
             logger.exception("保存简书贝市场记录数据时发生未知异常 id=%s", item.id)
