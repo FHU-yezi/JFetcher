@@ -33,7 +33,7 @@ class FTNMarketRecord(Table, frozen=True):
     ) -> None:
         async with jpep_pool.get_conn() as conn:
             await conn.cursor().execute(
-                "INSERT INTO ftn_macket_records (fetch_time, id, price, total_amount, "
+                "INSERT INTO ftn_market_records (fetch_time, id, price, total_amount, "
                 "traded_amount, remaining_amount, minimum_trade_amount, "
                 "completed_trades_count) "
                 "VALUES (%s, %s, %s, %s, %s, %s, %s, %s);",
@@ -53,7 +53,7 @@ class FTNMarketRecord(Table, frozen=True):
     async def exists_by_fetch_time(cls, fetch_time: datetime, /) -> bool:
         async with jpep_pool.get_conn() as conn:
             cursor = await conn.execute(
-                "SELECT 1 FROM ftn_macket_records WHERE fetch_time = %s LIMIT 1;",
+                "SELECT 1 FROM ftn_market_records WHERE fetch_time = %s LIMIT 1;",
                 (fetch_time,),
             )
 
