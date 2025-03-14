@@ -97,7 +97,7 @@ async def save_ftn_market_record_data(
 
 
 @flow(
-    name="采集简书积分兑换平台简书贝市场订单数据",
+    name="采集贝交易平台简书贝市场订单数据",
     flow_run_name=get_flow_run_name,
     retries=2,
     retry_delay_seconds=10,
