@@ -15,7 +15,7 @@ class UserEarningRankingRecord(Table, frozen=True):
     date: date
     type: UserEarningRankingRecordType
     ranking: PositiveInt
-    slug: NonEmptyStr
+    slug: NonEmptyStr | None
 
     total_earning: NonNegativeFloat
     creating_earning: NonNegativeFloat
@@ -28,7 +28,7 @@ class UserEarningRankingRecord(Table, frozen=True):
         date: date,
         type: UserEarningRankingRecordType,
         ranking: int,
-        slug: str,
+        slug: str | None,
         total_earning: float,
         creating_earning: float,
         voting_earning: float,

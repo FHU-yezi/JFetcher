@@ -2,6 +2,8 @@ jianshu_endpoint = ""
 
 beijiaoyi_token = ""
 
+core_user_slugs = []
+
 [jianshu_postgres]
 host = "localhost"
 port = 5432

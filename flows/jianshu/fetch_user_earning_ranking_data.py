@@ -52,11 +52,16 @@ async def pre_check(*, date: date, type: UserEarningRankingRecordType) -> int:
 async def iter_user_earning_ranking(
     date: date, type: UserEarningRankingRecordType
 ) -> AsyncGenerator[RecordData]:
-    async for item in UserEarningRanking(date).iter_records(type=type):
+    async for item in UserEarningRanking(date_=date).iter_records(type=type):
         yield item
 
 
 async def save_user_data(item: RecordData, /) -> None:
+    logger = get_run_logger()
+
+    if not item.slug or not item.name or not item.avatar_url:
+        logger.warning("用户数据不可用，跳过采集 ranking=%s", item.ranking)
+
     user_info: InfoData = await get_user_info(item)
 
     user = await User.get_by_slug(user_info.slug)
@@ -88,7 +93,7 @@ async def save_user_earning_ranking_record_data(
         ranking=item.ranking,
         slug=item.slug,
         total_earning=item.total_fp_amount,
-        creating_earning=item.fp_by_creating_anount,
+        creating_earning=item.fp_by_creating_amount,
         voting_earning=item.fp_by_voting_amount,
     )
 

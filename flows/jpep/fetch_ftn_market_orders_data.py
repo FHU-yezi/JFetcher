@@ -1,12 +1,13 @@
 from collections.abc import AsyncGenerator
 from datetime import datetime, timedelta
 
-from jkit.jpep.ftn_macket import FtnMacket, OrderData
+from jkit.jpep.ftn_market import FtnMarket, OrderData
 from prefect import flow, get_run_logger, task
 
 from models.jpep.credit_record import CreditRecord
-from models.jpep.ftn_macket_record import FTNMacketRecord
-from models.jpep.ftn_order import FTNOrder, OrdersType
+from models.jpep.ftn_market_record import FtnMarketRecord
+from models.jpep.ftn_market_summary_record import FtnMarketSummaryRecord
+from models.jpep.ftn_order import FtnOrder, FtnOrdersType
 from models.jpep.user import User
 from utils.prefect_helper import get_flow_run_name, get_task_run_name
 
@@ -31,8 +32,8 @@ async def pre_check() -> None:
 
 
 @task(task_run_name=get_task_run_name)
-async def iter_ftn_macket_orders(*, type: OrdersType) -> AsyncGenerator[OrderData]:
-    async for item in FtnMacket().iter_orders(type=type):
+async def iter_ftn_market_orders(*, type: FtnOrdersType) -> AsyncGenerator[OrderData]:
+    async for item in FtnMarket().iter_orders(type=type):
         yield item
 
 
@@ -66,11 +67,11 @@ async def save_credit_record_data(item: OrderData, /, *, fetch_time: datetime) -
 
 
 async def save_ftn_order_data(
-    item: OrderData, /, *, type: OrdersType, fetch_time: datetime
+    item: OrderData, /, *, type: FtnOrdersType, fetch_time: datetime
 ) -> None:
-    ftn_order = await FTNOrder.get_by_id(item.id)
+    ftn_order = await FtnOrder.get_by_id(item.id)
     if not ftn_order:
-        await FTNOrder.create(
+        await FtnOrder.create(
             id=item.id,
             type=type,
             publisher_id=item.publisher_info.id,
@@ -78,39 +79,53 @@ async def save_ftn_order_data(
             last_seen_time=fetch_time,
         )
     else:
-        await FTNOrder.update_by_id(id=item.id, last_seen_time=fetch_time)
+        await FtnOrder.update_by_id(id=item.id, last_seen_time=fetch_time)
 
 
-async def save_ftn_macket_record_data(
+async def save_ftn_market_record_data(
     item: OrderData, /, *, fetch_time: datetime
 ) -> None:
-    await FTNMacketRecord.create(
+    await FtnMarketRecord.create(
         fetch_time=fetch_time,
         id=item.id,
         price=item.price,
         total_amount=item.total_amount,
         traded_amount=item.traded_amount,
-        remaining_amount=item.tradable_amount,
+        remaining_amount=item.remaining_amount,
         minimum_trade_amount=item.minimum_trade_amount,
         completed_trades_count=item.completed_trades_count,
     )
 
 
+async def save_ftn_market_summary_record_data(
+    *, type: FtnOrdersType, fetch_time: datetime
+) -> None:
+    logger = get_run_logger()
+
+    if not await FtnMarketRecord.exists_by_fetch_time(fetch_time):
+        logger.warning("无简书贝市场记录数据，跳过摘要数据写入")
+        return
+
+    await FtnMarketSummaryRecord.create_from_ftn_market_records_by_fetch_time_and_type(
+        fetch_time=fetch_time, type=type
+    )
+
+
 @flow(
-    name="采集贝交易平台简书贝市场订单数据",
+    name="采集简书积分兑换平台简书贝市场订单数据",
     flow_run_name=get_flow_run_name,
     retries=2,
     retry_delay_seconds=10,
     timeout_seconds=20,
 )
-async def jpep_fetch_ftn_market_orders_data(type: OrdersType) -> None:
+async def jpep_fetch_ftn_market_orders_data(type: FtnOrdersType) -> None:
     logger = get_run_logger()
 
     fetch_time = get_fetch_time()
 
     await pre_check()
 
-    async for item in iter_ftn_macket_orders(type=type):
+    async for item in iter_ftn_market_orders(type=type):
         try:
             await save_user_data(item)
         except Exception:
@@ -127,6 +142,11 @@ async def jpep_fetch_ftn_market_orders_data(type: OrdersType) -> None:
             logger.exception("保存简书贝订单数据时发生未知异常 id=%s", item.id)
 
         try:
-            await save_ftn_macket_record_data(item, fetch_time=fetch_time)
+            await save_ftn_market_record_data(item, fetch_time=fetch_time)
         except Exception:
             logger.exception("保存简书贝市场记录数据时发生未知异常 id=%s", item.id)
+
+    try:
+        await save_ftn_market_summary_record_data(type=type, fetch_time=fetch_time)
+    except Exception:
+        logger.exception("保存简书贝市场摘要数据时发生未知异常")

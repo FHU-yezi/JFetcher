@@ -49,7 +49,7 @@ async def pre_check(*, date: date) -> int:
 
 @task(task_run_name=get_task_run_name)
 async def iter_article_earning_ranking(date: date) -> AsyncGenerator[RecordData]:
-    async for item in ArticleEarningRanking(date).iter_records():
+    async for item in ArticleEarningRanking(date_=date).iter_records():
         yield item
 
 
@@ -83,7 +83,7 @@ async def save_article_earning_ranking_record_data(
         slug=item.slug,
         title=item.title,
         author_slug=author_info.slug if author_info else None,
-        author_earning=item.fp_to_author_anount,
+        author_earning=item.fp_to_author_amount,
         voter_earning=item.fp_to_voter_amount,
     )
 

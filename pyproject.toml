@@ -1,13 +1,13 @@
 [project]
 name = "jfetcher"
-version = "4.0.1"
+version = "4.1.0"
 description = "简书数据采集工具"
 readme = "README.md"
 license = { file = "LICENSE" }
 authors = [{ name = "FHU-yezi", email = "yehaowei20060411@qq.com" }]
 requires-python = ">=3.9"
 dependencies = [
-    "jkit>=3.0.0b4",
+    "jkit>=3.0.0b5",
     "prefect>=3.2.0",
     "sshared[config, postgres, retry]>=0.21.0",
 ]
