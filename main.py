@@ -7,6 +7,9 @@ from flows.beijiaoyi.fetch_ftn_market_orders_data import (
 from flows.jianshu.fetch_article_earning_ranking_data import (
     jianshu_fetch_article_earning_ranking_data,
 )
+from flows.jianshu.fetch_core_user_assets_data import (
+    jianshu_fetch_core_user_assets_data,
+)
 from flows.jianshu.fetch_daily_update_ranking_data import (
     jianshu_fetch_daily_update_ranking_data,
 )
@@ -37,6 +40,11 @@ DEPLOYMENTS: tuple[RunnerDeployment, ...] = (
         name="JFetcher_采集简书文章收益排行榜数据",
         tags=["数据源 / 简书"],
         schedules=(get_cron_schedule("35 0 * * *"),),
+    ),
+    jianshu_fetch_core_user_assets_data.to_deployment(
+        name="JFetcher_采集简书核心用户资产数据",
+        tags=["数据源 / 简书"],
+        schedules=(get_cron_schedule("0 * * * *"),),
     ),
     jianshu_fetch_daily_update_ranking_data.to_deployment(
         name="JFetcher_采集简书日更排行榜数据",
