@@ -8,12 +8,12 @@ from sshared.strict_struct import PositiveInt
 
 from utils.db import beijiaoyi_pool
 
-OrdersType = Literal["BUY", "SELL"]
+FtnOrdersType = Literal["BUY", "SELL"]
 
 
-class FTNOrder(Table, frozen=True):
+class FtnOrder(Table, frozen=True):
     id: PositiveInt
-    type: OrdersType
+    type: FtnOrdersType
     publisher_id: PositiveInt
     publish_time: datetime
     last_seen_time: datetime
@@ -23,7 +23,7 @@ class FTNOrder(Table, frozen=True):
         cls,
         *,
         id: int,
-        type: OrdersType,
+        type: FtnOrdersType,
         publisher_id: int,
         publish_time: datetime,
         last_seen_time: datetime,
@@ -42,7 +42,7 @@ class FTNOrder(Table, frozen=True):
             )
 
     @classmethod
-    async def get_by_id(cls, id: int, /) -> FTNOrder | None:
+    async def get_by_id(cls, id: int, /) -> FtnOrder | None:
         async with beijiaoyi_pool.get_conn() as conn:
             cursor = await conn.execute(
                 "SELECT type, publisher_id, publish_time, last_seen_time "

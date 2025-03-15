@@ -8,7 +8,7 @@ from sshared.strict_struct import NonNegativeInt, PositiveFloat, PositiveInt
 from utils.db import beijiaoyi_pool
 
 
-class FTNMarketRecord(Table, frozen=True):
+class FtnMarketRecord(Table, frozen=True):
     fetch_time: datetime
     id: PositiveInt
     price: PositiveFloat

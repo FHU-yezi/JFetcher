@@ -5,8 +5,8 @@ from jkit.beijiaoyi.ftn_market import FtnMarket, OrderData
 from jkit.credentials import BeijiaoyiCredential
 from prefect import flow, get_run_logger, task
 
-from models.beijiaoyi.ftn_market_record import FTNMarketRecord
-from models.beijiaoyi.ftn_order import FTNOrder, OrdersType
+from models.beijiaoyi.ftn_market_record import FtnMarketRecord
+from models.beijiaoyi.ftn_order import FtnOrder, FtnOrdersType
 from models.beijiaoyi.user import User
 from utils.config import CONFIG
 from utils.exceptions import MissingCredentialError
@@ -37,7 +37,7 @@ async def pre_check() -> None:
 @task(task_run_name=get_task_run_name)
 async def iter_ftn_market_orders(
     *,
-    type: OrdersType,
+    type: FtnOrdersType,
 ) -> AsyncGenerator[OrderData]:
     async for item in FtnMarket(
         credential=BeijiaoyiCredential.from_bearer_token(CONFIG.beijiaoyi_token)
@@ -62,11 +62,11 @@ async def save_user_data(item: OrderData, /) -> None:
 
 
 async def save_ftn_order_data(
-    item: OrderData, /, *, type: OrdersType, fetch_time: datetime
+    item: OrderData, /, *, type: FtnOrdersType, fetch_time: datetime
 ) -> None:
-    ftn_order = await FTNOrder.get_by_id(item.id)
+    ftn_order = await FtnOrder.get_by_id(item.id)
     if not ftn_order:
-        await FTNOrder.create(
+        await FtnOrder.create(
             id=item.id,
             type=type,
             publisher_id=item.publisher_info.id,
@@ -74,7 +74,7 @@ async def save_ftn_order_data(
             last_seen_time=fetch_time,
         )
     else:
-        await FTNOrder.update_by_id(
+        await FtnOrder.update_by_id(
             id=item.id,
             last_seen_time=fetch_time,
         )
@@ -83,7 +83,7 @@ async def save_ftn_order_data(
 async def save_ftn_market_record_data(
     item: OrderData, /, *, fetch_time: datetime
 ) -> None:
-    await FTNMarketRecord.create(
+    await FtnMarketRecord.create(
         fetch_time=fetch_time,
         id=item.id,
         price=item.price,
@@ -103,7 +103,7 @@ async def save_ftn_market_record_data(
     retry_delay_seconds=10,
     timeout_seconds=20,
 )
-async def beijiaoyi_fetch_ftn_market_orders_data(type: OrdersType) -> None:
+async def beijiaoyi_fetch_ftn_market_orders_data(type: FtnOrdersType) -> None:
     logger = get_run_logger()
 
     fetch_time = get_fetch_time()

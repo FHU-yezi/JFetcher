@@ -5,8 +5,8 @@ from jkit.jpep.ftn_market import FtnMarket, OrderData
 from prefect import flow, get_run_logger, task
 
 from models.jpep.credit_record import CreditRecord
-from models.jpep.ftn_market_record import FTNMarketRecord
-from models.jpep.ftn_order import FTNOrder, OrdersType
+from models.jpep.ftn_market_record import FtnMarketRecord
+from models.jpep.ftn_order import FtnOrder, OrdersType
 from models.jpep.user import User
 from utils.prefect_helper import get_flow_run_name, get_task_run_name
 
@@ -68,9 +68,9 @@ async def save_credit_record_data(item: OrderData, /, *, fetch_time: datetime) -
 async def save_ftn_order_data(
     item: OrderData, /, *, type: OrdersType, fetch_time: datetime
 ) -> None:
-    ftn_order = await FTNOrder.get_by_id(item.id)
+    ftn_order = await FtnOrder.get_by_id(item.id)
     if not ftn_order:
-        await FTNOrder.create(
+        await FtnOrder.create(
             id=item.id,
             type=type,
             publisher_id=item.publisher_info.id,
@@ -78,13 +78,13 @@ async def save_ftn_order_data(
             last_seen_time=fetch_time,
         )
     else:
-        await FTNOrder.update_by_id(id=item.id, last_seen_time=fetch_time)
+        await FtnOrder.update_by_id(id=item.id, last_seen_time=fetch_time)
 
 
 async def save_ftn_market_record_data(
     item: OrderData, /, *, fetch_time: datetime
 ) -> None:
-    await FTNMarketRecord.create(
+    await FtnMarketRecord.create(
         fetch_time=fetch_time,
         id=item.id,
         price=item.price,

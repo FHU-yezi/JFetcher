@@ -11,7 +11,7 @@ from utils.db import jpep_pool
 OrdersType = Literal["BUY", "SELL"]
 
 
-class FTNOrder(Table, frozen=True):
+class FtnOrder(Table, frozen=True):
     id: PositiveInt
     type: OrdersType
     publisher_id: PositiveInt
@@ -42,7 +42,7 @@ class FTNOrder(Table, frozen=True):
             )
 
     @classmethod
-    async def get_by_id(cls, id: int, /) -> FTNOrder | None:
+    async def get_by_id(cls, id: int, /) -> FtnOrder | None:
         async with jpep_pool.get_conn() as conn:
             cursor = await conn.execute(
                 "SELECT type, publisher_id, publish_time, last_seen_time "
