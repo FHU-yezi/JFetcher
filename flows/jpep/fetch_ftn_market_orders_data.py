@@ -6,7 +6,8 @@ from prefect import flow, get_run_logger, task
 
 from models.jpep.credit_record import CreditRecord
 from models.jpep.ftn_market_record import FtnMarketRecord
-from models.jpep.ftn_order import FtnOrder, OrdersType
+from models.jpep.ftn_market_summary_record import FtnMarketSummaryRecord
+from models.jpep.ftn_order import FtnOrder, FtnOrdersType
 from models.jpep.user import User
 from utils.prefect_helper import get_flow_run_name, get_task_run_name
 
@@ -31,7 +32,7 @@ async def pre_check() -> None:
 
 
 @task(task_run_name=get_task_run_name)
-async def iter_ftn_market_orders(*, type: OrdersType) -> AsyncGenerator[OrderData]:
+async def iter_ftn_market_orders(*, type: FtnOrdersType) -> AsyncGenerator[OrderData]:
     async for item in FtnMarket().iter_orders(type=type):
         yield item
 
@@ -66,7 +67,7 @@ async def save_credit_record_data(item: OrderData, /, *, fetch_time: datetime) -
 
 
 async def save_ftn_order_data(
-    item: OrderData, /, *, type: OrdersType, fetch_time: datetime
+    item: OrderData, /, *, type: FtnOrdersType, fetch_time: datetime
 ) -> None:
     ftn_order = await FtnOrder.get_by_id(item.id)
     if not ftn_order:
@@ -96,6 +97,20 @@ async def save_ftn_market_record_data(
     )
 
 
+async def save_ftn_market_summary_record_data(
+    *, type: FtnOrdersType, fetch_time: datetime
+) -> None:
+    logger = get_run_logger()
+
+    if not await FtnMarketRecord.exists_by_fetch_time(fetch_time):
+        logger.warning("无简书贝市场记录数据，跳过摘要数据写入")
+        return
+
+    await FtnMarketSummaryRecord.create_from_ftn_market_records_by_fetch_time_and_type(
+        fetch_time=fetch_time, type=type
+    )
+
+
 @flow(
     name="采集简书积分兑换平台简书贝市场订单数据",
     flow_run_name=get_flow_run_name,
@@ -103,7 +118,7 @@ async def save_ftn_market_record_data(
     retry_delay_seconds=10,
     timeout_seconds=20,
 )
-async def jpep_fetch_ftn_market_orders_data(type: OrdersType) -> None:
+async def jpep_fetch_ftn_market_orders_data(type: FtnOrdersType) -> None:
     logger = get_run_logger()
 
     fetch_time = get_fetch_time()
@@ -130,3 +145,8 @@ async def jpep_fetch_ftn_market_orders_data(type: OrdersType) -> None:
             await save_ftn_market_record_data(item, fetch_time=fetch_time)
         except Exception:
             logger.exception("保存简书贝市场记录数据时发生未知异常 id=%s", item.id)
+
+    try:
+        await save_ftn_market_summary_record_data(type=type, fetch_time=fetch_time)
+    except Exception:
+        logger.exception("保存简书贝市场摘要数据时发生未知异常")

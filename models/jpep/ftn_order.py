@@ -8,12 +8,12 @@ from sshared.strict_struct import PositiveInt
 
 from utils.db import jpep_pool
 
-OrdersType = Literal["BUY", "SELL"]
+FtnOrdersType = Literal["BUY", "SELL"]
 
 
 class FtnOrder(Table, frozen=True):
     id: PositiveInt
-    type: OrdersType
+    type: FtnOrdersType
     publisher_id: PositiveInt
     publish_time: datetime
     last_seen_time: datetime
@@ -23,7 +23,7 @@ class FtnOrder(Table, frozen=True):
         cls,
         *,
         id: int,
-        type: OrdersType,
+        type: FtnOrdersType,
         publisher_id: int,
         publish_time: datetime,
         last_seen_time: datetime,
