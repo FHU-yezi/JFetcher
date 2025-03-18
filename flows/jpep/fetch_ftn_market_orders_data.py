@@ -16,7 +16,7 @@ def get_fetch_time() -> datetime:
     time = datetime.now().replace(second=0, microsecond=0)
 
     # 12:01 -> timedelta = -1 minute
-    if time.minute % 10 < 5:  # noqa: PLR2004
+    if time.minute % 10 < 5:
         delta = timedelta(minutes=time.minute % 10)
         return time - delta
     # 11:57 -> timedelta = +3 minute

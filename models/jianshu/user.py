@@ -24,7 +24,7 @@ class User(Table, frozen=True):
     membership_expire_time: datetime | None
 
     @classmethod
-    async def create(  # noqa: PLR0913
+    async def create(
         cls,
         *,
         slug: str,

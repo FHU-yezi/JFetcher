@@ -130,7 +130,7 @@ async def save_user_assets_ranking_record_data(
 
     try:
         assets_info: AssetsInfoData = await get_user_assets_info(item)
-    except Exception:
+    except ResourceUnavailableError:
         assets_info = None  # type: ignore
     else:
         if assets_info.ftn_amount is None and assets_info.assets_amount is None:

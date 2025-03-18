@@ -19,7 +19,7 @@ class ArticleEarningRankingRecord(Table, frozen=True):
     voter_earning: PositiveFloat
 
     @classmethod
-    async def create(  # noqa: PLR0913
+    async def create(
         cls,
         *,
         date: date,
