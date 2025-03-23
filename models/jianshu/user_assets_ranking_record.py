@@ -18,7 +18,7 @@ class UserAssetsRankingRecord(Table, frozen=True):
     assets: NonNegativeFloat | None
 
     @classmethod
-    async def create(  # noqa: PLR0913
+    async def create(
         cls,
         *,
         date: date,

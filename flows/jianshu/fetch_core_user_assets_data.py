@@ -26,7 +26,7 @@ def get_fetch_time() -> datetime:
     time = datetime.now().replace(second=0, microsecond=0)
 
     # 12:13 -> 12:00
-    if time.minute < 30:  # noqa: PLR2004
+    if time.minute < 30:
         return time.replace(minute=0)
     # 12:49 -> 13:00
     else:  # noqa: RET505

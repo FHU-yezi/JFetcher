@@ -20,7 +20,7 @@ class FtnMarketSummaryRecord(Table, frozen=True):
     remaining_amount: int
 
     @classmethod
-    async def create(  # noqa: PLR0913
+    async def create(
         cls,
         *,
         fetch_time: datetime,

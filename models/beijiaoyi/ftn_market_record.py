@@ -20,7 +20,7 @@ class FtnMarketRecord(Table, frozen=True):
     completed_trades_count: NonNegativeInt
 
     @classmethod
-    async def create(  # noqa: PLR0913
+    async def create(
         cls,
         *,
         fetch_time: datetime,

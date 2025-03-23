@@ -6,7 +6,7 @@ networks:
 
 services:
   main:
-    image: jfetcher:4.1.0
+    image: jfetcher:4.2.0
     container_name: jfetcher
     build: .
     volumes:
@@ -20,7 +20,7 @@ services:
     deploy:
       resources:
         limits:
-          memory: 1G
+          memory: 768M
       restart_policy:
         condition: on-failure
         delay: 5s
