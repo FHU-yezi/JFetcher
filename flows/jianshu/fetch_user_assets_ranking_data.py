@@ -62,12 +62,10 @@ async def iter_user_assets_ranking(
     start_ranking: int,
     total_count: int,
 ) -> AsyncGenerator[RecordData]:
-    current_count = 0
     async for item in UserAssetsRanking(start_ranking=start_ranking).iter_records():
         yield item
-        current_count += 1
 
-        if current_count == total_count:
+        if item.ranking == total_count:
             return
 
 
