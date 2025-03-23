@@ -6,7 +6,7 @@ networks:
 
 services:
   main:
-    image: jfetcher:4.1.0
+    image: jfetcher:4.2.0
     container_name: jfetcher
     build: .
     volumes:
